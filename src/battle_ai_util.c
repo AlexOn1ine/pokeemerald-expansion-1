@@ -701,6 +701,12 @@ s32 AI_CalcDamage(u32 move, u32 battlerAtk, u32 battlerDef, u8 *typeEffectivenes
     SetBattlerData(battlerAtk);
     SetBattlerData(battlerDef);
 
+    if (gBattleMoves[move].effect == EFFECT_NATURE_POWER)
+        move = GetNaturePowerMove();
+
+    if (gBattleStruct->shellSideArmCategory[battlerAtk][battlerDef] == TRUE && move == MOVE_SHELL_SIDE_ARM)
+        gBattleStruct->swapDamageCategory = TRUE;
+
     if (considerZPower && IsViableZMove(battlerAtk, move))
     {
         //temporarily enable z moves for damage calcs
@@ -709,10 +715,6 @@ s32 AI_CalcDamage(u32 move, u32 battlerAtk, u32 battlerDef, u8 *typeEffectivenes
     }
 
     gBattleStruct->dynamicMoveType = 0;
-
-    if (move == MOVE_NATURE_POWER)
-        move = GetNaturePowerMove();
-
     SetTypeBeforeUsingMove(move, battlerAtk);
     GET_MOVE_TYPE(move, moveType);
 
@@ -825,6 +827,7 @@ s32 AI_CalcDamage(u32 move, u32 battlerAtk, u32 battlerDef, u8 *typeEffectivenes
 
     gBattleStruct->zmove.active = FALSE;
     gBattleStruct->zmove.baseMoves[battlerAtk] = MOVE_NONE;
+    gBattleStruct->swapDamageCategory = FALSE;
     return dmg;
 }
 

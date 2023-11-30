@@ -732,6 +732,7 @@ struct BattleStruct
     bool8 transformZeroToHero[PARTY_SIZE][NUM_BATTLE_SIDES];
     u8 pledgeMove:1;
     bool8 isSkyBattle:1;
+    u8 shellSideArmCategory[MAX_BATTLERS_COUNT][MAX_BATTLERS_COUNT];
 };
 
 // The palaceFlags member of struct BattleStruct contains 1 flag per move to indicate which moves the AI should consider,

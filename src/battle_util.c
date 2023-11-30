@@ -8308,7 +8308,7 @@ bool32 IsMoveMakingContact(u32 move, u32 battlerAtk)
 
     if (!gBattleMoves[move].makesContact)
     {
-        if (gBattleMoves[move].effect == EFFECT_SHELL_SIDE_ARM && gBattleStruct->swapDamageCategory)
+        if (gBattleMoves[move].effect == EFFECT_SHELL_SIDE_ARM && gBattleStruct->shellSideArmCategory[battlerAtk][gBattlerTarget])
             return TRUE;
         else
             return FALSE;
@@ -8349,7 +8349,7 @@ bool32 IsBattlerProtected(u32 battler, u32 move)
     // Protective Pads doesn't stop Unseen Fist from bypassing Protect effects, so IsMoveMakingContact() isn't used here.
     // This means extra logic is needed to handle Shell Side Arm.
     if (GetBattlerAbility(gBattlerAttacker) == ABILITY_UNSEEN_FIST
-        && (gBattleMoves[move].makesContact || (gBattleMoves[move].effect == EFFECT_SHELL_SIDE_ARM && gBattleStruct->swapDamageCategory))
+        && (gBattleMoves[move].makesContact || (gBattleMoves[move].effect == EFFECT_SHELL_SIDE_ARM && gBattleStruct->shellSideArmCategory[battler][gBattlerTarget]))
         && !gProtectStructs[battler].maxGuarded) // Max Guard cannot be bypassed by Unseen Fist
         return FALSE;
     else if (gBattleMoves[move].ignoresProtect)
@@ -9930,6 +9930,7 @@ static inline s32 DoMoveDamageCalcVars(u32 move, u32 battlerAtk, u32 battlerDef,
 
     if (dmg == 0)
         dmg = 1;
+
     return dmg;
 }
 
@@ -10765,6 +10766,57 @@ u8 GetSplitBasedOnStats(u32 battler)
         return SPLIT_SPECIAL;
     else
         return SPLIT_PHYSICAL;
+}
+
+void SetShellSideArmCategory(void)
+{
+    u32 battlerAtk, battlerDef;
+    u32 attackerAtkStat;
+    u32 targetDefStat;
+    u32 attackerSpAtkStat;
+    u32 targetSpDefStat;
+    u8 statStage;
+    u32 physical;
+    u32 special;
+
+    for (battlerAtk = 0; battlerAtk < gBattlersCount; battlerAtk++)
+    {
+        for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
+        {
+            if (battlerAtk == battlerDef)
+                continue;
+
+            attackerAtkStat = gBattleMons[battlerAtk].attack;
+            targetDefStat = gBattleMons[battlerDef].defense;
+            attackerSpAtkStat = gBattleMons[battlerAtk].spAttack;
+            targetSpDefStat = gBattleMons[battlerDef].spDefense;
+
+            statStage = gBattleMons[battlerAtk].statStages[STAT_ATK];
+            attackerAtkStat *= gStatStageRatios[statStage][0];
+            attackerAtkStat /= gStatStageRatios[statStage][1];
+
+            statStage = gBattleMons[battlerDef].statStages[STAT_DEF];
+            targetDefStat *= gStatStageRatios[statStage][0];
+            targetDefStat /= gStatStageRatios[statStage][1];
+
+            physical = ((((2 * gBattleMons[battlerAtk].level / 5 + 2) * gBattleMoves[MOVE_SHELL_SIDE_ARM].power * attackerAtkStat) / targetDefStat) / 50);
+
+            statStage = gBattleMons[battlerAtk].statStages[STAT_SPATK];
+            attackerSpAtkStat *= gStatStageRatios[statStage][0];
+            attackerSpAtkStat /= gStatStageRatios[statStage][1];
+
+            statStage = gBattleMons[battlerDef].statStages[STAT_SPDEF];
+            targetSpDefStat *= gStatStageRatios[statStage][0];
+            targetSpDefStat /= gStatStageRatios[statStage][1];
+
+            special = ((((2 * gBattleMons[battlerAtk].level / 5 + 2) * gBattleMoves[MOVE_SHELL_SIDE_ARM].power * attackerSpAtkStat) / targetSpDefStat) / 50);
+
+            if (((physical > special) || (physical == special && (Random() % 2) == 0)))
+            {
+                gBattleStruct->shellSideArmCategory[battlerAtk][battlerDef] = TRUE;
+            }
+        }
+    }
 }
 
 static u32 GetFlingPowerFromItemId(u32 itemId)

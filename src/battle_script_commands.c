@@ -1973,6 +1973,8 @@ static void Cmd_damagecalc(void)
     u8 moveType;
 
     GET_MOVE_TYPE(gCurrentMove, moveType);
+    if (gBattleStruct->shellSideArmCategory[gBattlerAttacker][gBattlerTarget] == TRUE && gCurrentMove == MOVE_SHELL_SIDE_ARM)
+        gBattleStruct->swapDamageCategory = TRUE;
     gBattleMoveDamage = CalculateMoveDamage(gCurrentMove, gBattlerAttacker, gBattlerTarget, moveType, 0, gIsCriticalHit, TRUE, TRUE);
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
@@ -6052,6 +6054,9 @@ static void Cmd_moveend(void)
             gBattleStruct->zmove.effect = EFFECT_HIT;
             gBattleStruct->hitSwitchTargetFailed = FALSE;
             gBattleStruct->isAtkCancelerForCalledMove = FALSE;
+            gBattleStruct->swapDamageCategory = FALSE;
+            for (i = 0; i < gBattlersCount; i++)
+                gBattleStruct->shellSideArmCategory[gBattlerAttacker][i] = FALSE;
             gBattleScripting.moveendState++;
             break;
         case MOVEEND_COUNT:
@@ -10250,44 +10255,6 @@ static void Cmd_various(void)
     {
         VARIOUS_ARGS();
         gBattleStruct->swapDamageCategory = (GetSplitBasedOnStats(battler) == SPLIT_SPECIAL);
-        break;
-    }
-    case VARIOUS_SHELL_SIDE_ARM_CHECK: // 0% chance GameFreak actually checks this way according to DaWobblefet, but this is the only functional explanation at the moment
-    {
-        VARIOUS_ARGS();
-
-        u32 attackerAtkStat = gBattleMons[gBattlerAttacker].attack;
-        u32 targetDefStat = gBattleMons[gBattlerTarget].defense;
-        u32 attackerSpAtkStat = gBattleMons[gBattlerAttacker].spAttack;
-        u32 targetSpDefStat = gBattleMons[gBattlerTarget].spDefense;
-        u8 statStage;
-        u32 physical;
-        u32 special;
-
-        gBattleStruct->swapDamageCategory = FALSE;
-
-        statStage = gBattleMons[gBattlerAttacker].statStages[STAT_ATK];
-        attackerAtkStat *= gStatStageRatios[statStage][0];
-        attackerAtkStat /= gStatStageRatios[statStage][1];
-
-        statStage = gBattleMons[gBattlerTarget].statStages[STAT_DEF];
-        targetDefStat *= gStatStageRatios[statStage][0];
-        targetDefStat /= gStatStageRatios[statStage][1];
-
-        physical = ((((2 * gBattleMons[gBattlerAttacker].level / 5 + 2) * gBattleMoves[gCurrentMove].power * attackerAtkStat) / targetDefStat) / 50);
-
-        statStage = gBattleMons[gBattlerAttacker].statStages[STAT_SPATK];
-        attackerSpAtkStat *= gStatStageRatios[statStage][0];
-        attackerSpAtkStat /= gStatStageRatios[statStage][1];
-
-        statStage = gBattleMons[gBattlerTarget].statStages[STAT_SPDEF];
-        targetSpDefStat *= gStatStageRatios[statStage][0];
-        targetSpDefStat /= gStatStageRatios[statStage][1];
-
-        special = ((((2 * gBattleMons[gBattlerAttacker].level / 5 + 2) * gBattleMoves[gCurrentMove].power * attackerSpAtkStat) / targetSpDefStat) / 50);
-
-        if (((physical > special) || (physical == special && (Random() % 2) == 0)))
-            gBattleStruct->swapDamageCategory = TRUE;
         break;
     }
     case VARIOUS_JUMP_IF_LEAF_GUARD_PROTECTED:

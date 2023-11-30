@@ -391,7 +391,7 @@ gBattleScriptsForMoveEffects::
 	.4byte BattleScript_EffectHyperspaceFury          @ EFFECT_HYPERSPACE_FURY
 	.4byte BattleScript_EffectAuraWheel               @ EFFECT_AURA_WHEEL
 	.4byte BattleScript_EffectPhotonGeyser            @ EFFECT_PHOTON_GEYSER
-	.4byte BattleScript_EffectShellSideArm            @ EFFECT_SHELL_SIDE_ARM
+	.4byte BattleScript_EffectHit                     @ EFFECT_SHELL_SIDE_ARM
 	.4byte BattleScript_EffectHit                     @ EFFECT_TERRAIN_PULSE
 	.4byte BattleScript_EffectJawLock                 @ EFFECT_JAW_LOCK
 	.4byte BattleScript_EffectNoRetreat               @ EFFECT_NO_RETREAT
@@ -1103,11 +1103,6 @@ BattleScript_FlingWhiteHerb:
 	waitmessage B_WAIT_TIME_MED
 	swapattackerwithtarget
 	goto BattleScript_FlingEnd
-
-BattleScript_EffectShellSideArm:
-	shellsidearmcheck
-	setmoveeffect MOVE_EFFECT_POISON
-	goto BattleScript_EffectHit
 
 BattleScript_EffectPhotonGeyser:
 	attackcanceler

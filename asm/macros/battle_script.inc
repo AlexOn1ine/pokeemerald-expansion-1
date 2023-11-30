@@ -2129,10 +2129,6 @@
 	various \battler, VARIOUS_PHOTON_GEYSER_CHECK
 	.endm
 
-	.macro shellsidearmcheck
-	various BS_ATTACKER, VARIOUS_SHELL_SIDE_ARM_CHECK
-	.endm
-
 	.macro jumpifteanoberry jumpInstr:req
 	various BS_ATTACKER, VARIOUS_TEATIME_TARGETS
 	.4byte \jumpInstr

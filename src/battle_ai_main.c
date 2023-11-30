@@ -408,7 +408,6 @@ void SetAiLogicDataForTurn(struct AiLogicData *aiData)
     {
         if (!IsBattlerAlive(battlerAtk))
             continue;
-
         SetBattlerAiData(battlerAtk, aiData);
         SetBattlerAiMovesData(aiData, battlerAtk, battlersCount);
     }
