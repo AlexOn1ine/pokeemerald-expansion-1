@@ -3773,17 +3773,18 @@ u8 AtkCanceller_UnableToUseMove(u32 moveType)
                 {
                     gMultiHitCounter = RandomUniform(RNG_LOADED_DICE, 4, 10);
                 }
-                else if (gBattleMoves[gCurrentMove].effect == EFFECT_DRAGON_DARTS
-                && CanTargetPartner(gBattlerTarget)
-                && TargetFullyImmuneToCurrMove(gBattlerTarget))
-                {
-                    // Smart target to partner
-                    gBattlerTarget = BATTLE_PARTNER(gBattlerTarget);
-                }
                 else
                 {
                     gMultiHitCounter = gBattleMoves[gCurrentMove].strikeCount;
                     PREPARE_BYTE_NUMBER_BUFFER(gBattleScripting.multihitString, 3, 0)
+
+                    if (gBattleMoves[gCurrentMove].effect == EFFECT_DRAGON_DARTS
+                    && CanTargetPartner(gBattlerTarget)
+                    && TargetFullyImmuneToCurrMove(gBattlerTarget))
+                    {
+                        // Smart target to partner
+                        gBattlerTarget = BATTLE_PARTNER(gBattlerTarget);
+                    }
                 }
 
             }
@@ -11207,7 +11208,7 @@ bool8 TargetFullyImmuneToCurrMove(u8 battlerDef)
     u8 moveType = 0;
     GET_MOVE_TYPE(gCurrentMove, moveType);
 
-    return (CalcTypeEffectivenessMultiplier(gCurrentMove, moveType, gBattlerAttacker, battlerDef, FALSE) & MOVE_RESULT_NO_EFFECT)
+    return (CalcTypeEffectivenessMultiplier(gCurrentMove, moveType, gBattlerAttacker, battlerDef, FALSE) == UQ_4_12(0.0))
          || IsBattlerProtected(battlerDef, gCurrentMove)
          || IsSemiInvulnerable(battlerDef, gCurrentMove)
          || DoesTargetHaveAbilityImmunity();
