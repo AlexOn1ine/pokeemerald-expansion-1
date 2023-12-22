@@ -191,7 +191,7 @@
 #define STATUS4_GLAIVE_RUSH             (1 << 6)
 
 #define HITMARKER_WAKE_UP_CLEAR         (1 << 4) // Cleared when waking up. Never set or checked.
-#define HITMARKER_SKIP_DMG_TRACK        (1 << 5)
+#define HITMARKER_IGNORE_BIDE           (1 << 5)
 #define HITMARKER_DESTINYBOND           (1 << 6)
 #define HITMARKER_NO_ANIMATIONS         (1 << 7)   // set from battleSceneOff. Never changed during battle
 #define HITMARKER_IGNORE_SUBSTITUTE     (1 << 8)
@@ -199,7 +199,7 @@
 #define HITMARKER_ATTACKSTRING_PRINTED  (1 << 10)
 #define HITMARKER_NO_PPDEDUCT           (1 << 11)
 #define HITMARKER_SWAP_ATTACKER_TARGET  (1 << 12)
-#define HITMARKER_IGNORE_SAFEGUARD      (1 << 13)
+#define HITMARKER_STATUS_ABILITY_EFFECT (1 << 13)
 #define HITMARKER_SYNCHRONISE_EFFECT    (1 << 14)
 #define HITMARKER_RUN                   (1 << 15)
 #define HITMARKER_IGNORE_DISGUISE       (1 << 16)
@@ -392,8 +392,9 @@
 #define MOVE_EFFECT_SPIKES              76
 #define MOVE_EFFECT_TRIPLE_ARROWS       77
 #define MOVE_EFFECT_SYRUP_BOMB          78
+#define MOVE_EFFECT_FLORAL_HEALING      79
 
-#define NUM_MOVE_EFFECTS                79
+#define NUM_MOVE_EFFECTS                80
 
 #define MOVE_EFFECT_AFFECTS_USER        0x4000
 #define MOVE_EFFECT_CERTAIN             0x8000
