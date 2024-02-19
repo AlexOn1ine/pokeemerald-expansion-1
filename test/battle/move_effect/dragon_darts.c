@@ -150,38 +150,40 @@ DOUBLE_BATTLE_TEST("Dragon Darts strikes hit the ally if the target fainted")
     }
 }
 
-// DOUBLE_BATTLE_TEST("Dragon Darts strikes left ally twice if one strike misses")
-// {
-//     GIVEN {
-//         PLAYER(SPECIES_WOBBUFFET);
-//         PLAYER(SPECIES_WOBBUFFET);
-//         OPPONENT(SPECIES_WOBBUFFET);
-//         OPPONENT(SPECIES_WOBBUFFET) { Item(ITEM_BRIGHT_POWDER); };
-//     } WHEN {
-//         TURN { MOVE(playerLeft, MOVE_DRAGON_DARTS, target: opponentRight, hit: FALSE); }
-//     } SCENE {
-//         ANIMATION(ANIM_TYPE_MOVE, MOVE_DRAGON_DARTS, playerLeft);
-//         HP_BAR(opponentLeft);
-//         ANIMATION(ANIM_TYPE_MOVE, MOVE_DRAGON_DARTS, playerLeft);
-//         HP_BAR(opponentLeft);
-//         MESSAGE("Hit 2 time(s)!");
-//     }
-// }
+DOUBLE_BATTLE_TEST("Dragon Darts strikes left ally twice if one strike misses")
+{
+    KNOWN_FAILING; // The game freezes after the accuract check.
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET) { Item(ITEM_BRIGHT_POWDER); };
+    } WHEN {
+        TURN { MOVE(playerLeft, MOVE_DRAGON_DARTS, target: opponentRight, hit: FALSE); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_DRAGON_DARTS, playerLeft);
+        HP_BAR(opponentLeft);
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_DRAGON_DARTS, playerLeft);
+        HP_BAR(opponentLeft);
+        MESSAGE("Hit 2 time(s)!");
+    }
+}
 
-// DOUBLE_BATTLE_TEST("Dragon Darts strikes right ally twice if one strike misses")
-// {
-//     GIVEN {
-//         PLAYER(SPECIES_WOBBUFFET);
-//         PLAYER(SPECIES_WOBBUFFET);
-//         OPPONENT(SPECIES_WOBBUFFET) { Item(ITEM_BRIGHT_POWDER); };
-//         OPPONENT(SPECIES_WOBBUFFET);
-//     } WHEN {
-//         TURN { MOVE(playerLeft, MOVE_DRAGON_DARTS, target: opponentLeft, hit: FALSE); }
-//     } SCENE {
-//         ANIMATION(ANIM_TYPE_MOVE, MOVE_DRAGON_DARTS, playerLeft);
-//         HP_BAR(opponentRight);
-//         ANIMATION(ANIM_TYPE_MOVE, MOVE_DRAGON_DARTS, playerLeft);
-//         HP_BAR(opponentRight);
-//         MESSAGE("Hit 2 time(s)!");
-//     }
-// }
+DOUBLE_BATTLE_TEST("Dragon Darts strikes right ally twice if one strike misses")
+{
+    KNOWN_FAILING; // The game freezes after the accuract check.
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET) { Item(ITEM_BRIGHT_POWDER); };
+        OPPONENT(SPECIES_WOBBUFFET);
+    } WHEN {
+        TURN { MOVE(playerLeft, MOVE_DRAGON_DARTS, target: opponentLeft, hit: FALSE); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_DRAGON_DARTS, playerLeft);
+        HP_BAR(opponentRight);
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_DRAGON_DARTS, playerLeft);
+        HP_BAR(opponentRight);
+        MESSAGE("Hit 2 time(s)!");
+    }
+}
