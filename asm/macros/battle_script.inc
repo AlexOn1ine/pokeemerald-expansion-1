@@ -377,6 +377,11 @@
 	.byte 0x3f
 	.endm
 
+	.macro battlercountforspreaddamage jumpInstr:req
+	.byte 0x40
+	.4byte \jumpInstr
+	.endm
+
 	.macro call instr:req
 	.byte 0x41
 	.4byte \instr

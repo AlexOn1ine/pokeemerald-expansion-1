@@ -2778,8 +2778,7 @@ BattleScript_EffectHitSpreadMoveMoveEnd:
 	setadditionaleffects
 	tryfaintmon BS_TARGET
 	moveendall
-	addbyte gBattlerTarget, 1 @ Loops through all potential targets
-	jumpifbytenotequal gBattlerTarget, gBattlersCount, BattleScript_EffectHitSpreadMoveMoveEnd
+	battlercountforspreaddamage BattleScript_EffectHitSpreadMoveMoveEnd
 	end
 
 BattleScript_EffectHit::

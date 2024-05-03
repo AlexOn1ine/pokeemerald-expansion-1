@@ -401,7 +401,7 @@ static void Cmd_return(void);
 static void Cmd_end(void);
 static void Cmd_end2(void);
 static void Cmd_end3(void);
-static void Cmd_unused5(void);
+static void Cmd_battlercountforspreaddamage(void);
 static void Cmd_call(void);
 static void Cmd_setroost(void);
 static void Cmd_jumpifabilitypresent(void);
@@ -660,7 +660,7 @@ void (* const gBattleScriptingCommandsTable[])(void) =
     Cmd_end,                                     //0x3D
     Cmd_end2,                                    //0x3E
     Cmd_end3,                                    //0x3F
-    Cmd_unused5,                                 //0x40
+    Cmd_battlercountforspreaddamage,                                 //0x40
     Cmd_call,                                    //0x41
     Cmd_setroost,                                //0x42
     Cmd_jumpifabilitypresent,                    //0x43
@@ -1515,20 +1515,24 @@ static bool32 JumpIfMoveFailed(u8 adder, u16 move)
     return FALSE;
 }
 
-static void Cmd_unused5(void)
+static void Cmd_battlercountforspreaddamage(void)
 {
-    CMD_ARGS(const u8 *failInstr);
+    CMD_ARGS(const u8 *jumpInstr);
 
-    if (IsBattlerProtected(gBattlerTarget, gCurrentMove))
+    u32 battler;
+    gBattlerTarget++;
+    for (battler = gBattlerTarget; battler < gBattlersCount; battler++)
     {
-        gMoveResultFlags |= MOVE_RESULT_MISSED;
-        JumpIfMoveFailed(sizeof(*cmd), MOVE_NONE);
-        gBattleCommunication[MISS_TYPE] = B_MSG_PROTECTED;
+        if (gBattleStruct->damageTaken[battler] != 0)
+        {
+            DebugPrintf("battler: %d", battler);
+            gBattlerTarget = battler;
+            gBattlescriptCurrInstr = cmd->jumpInstr;
+            return;
+        }
     }
-    else
-    {
-        gBattlescriptCurrInstr = cmd->nextInstr;
-    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+
 }
 
 static bool8 JumpIfMoveAffectedByProtect(u16 move)
@@ -2144,7 +2148,9 @@ END:
             gBattlescriptCurrInstr = BattleScript_AttackWeakenedByStrongWinds;
         }
     }
-    gBattleStruct->calculatedDamage[gBattlerTarget] = gBattleMoveDamage;
+
+    gBattleStruct->damageTaken[gBattlerTarget] = gBattleMoveDamage;
+    gBattleStruct->numSpreadMoveTargets++;
 }
 
 static void Cmd_multihitresultmessage(void)
@@ -2272,7 +2278,7 @@ static void DoublesHPBarReduction(void)
 
     for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
     {
-        if (gBattleStruct->calculatedDamage[battlerDef] == 0)
+        if (gBattleStruct->damageTaken[battlerDef] == 0)
             continue;
 
         s32 healthValue, currDmg;
@@ -2282,7 +2288,7 @@ static void DoublesHPBarReduction(void)
         //  || DoesDisguiseBlockMove(battlerDef, gCurrentMove))
         //     continue;
 
-        currDmg = gBattleStruct->calculatedDamage[battlerDef];
+        currDmg = gBattleStruct->damageTaken[battlerDef];
         healthValue = min(currDmg, 10000); // Max damage (10000) not present in R/S, ensures that huge damage values don't change sign
         BtlController_EmitHealthBarUpdate(battlerDef, BUFFER_A, healthValue);
         MarkBattlerForControllerExec(battlerDef);
@@ -6076,7 +6082,6 @@ static void Cmd_moveend(void)
                 }
                 if (ejectButtonBattlers || ejectPackBattlers)
                 {
-                    DebugPrintf("[1]");
                     u8 battlers[4] = {0, 1, 2, 3};
                     SortBattlersBySpeed(battlers, FALSE);
 
@@ -6084,38 +6089,31 @@ static void Cmd_moveend(void)
                     {
                         u32 battler = battlers[i];
 
-                        if (ejectButtonBattlers & gBitTable[battler])
-                            DebugPrintf("ejectButtonBattlers %d", ejectButtonBattlers & gBitTable[battler]);
                         if (battler != gBattlerAttacker && ejectButtonBattlers & gBitTable[battler])
                         {
                             if (TestIfSheerForceAffected(gBattlerAttacker, gCurrentMove)) // Apparently Sheer Force blocks Eject Button, but not Eject Pack
                                 continue;
                             // Since we check if battler was damaged, we don't need to check move result.
                             // In fact, doing so actually prevents multi-target moves from activating eject button properly
-                            // if (!BATTLER_TURN_DAMAGED(battler))
-                            //     continue;
-                            DebugPrintf("[2]");
+                            if (!BATTLER_TURN_DAMAGED(battler) && gBattleStruct->damageTaken[battler] != 0)
+                                continue;
                         }
                         else if (ejectPackBattlers & gBitTable[battler])
                         {
-                            DebugPrintf("[3]");
                             if (!gProtectStructs[battler].statFell || gProtectStructs[battler].disableEjectPack)
                                 continue;
                         }
                         else
                         {
-                            DebugPrintf("[4]");
                             continue;
                         }
 
-                        DebugPrintf("[5]");
                         if (IsBattlerAlive(battler)
                             && CountUsablePartyMons(battler) > 0 // Has mon to switch into
                             // Does not activate if attacker used Parting Shot and can switch out
                             && !(gMovesInfo[gCurrentMove].effect == EFFECT_HIT_SWITCH_TARGET && CanBattlerSwitch(gBattlerAttacker))
                             )
                         {
-                            DebugPrintf("[6]");
                             gBattleScripting.battler = battler;
                             gLastUsedItem = gBattleMons[battler].item;
                             if (gMovesInfo[gCurrentMove].effect == EFFECT_HIT_ESCAPE)
@@ -7572,7 +7570,7 @@ static void Cmd_hitanimation(void)
 		{
             // if (gBattleStruct->resultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT)
             //     continue;
-            if (gBattleStruct->calculatedDamage[battlerDef] == 0)
+            if (gBattleStruct->damageTaken[battlerDef] == 0)
                 continue;
 
             if (!(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE)
@@ -12443,7 +12441,6 @@ static void Cmd_jumpifnexttarget(void)
             gBattlescriptCurrInstr = cmd->nextInstr;
         }
 
-        gBattleStruct->numSpreadMoveTargets++; // Move to a more reasnable place
         gHitMarker |= HITMARKER_NO_ATTACKSTRING;
         gHitMarker &= ~HITMARKER_NO_PPDEDUCT;
     }

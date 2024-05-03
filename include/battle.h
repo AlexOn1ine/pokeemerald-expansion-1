@@ -818,7 +818,7 @@ struct BattleStruct
     u8 boosterEnergyActivates;
     u8 distortedTypeMatchups;
 
-    s32 calculatedDamage[MAX_BATTLERS_COUNT];
+    s32 damageTaken[MAX_BATTLERS_COUNT];
     u8 numSpreadMoveTargets;
 };
 
