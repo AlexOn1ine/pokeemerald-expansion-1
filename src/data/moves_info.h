@@ -6270,7 +6270,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .description = COMPOUND_STRING(
             "Exhales a hot breath on the\n"
             "foe. May inflict a burn."),
-        .effect = EFFECT_HIT,
+        .effect = EFFECT_HIT_SPREAD_MOVE,
         .power = B_UPDATED_MOVE_DATA >= GEN_6 ? 95 : 100,
         .type = TYPE_FIRE,
         .accuracy = 90,
@@ -7395,7 +7395,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .description = COMPOUND_STRING(
             "A loud attack that uses\n"
             "sound waves to injure."),
-        .effect = EFFECT_HIT,
+        .effect = EFFECT_HIT_SPREAD_MOVE,
         .power = 90,
         .type = TYPE_NORMAL,
         .accuracy = 100,

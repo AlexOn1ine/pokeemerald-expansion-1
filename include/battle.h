@@ -817,6 +817,9 @@ struct BattleStruct
     u8 quickDrawRandom[MAX_BATTLERS_COUNT];
     u8 boosterEnergyActivates;
     u8 distortedTypeMatchups;
+
+    s32 calculatedDamage[MAX_BATTLERS_COUNT];
+    u8 numSpreadMoveTargets;
 };
 
 // The palaceFlags member of struct BattleStruct contains 1 flag per move to indicate which moves the AI should consider,

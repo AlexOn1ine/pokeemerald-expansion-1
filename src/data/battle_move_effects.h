@@ -2242,4 +2242,9 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
         .battleScript = BattleScript_EffectPhotonGeyser,
         .battleTvScore = 0, // TODO: Assign points
     },
+
+    [EFFECT_HIT_SPREAD_MOVE] =
+    {
+        .battleScript = BattleScript_EffectHitSpreadMove,
+    },
 };

@@ -2753,6 +2753,35 @@ BattleScript_EffectPlaceholder::
 	printstring STRINGID_NOTDONEYET
 	goto BattleScript_MoveEnd
 
+BattleScript_EffectHitSpreadMove::
+	attackcanceler
+	accuracycheck BattleScript_PrintMoveMissed, ACC_CURR_MOVE
+	attackstring
+	ppreduce
+	critcalc
+	damagecalc
+	adjustdamage
+	jumpifnexttarget  @ Jumps to next target before doing everything else
+	attackanimation
+	waitanimation
+	effectivenesssound
+	hitanimation BS_TARGET
+	waitstate
+	healthbarupdate BS_TARGET
+	datahpupdate BS_TARGET
+	critmessage
+	waitmessage B_WAIT_TIME_LONG
+	resultmessage
+	waitmessage B_WAIT_TIME_LONG
+	setbyte gBattlerTarget, 1
+BattleScript_EffectHitSpreadMoveMoveEnd:
+	setadditionaleffects
+	tryfaintmon BS_TARGET
+	moveendall
+	addbyte gBattlerTarget, 1 @ Loops through all potential targets
+	jumpifbytenotequal gBattlerTarget, gBattlersCount, BattleScript_EffectHitSpreadMoveMoveEnd
+	end
+
 BattleScript_EffectHit::
 BattleScript_HitFromAtkCanceler::
 	attackcanceler

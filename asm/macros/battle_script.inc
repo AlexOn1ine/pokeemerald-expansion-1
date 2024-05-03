@@ -834,7 +834,7 @@
 	.byte 0x94
 	.endm
 
-	.macro unused_95
+	.macro jumpifnexttarget
 	.byte 0x95
 	.endm
 

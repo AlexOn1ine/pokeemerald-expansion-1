@@ -486,7 +486,7 @@ static void Cmd_givepaydaymoney(void);
 static void Cmd_setlightscreen(void);
 static void Cmd_tryKO(void);
 static void Cmd_damagetohalftargethp(void);
-static void Cmd_unused_95(void);
+static void Cmd_jumpifnexttarget(void);
 static void Cmd_weatherdamage(void);
 static void Cmd_tryinfatuating(void);
 static void Cmd_updatestatusicon(void);
@@ -745,7 +745,7 @@ void (* const gBattleScriptingCommandsTable[])(void) =
     Cmd_setlightscreen,                          //0x92
     Cmd_tryKO,                                   //0x93
     Cmd_damagetohalftargethp,                    //0x94
-    Cmd_unused_95,                               //0x95
+    Cmd_jumpifnexttarget,                               //0x95
     Cmd_weatherdamage,                           //0x96
     Cmd_tryinfatuating,                          //0x97
     Cmd_updatestatusicon,                        //0x98
@@ -2144,6 +2144,7 @@ END:
             gBattlescriptCurrInstr = BattleScript_AttackWeakenedByStrongWinds;
         }
     }
+    gBattleStruct->calculatedDamage[gBattlerTarget] = gBattleMoveDamage;
 }
 
 static void Cmd_multihitresultmessage(void)
@@ -2262,6 +2263,35 @@ static void Cmd_waitanimation(void)
         gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+static void DoublesHPBarReduction(void)
+{
+    u32 battlerDef = 0;
+
+	if (gHitMarker & (HITMARKER_IGNORE_SUBSTITUTE | HITMARKER_PASSIVE_DAMAGE))
+        return;
+
+    for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
+    {
+        if (gBattleStruct->calculatedDamage[battlerDef] == 0)
+            continue;
+
+        s32 healthValue, currDmg;
+
+        // if (gBattleStruct->resultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT
+        //  || DoesSubstituteBlockMove(gBattlerAttacker, battlerDef, gCurrentMove)
+        //  || DoesDisguiseBlockMove(battlerDef, gCurrentMove))
+        //     continue;
+
+        currDmg = gBattleStruct->calculatedDamage[battlerDef];
+        healthValue = min(currDmg, 10000); // Max damage (10000) not present in R/S, ensures that huge damage values don't change sign
+        BtlController_EmitHealthBarUpdate(battlerDef, BUFFER_A, healthValue);
+        MarkBattlerForControllerExec(battlerDef);
+
+        if (GetBattlerSide(battlerDef) == B_SIDE_PLAYER && currDmg > 0)
+            gBattleResults.playerMonWasDamaged = TRUE;
+    }
+}
+
 static void Cmd_healthbarupdate(void)
 {
     CMD_ARGS(u8 battler);
@@ -2269,26 +2299,39 @@ static void Cmd_healthbarupdate(void)
     if (gBattleControllerExecFlags)
         return;
 
-    if (!(gMoveResultFlags & MOVE_RESULT_NO_EFFECT) || (gHitMarker & HITMARKER_PASSIVE_DAMAGE))
-    {
-        u32 battler = GetBattlerForBattleScript(cmd->battler);
+    // if (!(gMoveResultFlags & MOVE_RESULT_NO_EFFECT) || (gHitMarker & HITMARKER_PASSIVE_DAMAGE))
+    // {
+    //     u32 battler = GetBattlerForBattleScript(cmd->battler);
 
-        if (DoesSubstituteBlockMove(gBattlerAttacker, battler, gCurrentMove) && gDisableStructs[battler].substituteHP && !(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE))
-        {
-            PrepareStringBattle(STRINGID_SUBSTITUTEDAMAGED, battler);
-        }
-        else if (!DoesDisguiseBlockMove(battler, gCurrentMove))
-        {
-            s16 healthValue = min(gBattleMoveDamage, 10000); // Max damage (10000) not present in R/S, ensures that huge damage values don't change sign
+    //     if (DoesSubstituteBlockMove(gBattlerAttacker, battler, gCurrentMove) && gDisableStructs[battler].substituteHP && !(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE))
+    //     {
+    //         PrepareStringBattle(STRINGID_SUBSTITUTEDAMAGED, battler);
+    //         if (gBattleStruct->numSpreadMoveTargets >= 2)
+    //             DoublesHPBarReduction();
+    //     }
+    //     else if (!DoesDisguiseBlockMove(battler, gCurrentMove))
+    //     {
+    //         if (gBattleStruct->numSpreadMoveTargets >= 2)
+    //         {
+    //             DoublesHPBarReduction();
+    //         }
+    //         else
+    //         {
+    //             s16 healthValue = min(gBattleMoveDamage, 10000); // Max damage (10000) not present in R/S, ensures that huge damage values don't change sign
 
-            BtlController_EmitHealthBarUpdate(battler, BUFFER_A, healthValue);
-            MarkBattlerForControllerExec(battler);
+    //             BtlController_EmitHealthBarUpdate(battler, BUFFER_A, healthValue);
+    //             MarkBattlerForControllerExec(battler);
 
-            if (GetBattlerSide(battler) == B_SIDE_PLAYER && gBattleMoveDamage > 0)
-                gBattleResults.playerMonWasDamaged = TRUE;
-        }
-    }
+    //             if (GetBattlerSide(battler) == B_SIDE_PLAYER && gBattleMoveDamage > 0)
+    //                 gBattleResults.playerMonWasDamaged = TRUE;
+    //         }
+    //     }
+    // }
+    // else if (gBattleStruct->numSpreadMoveTargets >= 2)
+    // {
+    // }
 
+    DoublesHPBarReduction();
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
@@ -5924,65 +5967,8 @@ static void Cmd_moveend(void)
             gBattleScripting.moveendState++;
             break;
         case MOVEEND_NEXT_TARGET: // For moves hitting two opposing Pokemon.
-        {
-            u16 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
-            // Set a flag if move hits either target (for throat spray that can't check damage)
-            if (!(gHitMarker & HITMARKER_UNABLE_TO_USE_MOVE)
-             && !(gMoveResultFlags & MOVE_RESULT_NO_EFFECT))
-                gProtectStructs[gBattlerAttacker].targetAffected = TRUE;
-
-            gBattleStruct->targetsDone[gBattlerAttacker] |= gBitTable[gBattlerTarget];
-            if (!(gHitMarker & HITMARKER_UNABLE_TO_USE_MOVE)
-                && gBattleTypeFlags & BATTLE_TYPE_DOUBLE
-                && !gProtectStructs[gBattlerAttacker].chargingTurn
-                && (moveTarget == MOVE_TARGET_BOTH
-                    || moveTarget == MOVE_TARGET_FOES_AND_ALLY)
-                && !(gHitMarker & HITMARKER_NO_ATTACKSTRING))
-            {
-                u32 nextTarget = GetNextTarget(moveTarget, FALSE);
-                gHitMarker |= HITMARKER_NO_PPDEDUCT;
-
-                if (nextTarget != MAX_BATTLERS_COUNT)
-                {
-                    gBattleStruct->moveTarget[gBattlerAttacker] = gBattlerTarget = nextTarget; // Fix for moxie spread moves
-                    gBattleScripting.moveendState = 0;
-                    MoveValuesCleanUp();
-                    gBattleScripting.moveEffect = gBattleScripting.savedMoveEffect;
-                    BattleScriptPush(GET_MOVE_BATTLESCRIPT(gCurrentMove));
-                    gBattlescriptCurrInstr = BattleScript_FlushMessageBox;
-                    return;
-                }
-                // Check if the move used was actually a bounced move. If so, we need to go back to the original attacker and make sure, its move hits all 2 or 3 pokemon.
-                else if (gBattleStruct->bouncedMoveIsUsed)
-                {
-                    u8 originalBounceTarget = gBattlerAttacker;
-                    gBattleStruct->bouncedMoveIsUsed = FALSE;
-                    gBattlerAttacker = gBattleStruct->attackerBeforeBounce;
-                    gBattleStruct->targetsDone[gBattlerAttacker] |= gBitTable[originalBounceTarget];
-                    gBattleStruct->targetsDone[originalBounceTarget] = 0;
-
-                    nextTarget = GetNextTarget(moveTarget, FALSE);
-                    if (nextTarget != MAX_BATTLERS_COUNT)
-                    {
-                        // We found another target for the original move user.
-                        gBattleStruct->moveTarget[gBattlerAttacker] = gBattlerTarget = nextTarget;
-                        gBattleScripting.moveendState = 0;
-                        gBattleScripting.animTurn = 0;
-                        gBattleScripting.animTargetsHit = 0;
-                        MoveValuesCleanUp();
-                        BattleScriptPush(GET_MOVE_BATTLESCRIPT(gCurrentMove));
-                        gBattlescriptCurrInstr = BattleScript_FlushMessageBox;
-                        return;
-                    }
-                }
-
-                gHitMarker |= HITMARKER_NO_ATTACKSTRING;
-                gHitMarker &= ~HITMARKER_NO_PPDEDUCT;
-            }
-            RecordLastUsedMoveBy(gBattlerAttacker, gCurrentMove);
             gBattleScripting.moveendState++;
             break;
-        }
         case MOVEEND_MULTIHIT_MOVE:
         {
             if (!(gMoveResultFlags & MOVE_RESULT_NO_EFFECT)
@@ -6090,6 +6076,7 @@ static void Cmd_moveend(void)
                 }
                 if (ejectButtonBattlers || ejectPackBattlers)
                 {
+                    DebugPrintf("[1]");
                     u8 battlers[4] = {0, 1, 2, 3};
                     SortBattlersBySpeed(battlers, FALSE);
 
@@ -6097,31 +6084,38 @@ static void Cmd_moveend(void)
                     {
                         u32 battler = battlers[i];
 
+                        if (ejectButtonBattlers & gBitTable[battler])
+                            DebugPrintf("ejectButtonBattlers %d", ejectButtonBattlers & gBitTable[battler]);
                         if (battler != gBattlerAttacker && ejectButtonBattlers & gBitTable[battler])
                         {
                             if (TestIfSheerForceAffected(gBattlerAttacker, gCurrentMove)) // Apparently Sheer Force blocks Eject Button, but not Eject Pack
                                 continue;
                             // Since we check if battler was damaged, we don't need to check move result.
                             // In fact, doing so actually prevents multi-target moves from activating eject button properly
-                            if (!BATTLER_TURN_DAMAGED(battler))
-                                continue;
+                            // if (!BATTLER_TURN_DAMAGED(battler))
+                            //     continue;
+                            DebugPrintf("[2]");
                         }
                         else if (ejectPackBattlers & gBitTable[battler])
                         {
+                            DebugPrintf("[3]");
                             if (!gProtectStructs[battler].statFell || gProtectStructs[battler].disableEjectPack)
                                 continue;
                         }
                         else
                         {
+                            DebugPrintf("[4]");
                             continue;
                         }
 
+                        DebugPrintf("[5]");
                         if (IsBattlerAlive(battler)
                             && CountUsablePartyMons(battler) > 0 // Has mon to switch into
                             // Does not activate if attacker used Parting Shot and can switch out
                             && !(gMovesInfo[gCurrentMove].effect == EFFECT_HIT_SWITCH_TARGET && CanBattlerSwitch(gBattlerAttacker))
                             )
                         {
+                            DebugPrintf("[6]");
                             gBattleScripting.battler = battler;
                             gLastUsedItem = gBattleMons[battler].item;
                             if (gMovesInfo[gCurrentMove].effect == EFFECT_HIT_ESCAPE)
@@ -7572,21 +7566,25 @@ static void Cmd_hitanimation(void)
 {
     CMD_ARGS(u8 battler);
 
-    u32 battler = GetBattlerForBattleScript(cmd->battler);
-    if (gMoveResultFlags & MOVE_RESULT_NO_EFFECT)
-    {
-        gBattlescriptCurrInstr = cmd->nextInstr;
-    }
-    else if (!(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE) || !(DoesSubstituteBlockMove(gBattlerAttacker, battler, gCurrentMove)) || gDisableStructs[battler].substituteHP == 0)
-    {
-        BtlController_EmitHitAnimation(battler, BUFFER_A);
-        MarkBattlerForControllerExec(battler);
-        gBattlescriptCurrInstr = cmd->nextInstr;
-    }
-    else
-    {
-        gBattlescriptCurrInstr = cmd->nextInstr;
-    }
+
+        u32 battlerDef;
+		for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
+		{
+            // if (gBattleStruct->resultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT)
+            //     continue;
+            if (gBattleStruct->calculatedDamage[battlerDef] == 0)
+                continue;
+
+            if (!(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE)
+             || !(DoesSubstituteBlockMove(gBattlerAttacker, battlerDef, gCurrentMove))
+             || gDisableStructs[battlerDef].substituteHP == 0)
+            {
+                BtlController_EmitHitAnimation(battlerDef, BUFFER_A);
+                MarkBattlerForControllerExec(battlerDef);
+            }
+        }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
 static u32 GetTrainerMoneyToGive(u16 trainerId)
@@ -12386,8 +12384,70 @@ static void Cmd_damagetohalftargethp(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
-static void Cmd_unused_95(void)
+static void Cmd_jumpifnexttarget(void)
 {
+    CMD_ARGS();
+
+    u16 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
+    // Set a flag if move hits either target (for throat spray that can't check damage)
+    if (!(gHitMarker & HITMARKER_UNABLE_TO_USE_MOVE)
+     && !(gMoveResultFlags & MOVE_RESULT_NO_EFFECT))
+        gProtectStructs[gBattlerAttacker].targetAffected = TRUE;
+
+    gBattleStruct->targetsDone[gBattlerAttacker] |= gBitTable[gBattlerTarget];
+    if (!(gHitMarker & HITMARKER_UNABLE_TO_USE_MOVE)
+        && gBattleTypeFlags & BATTLE_TYPE_DOUBLE
+        && !gProtectStructs[gBattlerAttacker].chargingTurn
+        && (moveTarget == MOVE_TARGET_BOTH
+            || moveTarget == MOVE_TARGET_FOES_AND_ALLY)
+        && !(gHitMarker & HITMARKER_NO_ATTACKSTRING))
+    {
+        u32 nextTarget = GetNextTarget(moveTarget, FALSE);
+        gHitMarker |= HITMARKER_NO_PPDEDUCT;
+
+        if (nextTarget != MAX_BATTLERS_COUNT)
+        {
+            gBattleStruct->moveTarget[gBattlerAttacker] = gBattlerTarget = nextTarget; // Fix for moxie spread moves
+            gBattleScripting.moveendState = 0;
+            MoveValuesCleanUp();
+            gBattleScripting.moveEffect = gBattleScripting.savedMoveEffect;
+            BattleScriptPush(GET_MOVE_BATTLESCRIPT(gCurrentMove));
+            gBattlescriptCurrInstr = BattleScript_FlushMessageBox;
+            return;
+        }
+        // Check if the move used was actually a bounced move. If so, we need to go back to the original attacker and make sure, its move hits all 2 or 3 pokemon.
+        else if (gBattleStruct->bouncedMoveIsUsed)
+        {
+            u8 originalBounceTarget = gBattlerAttacker;
+            gBattleStruct->bouncedMoveIsUsed = FALSE;
+            gBattlerAttacker = gBattleStruct->attackerBeforeBounce;
+            gBattleStruct->targetsDone[gBattlerAttacker] |= gBitTable[originalBounceTarget];
+            gBattleStruct->targetsDone[originalBounceTarget] = 0;
+
+            nextTarget = GetNextTarget(moveTarget, FALSE);
+            if (nextTarget != MAX_BATTLERS_COUNT)
+            {
+                // We found another target for the original move user.
+                gBattleStruct->moveTarget[gBattlerAttacker] = gBattlerTarget = nextTarget;
+                gBattleScripting.moveendState = 0;
+                gBattleScripting.animTurn = 0;
+                gBattleScripting.animTargetsHit = 0;
+                MoveValuesCleanUp();
+                BattleScriptPush(GET_MOVE_BATTLESCRIPT(gCurrentMove));
+                gBattlescriptCurrInstr = BattleScript_FlushMessageBox;
+                return;
+            }
+        }
+        else
+        {
+            gBattlescriptCurrInstr = cmd->nextInstr;
+        }
+
+        gBattleStruct->numSpreadMoveTargets++; // Move to a more reasnable place
+        gHitMarker |= HITMARKER_NO_ATTACKSTRING;
+        gHitMarker &= ~HITMARKER_NO_PPDEDUCT;
+    }
+    RecordLastUsedMoveBy(gBattlerAttacker, gCurrentMove);
 }
 
 static void Cmd_weatherdamage(void)
