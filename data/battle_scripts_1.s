@@ -2773,12 +2773,15 @@ BattleScript_EffectHitSpreadMove::
 	waitmessage B_WAIT_TIME_LONG
 	resultmessage
 	waitmessage B_WAIT_TIME_LONG
-	setbyte gBattlerTarget, 1
+	setbyte gBattlerTarget, 0
 BattleScript_EffectHitSpreadMoveMoveEnd:
+	battlercountforspreaddamage BattleScript_MOVEEND
 	setadditionaleffects
 	tryfaintmon BS_TARGET
-	moveendall
-	battlercountforspreaddamage BattleScript_EffectHitSpreadMoveMoveEnd
+	moveendfromto MOVEEND_SUM_DAMAGE, MOVEEND_MAGICIAN
+	jumpifbytenotequal gBattlerTarget, gBattlersCount, BattleScript_EffectHitSpreadMoveMoveEnd
+BattleScript_MOVEEND:
+	moveendfromto MOVEEND_EJECT_ITEMS, MOVEEND_CLEAR_BITS
 	end
 
 BattleScript_EffectHit::

@@ -820,6 +820,7 @@ struct BattleStruct
 
     s32 damageTaken[MAX_BATTLERS_COUNT];
     u8 numSpreadMoveTargets;
+    u8 tookSpreadDamage;
 };
 
 // The palaceFlags member of struct BattleStruct contains 1 flag per move to indicate which moves the AI should consider,

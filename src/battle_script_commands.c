@@ -1520,19 +1520,18 @@ static void Cmd_battlercountforspreaddamage(void)
     CMD_ARGS(const u8 *jumpInstr);
 
     u32 battler;
-    gBattlerTarget++;
-    for (battler = gBattlerTarget; battler < gBattlersCount; battler++)
+    for (battler = 0; battler < gBattlersCount; battler++)
     {
         if (gBattleStruct->damageTaken[battler] != 0)
         {
-            DebugPrintf("battler: %d", battler);
             gBattlerTarget = battler;
-            gBattlescriptCurrInstr = cmd->jumpInstr;
+            gBattleMoveDamage = gBattleStruct->damageTaken[battler];
+            gBattleStruct->damageTaken[battler] = 0;
+            gBattlescriptCurrInstr = cmd->nextInstr;
             return;
         }
     }
-    gBattlescriptCurrInstr = cmd->nextInstr;
-
+    gBattlescriptCurrInstr = cmd->jumpInstr;
 }
 
 static bool8 JumpIfMoveAffectedByProtect(u16 move)
@@ -2150,6 +2149,7 @@ END:
     }
 
     gBattleStruct->damageTaken[gBattlerTarget] = gBattleMoveDamage;
+    gBattleStruct->tookSpreadDamage |= gBitTable[gBattlerTarget];
     gBattleStruct->numSpreadMoveTargets++;
 }
 
@@ -6095,7 +6095,7 @@ static void Cmd_moveend(void)
                                 continue;
                             // Since we check if battler was damaged, we don't need to check move result.
                             // In fact, doing so actually prevents multi-target moves from activating eject button properly
-                            if (!BATTLER_TURN_DAMAGED(battler) && gBattleStruct->damageTaken[battler] != 0)
+                            if (!BATTLER_TURN_DAMAGED(battler) && !(gBattleStruct->tookSpreadDamage & gBitTable[battler]))
                                 continue;
                         }
                         else if (ejectPackBattlers & gBitTable[battler])
@@ -6111,8 +6111,7 @@ static void Cmd_moveend(void)
                         if (IsBattlerAlive(battler)
                             && CountUsablePartyMons(battler) > 0 // Has mon to switch into
                             // Does not activate if attacker used Parting Shot and can switch out
-                            && !(gMovesInfo[gCurrentMove].effect == EFFECT_HIT_SWITCH_TARGET && CanBattlerSwitch(gBattlerAttacker))
-                            )
+                            && !(gMovesInfo[gCurrentMove].effect == EFFECT_HIT_SWITCH_TARGET && CanBattlerSwitch(gBattlerAttacker)))
                         {
                             gBattleScripting.battler = battler;
                             gLastUsedItem = gBattleMons[battler].item;
@@ -6363,6 +6362,7 @@ static void Cmd_moveend(void)
             gBattleStruct->additionalEffectsCounter = 0;
             gBattleStruct->poisonPuppeteerConfusion = FALSE;
             gBattleStruct->distortedTypeMatchups = 0;
+            gBattleStruct->tookSpreadDamage = 0;
             gBattleScripting.moveendState++;
             break;
         case MOVEEND_COUNT:
@@ -12406,7 +12406,6 @@ static void Cmd_jumpifnexttarget(void)
         if (nextTarget != MAX_BATTLERS_COUNT)
         {
             gBattleStruct->moveTarget[gBattlerAttacker] = gBattlerTarget = nextTarget; // Fix for moxie spread moves
-            gBattleScripting.moveendState = 0;
             MoveValuesCleanUp();
             gBattleScripting.moveEffect = gBattleScripting.savedMoveEffect;
             BattleScriptPush(GET_MOVE_BATTLESCRIPT(gCurrentMove));
@@ -12427,7 +12426,6 @@ static void Cmd_jumpifnexttarget(void)
             {
                 // We found another target for the original move user.
                 gBattleStruct->moveTarget[gBattlerAttacker] = gBattlerTarget = nextTarget;
-                gBattleScripting.moveendState = 0;
                 gBattleScripting.animTurn = 0;
                 gBattleScripting.animTargetsHit = 0;
                 MoveValuesCleanUp();
