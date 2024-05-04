@@ -818,8 +818,10 @@ struct BattleStruct
     u8 boosterEnergyActivates;
     u8 distortedTypeMatchups;
 
+    // Simultaneous hp reduction for spread moves
     s32 damageTaken[MAX_BATTLERS_COUNT];
-    u8 numSpreadMoveTargets;
+    u32 resultFlags[MAX_BATTLERS_COUNT];
+    u8 numSpreadTargets:2;
     u8 tookSpreadDamage;
 };
 

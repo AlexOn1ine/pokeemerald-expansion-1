@@ -1526,6 +1526,7 @@ static void Cmd_battlercountforspreaddamage(void)
         {
             gBattlerTarget = battler;
             gBattleMoveDamage = gBattleStruct->damageTaken[battler];
+            gMoveResultFlags = gBattleStruct->resultFlags[battler];
             gBattleStruct->damageTaken[battler] = 0;
             gBattlescriptCurrInstr = cmd->nextInstr;
             return;
@@ -2149,8 +2150,9 @@ END:
     }
 
     gBattleStruct->damageTaken[gBattlerTarget] = gBattleMoveDamage;
+    gBattleStruct->resultFlags[gBattlerTarget] = gMoveResultFlags;
     gBattleStruct->tookSpreadDamage |= gBitTable[gBattlerTarget];
-    gBattleStruct->numSpreadMoveTargets++;
+    gBattleStruct->numSpreadTargets++;
 }
 
 static void Cmd_multihitresultmessage(void)
@@ -2278,15 +2280,13 @@ static void DoublesHPBarReduction(void)
 
     for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
     {
-        if (gBattleStruct->damageTaken[battlerDef] == 0)
-            continue;
-
         s32 healthValue, currDmg;
 
-        // if (gBattleStruct->resultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT
-        //  || DoesSubstituteBlockMove(gBattlerAttacker, battlerDef, gCurrentMove)
-        //  || DoesDisguiseBlockMove(battlerDef, gCurrentMove))
-        //     continue;
+        if (gBattleStruct->resultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT
+         || gBattleStruct->damageTaken[battlerDef] == 0
+         || DoesSubstituteBlockMove(gBattlerAttacker, battlerDef, gCurrentMove)
+         || DoesDisguiseBlockMove(battlerDef, gCurrentMove))
+            continue;
 
         currDmg = gBattleStruct->damageTaken[battlerDef];
         healthValue = min(currDmg, 10000); // Max damage (10000) not present in R/S, ensures that huge damage values don't change sign
@@ -2305,39 +2305,39 @@ static void Cmd_healthbarupdate(void)
     if (gBattleControllerExecFlags)
         return;
 
-    // if (!(gMoveResultFlags & MOVE_RESULT_NO_EFFECT) || (gHitMarker & HITMARKER_PASSIVE_DAMAGE))
-    // {
-    //     u32 battler = GetBattlerForBattleScript(cmd->battler);
+    if (!(gMoveResultFlags & MOVE_RESULT_NO_EFFECT) || (gHitMarker & HITMARKER_PASSIVE_DAMAGE))
+    {
+        u32 battler = GetBattlerForBattleScript(cmd->battler);
 
-    //     if (DoesSubstituteBlockMove(gBattlerAttacker, battler, gCurrentMove) && gDisableStructs[battler].substituteHP && !(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE))
-    //     {
-    //         PrepareStringBattle(STRINGID_SUBSTITUTEDAMAGED, battler);
-    //         if (gBattleStruct->numSpreadMoveTargets >= 2)
-    //             DoublesHPBarReduction();
-    //     }
-    //     else if (!DoesDisguiseBlockMove(battler, gCurrentMove))
-    //     {
-    //         if (gBattleStruct->numSpreadMoveTargets >= 2)
-    //         {
-    //             DoublesHPBarReduction();
-    //         }
-    //         else
-    //         {
-    //             s16 healthValue = min(gBattleMoveDamage, 10000); // Max damage (10000) not present in R/S, ensures that huge damage values don't change sign
+        if (DoesSubstituteBlockMove(gBattlerAttacker, battler, gCurrentMove) && gDisableStructs[battler].substituteHP && !(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE))
+        {
+            PrepareStringBattle(STRINGID_SUBSTITUTEDAMAGED, battler);
+            if (gBattleStruct->numSpreadTargets >= 2)
+                DoublesHPBarReduction();
+        }
+        else if (!DoesDisguiseBlockMove(battler, gCurrentMove))
+        {
+            if (gBattleStruct->numSpreadTargets >= 2)
+            {
+                DoublesHPBarReduction();
+            }
+            else
+            {
+                s16 healthValue = min(gBattleMoveDamage, 10000); // Max damage (10000) not present in R/S, ensures that huge damage values don't change sign
 
-    //             BtlController_EmitHealthBarUpdate(battler, BUFFER_A, healthValue);
-    //             MarkBattlerForControllerExec(battler);
+                BtlController_EmitHealthBarUpdate(battler, BUFFER_A, healthValue);
+                MarkBattlerForControllerExec(battler);
 
-    //             if (GetBattlerSide(battler) == B_SIDE_PLAYER && gBattleMoveDamage > 0)
-    //                 gBattleResults.playerMonWasDamaged = TRUE;
-    //         }
-    //     }
-    // }
-    // else if (gBattleStruct->numSpreadMoveTargets >= 2)
-    // {
-    // }
+                if (GetBattlerSide(battler) == B_SIDE_PLAYER && gBattleMoveDamage > 0)
+                    gBattleResults.playerMonWasDamaged = TRUE;
+            }
+        }
+    }
+    else if (gBattleStruct->numSpreadTargets >= 2)
+    {
+        DoublesHPBarReduction();
+    }
 
-    DoublesHPBarReduction();
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
@@ -6340,6 +6340,8 @@ static void Cmd_moveend(void)
               && (gBattleMons[gBattlerAttacker].status2 & STATUS2_LOCK_CONFUSE) != STATUS2_LOCK_CONFUSE_TURN(1))  // And won't end this turn
                 CancelMultiTurnMoves(gBattlerAttacker); // Cancel it
 
+            // if (gBattleStruct->tookSpreadDamage & gBitTable[gBattlerTarget])
+            //     DebugPrintf("11");
             gBattleStruct->targetsDone[gBattlerAttacker] = 0;
             gProtectStructs[gBattlerAttacker].targetAffected = FALSE;
             gProtectStructs[gBattlerAttacker].shellTrap = FALSE;
@@ -7564,13 +7566,28 @@ static void Cmd_hitanimation(void)
 {
     CMD_ARGS(u8 battler);
 
+    if (gBattleStruct->numSpreadTargets < 2)
+    {
+        u32 battler = GetBattlerForBattleScript(cmd->battler);
 
+        if (gMoveResultFlags & MOVE_RESULT_NO_EFFECT)
+        {
+        }
+        else if (!(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE)
+              || !(DoesSubstituteBlockMove(gBattlerAttacker, battler, gCurrentMove))
+              || gDisableStructs[battler].substituteHP == 0)
+        {
+            BtlController_EmitHitAnimation(battler, BUFFER_A);
+            MarkBattlerForControllerExec(battler);
+        }
+
+    }
+	else
+	{
         u32 battlerDef;
 		for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
 		{
-            // if (gBattleStruct->resultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT)
-            //     continue;
-            if (gBattleStruct->damageTaken[battlerDef] == 0)
+            if (gBattleStruct->resultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT)
                 continue;
 
             if (!(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE)
@@ -7580,7 +7597,8 @@ static void Cmd_hitanimation(void)
                 BtlController_EmitHitAnimation(battlerDef, BUFFER_A);
                 MarkBattlerForControllerExec(battlerDef);
             }
-        }
+		}
+	}
 
     gBattlescriptCurrInstr = cmd->nextInstr;
 }

@@ -174,3 +174,21 @@ DOUBLE_BATTLE_TEST("t3")
         ANIMATION(ANIM_TYPE_MOVE, MOVE_HYPER_VOICE);
     }
 }
+
+DOUBLE_BATTLE_TEST("t4")
+{
+    GIVEN {
+        PLAYER(SPECIES_WYNAUT) { Speed(200); }
+        PLAYER(SPECIES_WOBBUFFET) { Speed(100); }
+        PLAYER(SPECIES_WOBBUFFET) { Speed(100); }
+        OPPONENT(SPECIES_WYNAUT) { Speed(200); Item(ITEM_EJECT_BUTTON); };
+        OPPONENT(SPECIES_WOBBUFFET) { Speed(100); Item(ITEM_RED_CARD); };
+        OPPONENT(SPECIES_WOBBUFFET) { Speed(200); }
+    } WHEN {
+        TURN { MOVE(playerLeft, MOVE_HEAT_WAVE);
+               SEND_OUT(opponentLeft, 2);
+        }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_HEAT_WAVE);
+    }
+}

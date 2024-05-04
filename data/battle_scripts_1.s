@@ -2781,7 +2781,7 @@ BattleScript_EffectHitSpreadMoveMoveEnd:
 	moveendfromto MOVEEND_SUM_DAMAGE, MOVEEND_MAGICIAN
 	jumpifbytenotequal gBattlerTarget, gBattlersCount, BattleScript_EffectHitSpreadMoveMoveEnd
 BattleScript_MOVEEND:
-	moveendfromto MOVEEND_EJECT_ITEMS, MOVEEND_CLEAR_BITS
+	moveendfromto MOVEEND_EJECT_ITEMS, MOVEEND_COUNT
 	end
 
 BattleScript_EffectHit::
