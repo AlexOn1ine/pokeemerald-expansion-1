@@ -1011,8 +1011,9 @@
 	.4byte \jumpInstr
 	.endm
 
-	.macro unused_bb
+	.macro jumpifspreaddamage jumpInstr:req
 	.byte 0xbb
+	.4byte \jumpInstr
 	.endm
 
 	.macro halvehp failInstr:req

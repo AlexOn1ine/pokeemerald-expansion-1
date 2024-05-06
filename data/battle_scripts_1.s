@@ -2753,7 +2753,7 @@ BattleScript_EffectPlaceholder::
 	printstring STRINGID_NOTDONEYET
 	goto BattleScript_MoveEnd
 
-BattleScript_EffectHitSpreadMove::
+BattleScript_EffectHitSpreadDamage::
 	attackcanceler
 	accuracycheck BattleScript_PrintMoveMissed, ACC_CURR_MOVE
 	attackstring
@@ -2785,6 +2785,7 @@ BattleScript_MOVEEND:
 	end
 
 BattleScript_EffectHit::
+	jumpifspreaddamage BattleScript_EffectHitSpreadDamage
 BattleScript_HitFromAtkCanceler::
 	attackcanceler
 BattleScript_HitFromAccCheck::
@@ -2798,6 +2799,7 @@ BattleScript_HitFromCritCalc::
 	adjustdamage
 BattleScript_HitFromAtkAnimation::
 	call BattleScript_Hit_RetFromAtkAnimation
+	setadditionaleffects
 BattleScript_TryFaintMon::
 	tryfaintmon BS_TARGET
 BattleScript_MoveEnd::
@@ -2805,6 +2807,7 @@ BattleScript_MoveEnd::
 	end
 
 BattleScript_EffectHit_Ret::
+	jumpifspreaddamage BattleScript_EffectHitSpreadDamage
 	attackcanceler
 BattleScript_EffectHit_RetFromAccCheck::
 	accuracycheck BattleScript_PrintMoveMissed, ACC_CURR_MOVE
@@ -2826,7 +2829,6 @@ BattleScript_Hit_RetFromAtkAnimation::
 	waitmessage B_WAIT_TIME_LONG
 	resultmessage
 	waitmessage B_WAIT_TIME_LONG
-	setadditionaleffects
 	return
 
 BattleScript_EffectNaturalGift::

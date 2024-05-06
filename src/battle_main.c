@@ -5345,7 +5345,6 @@ static void TurnValuesCleanUp(bool8 var0)
 
     gBattleStruct->pledgeMove = FALSE; // combined pledge move may not have been used due to a canceller
     gBattleStruct->tookSpreadDamage = FALSE;
-    gBattleStruct->numSpreadTargets = 0;
 }
 
 void SpecialStatusesClear(void)

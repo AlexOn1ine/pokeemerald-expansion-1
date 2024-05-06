@@ -524,7 +524,7 @@ static void Cmd_presentdamagecalculation(void);
 static void Cmd_setsafeguard(void);
 static void Cmd_magnitudedamagecalculation(void);
 static void Cmd_jumpifnopursuitswitchdmg(void);
-static void Cmd_unused_bb(void);
+static void Cmd_jumpifspreaddamage(void);
 static void Cmd_halvehp(void);
 static void Cmd_copyfoestats(void);
 static void Cmd_rapidspinfree(void);
@@ -783,7 +783,7 @@ void (* const gBattleScriptingCommandsTable[])(void) =
     Cmd_setsafeguard,                            //0xB8
     Cmd_magnitudedamagecalculation,              //0xB9
     Cmd_jumpifnopursuitswitchdmg,                //0xBA
-    Cmd_unused_bb,                               //0xBB
+    Cmd_jumpifspreaddamage,                               //0xBB
     Cmd_halvehp,                                 //0xBC
     Cmd_copyfoestats,                            //0xBD
     Cmd_rapidspinfree,                           //0xBE
@@ -2202,9 +2202,11 @@ static void Cmd_attackanimation(void)
 
     u16 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
 
+    // DebugPrintf("ATTACK_ANIMATION");
     if (gBattleControllerExecFlags)
         return;
 
+    // DebugPrintf("[1] ATTACK_ANIMATION");
     if ((gHitMarker & (HITMARKER_NO_ANIMATIONS | HITMARKER_DISABLE_ANIMATION))
         && gCurrentMove != MOVE_TRANSFORM
         && gCurrentMove != MOVE_SUBSTITUTE
@@ -2216,6 +2218,7 @@ static void Cmd_attackanimation(void)
         gBattlescriptCurrInstr = BattleScript_Pausex20;
         gBattleScripting.animTurn++;
         gBattleScripting.animTargetsHit++;
+        // DebugPrintf("[2] ATTACK_ANIMATION");
     }
     else
     {
@@ -2224,6 +2227,7 @@ static void Cmd_attackanimation(void)
             gBattlescriptCurrInstr = cmd->nextInstr;
             return;
         }
+        // DebugPrintf("[3] ATTACK_ANIMATION");
 
         if ((moveTarget & MOVE_TARGET_BOTH
              || moveTarget & MOVE_TARGET_FOES_AND_ALLY
@@ -2254,6 +2258,7 @@ static void Cmd_attackanimation(void)
             gBattleScripting.animTargetsHit++;
             MarkBattlerForControllerExec(gBattlerAttacker);
             gBattlescriptCurrInstr = cmd->nextInstr;
+            // DebugPrintf("[4] ATTACK_ANIMATION");
         }
         else
         {
@@ -2268,7 +2273,12 @@ static void Cmd_waitanimation(void)
     CMD_ARGS();
 
     if (gBattleControllerExecFlags == 0)
+    {
+        // DebugPrintf("[1] WAIT_ANIMATION");
         gBattlescriptCurrInstr = cmd->nextInstr;
+    }
+
+    // DebugPrintf("[2] WAIT_ANIMATION");
 }
 
 static void DoublesHPBarReduction(void)
@@ -2351,140 +2361,290 @@ static void Cmd_datahpupdate(void)
     if (gBattleControllerExecFlags)
         return;
 
-    if (!(gMoveResultFlags & MOVE_RESULT_NO_EFFECT) || (gHitMarker & HITMARKER_PASSIVE_DAMAGE))
+    if (gBattleStruct->numSpreadTargets < 2)
     {
-        battler = GetBattlerForBattleScript(cmd->battler);
-        if (DoesSubstituteBlockMove(gBattlerAttacker, battler, gCurrentMove) && gDisableStructs[battler].substituteHP && !(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE))
-        {
-            if (gDisableStructs[battler].substituteHP >= gBattleMoveDamage)
-            {
-                if (gSpecialStatuses[battler].shellBellDmg == 0)
-                    gSpecialStatuses[battler].shellBellDmg = gBattleMoveDamage;
-                gDisableStructs[battler].substituteHP -= gBattleMoveDamage;
-                gHpDealt = gBattleMoveDamage;
-            }
-            else
-            {
-                if (gSpecialStatuses[battler].shellBellDmg == 0)
-                    gSpecialStatuses[battler].shellBellDmg = gDisableStructs[battler].substituteHP;
-                gHpDealt = gDisableStructs[battler].substituteHP;
-                gDisableStructs[battler].substituteHP = 0;
-            }
-            // check substitute fading
-            if (gDisableStructs[battler].substituteHP == 0)
-            {
-                gBattlescriptCurrInstr = cmd->nextInstr;
-                BattleScriptPushCursor();
-                gBattlescriptCurrInstr = BattleScript_SubstituteFade;
-                return;
-            }
-        }
-        else if (DoesDisguiseBlockMove(battler, gCurrentMove))
-        {
-            // TODO: Convert this to a proper FORM_CHANGE type.
-            u32 side = GetBattlerSide(battler);
-            gBattleScripting.battler = battler;
-            if (gBattleStruct->changedSpecies[side][gBattlerPartyIndexes[battler]] == SPECIES_NONE)
-                gBattleStruct->changedSpecies[side][gBattlerPartyIndexes[battler]] = gBattleMons[battler].species;
-            if (gBattleMons[battler].species == SPECIES_MIMIKYU_TOTEM_DISGUISED)
-                gBattleMons[battler].species = SPECIES_MIMIKYU_TOTEM_BUSTED;
-            else
-                gBattleMons[battler].species = SPECIES_MIMIKYU_BUSTED;
-            if (B_DISGUISE_HP_LOSS >= GEN_8)
-                gBattleMoveDamage = GetNonDynamaxMaxHP(battler) / 8;
-            BattleScriptPush(cmd->nextInstr);
-            gBattlescriptCurrInstr = BattleScript_TargetFormChange;
-            return;
-        }
-        else
-        {
-            gHitMarker &= ~HITMARKER_IGNORE_SUBSTITUTE;
-            if (gBattleMoveDamage < 0)
-            {
-                // Negative damage is HP gain
-                gBattleMons[battler].hp += -gBattleMoveDamage;
-                if (gBattleMons[battler].hp > gBattleMons[battler].maxHP)
-                    gBattleMons[battler].hp = gBattleMons[battler].maxHP;
-            }
-            else
-            {
-                if (gHitMarker & HITMARKER_IGNORE_BIDE)
-                {
-                    gHitMarker &= ~HITMARKER_IGNORE_BIDE;
-                }
-                else
-                {
-                    gBideDmg[battler] += gBattleMoveDamage;
-                    if (cmd->battler == BS_TARGET)
-                        gBideTarget[battler] = gBattlerAttacker;
-                    else
-                        gBideTarget[battler] = gBattlerTarget;
-                }
 
-                // Deal damage to the battler
-                if (gBattleMons[battler].hp > gBattleMoveDamage)
+        if (!(gMoveResultFlags & MOVE_RESULT_NO_EFFECT) || (gHitMarker & HITMARKER_PASSIVE_DAMAGE))
+        {
+                    u32 battler = GetBattlerForBattleScript(cmd->battler);
+            if (DoesSubstituteBlockMove(gBattlerAttacker, battler, gCurrentMove) && gDisableStructs[battler].substituteHP && !(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE))
+            {
+                if (gDisableStructs[battler].substituteHP >= gBattleMoveDamage)
                 {
-                    gBattleMons[battler].hp -= gBattleMoveDamage;
+                    if (gSpecialStatuses[battler].shellBellDmg == 0)
+                        gSpecialStatuses[battler].shellBellDmg = gBattleMoveDamage;
+                    gDisableStructs[battler].substituteHP -= gBattleMoveDamage;
                     gHpDealt = gBattleMoveDamage;
                 }
                 else
                 {
-                    gHpDealt = gBattleMons[battler].hp;
-                    gBattleMons[battler].hp = 0;
+                    if (gSpecialStatuses[battler].shellBellDmg == 0)
+                        gSpecialStatuses[battler].shellBellDmg = gDisableStructs[battler].substituteHP;
+                    gHpDealt = gDisableStructs[battler].substituteHP;
+                    gDisableStructs[battler].substituteHP = 0;
                 }
-
-                // Record damage for Shell Bell
-                if (gSpecialStatuses[battler].shellBellDmg == 0 && !(gHitMarker & HITMARKER_PASSIVE_DAMAGE))
-                    gSpecialStatuses[battler].shellBellDmg = gHpDealt;
-
-                // Note: While physicalDmg/specialDmg below are only distinguished between for Counter/Mirror Coat, they are
-                //       used in combination as general damage trackers for other purposes. specialDmg is additionally used
-                //       to help determine if a fire move should defrost the target.
-                if (IS_MOVE_PHYSICAL(gCurrentMove) && !(gHitMarker & HITMARKER_PASSIVE_DAMAGE) && gMovesInfo[gCurrentMove].effect != EFFECT_PAIN_SPLIT)
+                // check substitute fading
+                if (gDisableStructs[battler].substituteHP == 0)
                 {
-                    gProtectStructs[battler].physicalDmg = gHpDealt;
-                    gSpecialStatuses[battler].physicalDmg = gHpDealt;
-                    if (cmd->battler == BS_TARGET)
-                    {
-                        gProtectStructs[battler].physicalBattlerId = gBattlerAttacker;
-                        gSpecialStatuses[battler].physicalBattlerId = gBattlerAttacker;
-                    }
-                    else
-                    {
-                        gProtectStructs[battler].physicalBattlerId = gBattlerTarget;
-                        gSpecialStatuses[battler].physicalBattlerId = gBattlerTarget;
-                    }
-                }
-                else if (!IS_MOVE_PHYSICAL(gCurrentMove) && !(gHitMarker & HITMARKER_PASSIVE_DAMAGE) && gMovesInfo[gCurrentMove].effect != EFFECT_PAIN_SPLIT)
-                {
-                    // Record special damage/attacker for Mirror Coat
-                    gProtectStructs[battler].specialDmg = gHpDealt;
-                    gSpecialStatuses[battler].specialDmg = gHpDealt;
-                    if (cmd->battler == BS_TARGET)
-                    {
-                        gProtectStructs[battler].specialBattlerId = gBattlerAttacker;
-                        gSpecialStatuses[battler].specialBattlerId = gBattlerAttacker;
-                    }
-                    else
-                    {
-                        gProtectStructs[battler].specialBattlerId = gBattlerTarget;
-                        gSpecialStatuses[battler].specialBattlerId = gBattlerTarget;
-                    }
+                    gBattlescriptCurrInstr = cmd->nextInstr;
+                    BattleScriptPushCursor();
+                    gBattlescriptCurrInstr = BattleScript_SubstituteFade;
+                    return;
                 }
             }
-            gHitMarker &= ~HITMARKER_PASSIVE_DAMAGE;
+            else if (DoesDisguiseBlockMove(battler, gCurrentMove))
+            {
+                // TODO: Convert this to a proper FORM_CHANGE type.
+                u32 side = GetBattlerSide(battler);
+                gBattleScripting.battler = battler;
+                if (gBattleStruct->changedSpecies[side][gBattlerPartyIndexes[battler]] == SPECIES_NONE)
+                    gBattleStruct->changedSpecies[side][gBattlerPartyIndexes[battler]] = gBattleMons[battler].species;
+                if (gBattleMons[battler].species == SPECIES_MIMIKYU_TOTEM_DISGUISED)
+                    gBattleMons[battler].species = SPECIES_MIMIKYU_TOTEM_BUSTED;
+                else
+                    gBattleMons[battler].species = SPECIES_MIMIKYU_BUSTED;
+                if (B_DISGUISE_HP_LOSS >= GEN_8)
+                    gBattleMoveDamage = GetNonDynamaxMaxHP(battler) / 8;
+                BattleScriptPush(cmd->nextInstr);
+                gBattlescriptCurrInstr = BattleScript_TargetFormChange;
+                return;
+            }
+            else
+            {
+                gHitMarker &= ~HITMARKER_IGNORE_SUBSTITUTE;
+                if (gBattleMoveDamage < 0)
+                {
+                    // Negative damage is HP gain
+                    gBattleMons[battler].hp += -gBattleMoveDamage;
+                    if (gBattleMons[battler].hp > gBattleMons[battler].maxHP)
+                        gBattleMons[battler].hp = gBattleMons[battler].maxHP;
+                }
+                else
+                {
+                    if (gHitMarker & HITMARKER_IGNORE_BIDE)
+                    {
+                        gHitMarker &= ~HITMARKER_IGNORE_BIDE;
+                    }
+                    else
+                    {
+                        gBideDmg[battler] += gBattleMoveDamage;
+                        if (cmd->battler == BS_TARGET)
+                            gBideTarget[battler] = gBattlerAttacker;
+                        else
+                            gBideTarget[battler] = gBattlerTarget;
+                    }
 
-            // Send updated HP
-            BtlController_EmitSetMonData(battler, BUFFER_A, REQUEST_HP_BATTLE, 0, sizeof(gBattleMons[battler].hp), &gBattleMons[battler].hp);
-            MarkBattlerForControllerExec(battler);
+                    // Deal damage to the battler
+                    if (gBattleMons[battler].hp > gBattleMoveDamage)
+                    {
+                        gBattleMons[battler].hp -= gBattleMoveDamage;
+                        gHpDealt = gBattleMoveDamage;
+                    }
+                    else
+                    {
+                        gHpDealt = gBattleMons[battler].hp;
+                        gBattleMons[battler].hp = 0;
+                    }
+
+                    // Record damage for Shell Bell
+                    if (gSpecialStatuses[battler].shellBellDmg == 0 && !(gHitMarker & HITMARKER_PASSIVE_DAMAGE))
+                        gSpecialStatuses[battler].shellBellDmg = gHpDealt;
+
+                    // Note: While physicalDmg/specialDmg below are only distinguished between for Counter/Mirror Coat, they are
+                    //       used in combination as general damage trackers for other purposes. specialDmg is additionally used
+                    //       to help determine if a fire move should defrost the target.
+                    if (IS_MOVE_PHYSICAL(gCurrentMove) && !(gHitMarker & HITMARKER_PASSIVE_DAMAGE) && gMovesInfo[gCurrentMove].effect != EFFECT_PAIN_SPLIT)
+                    {
+                        gProtectStructs[battler].physicalDmg = gHpDealt;
+                        gSpecialStatuses[battler].physicalDmg = gHpDealt;
+                        if (cmd->battler == BS_TARGET)
+                        {
+                            gProtectStructs[battler].physicalBattlerId = gBattlerAttacker;
+                            gSpecialStatuses[battler].physicalBattlerId = gBattlerAttacker;
+                        }
+                        else
+                        {
+                            gProtectStructs[battler].physicalBattlerId = gBattlerTarget;
+                            gSpecialStatuses[battler].physicalBattlerId = gBattlerTarget;
+                        }
+                    }
+                    else if (!IS_MOVE_PHYSICAL(gCurrentMove) && !(gHitMarker & HITMARKER_PASSIVE_DAMAGE) && gMovesInfo[gCurrentMove].effect != EFFECT_PAIN_SPLIT)
+                    {
+                        // Record special damage/attacker for Mirror Coat
+                        gProtectStructs[battler].specialDmg = gHpDealt;
+                        gSpecialStatuses[battler].specialDmg = gHpDealt;
+                        if (cmd->battler == BS_TARGET)
+                        {
+                            gProtectStructs[battler].specialBattlerId = gBattlerAttacker;
+                            gSpecialStatuses[battler].specialBattlerId = gBattlerAttacker;
+                        }
+                        else
+                        {
+                            gProtectStructs[battler].specialBattlerId = gBattlerTarget;
+                            gSpecialStatuses[battler].specialBattlerId = gBattlerTarget;
+                        }
+                    }
+                }
+                gHitMarker &= ~HITMARKER_PASSIVE_DAMAGE;
+
+                // Send updated HP
+                BtlController_EmitSetMonData(battler, BUFFER_A, REQUEST_HP_BATTLE, 0, sizeof(gBattleMons[battler].hp), &gBattleMons[battler].hp);
+                MarkBattlerForControllerExec(battler);
+            }
         }
+        else
+        {
+            // MOVE_RESULT_NO_EFFECT was set
+            battler = GetBattlerForBattleScript(cmd->battler);
+            if (gSpecialStatuses[battler].shellBellDmg == 0)
+                gSpecialStatuses[battler].shellBellDmg = IGNORE_SHELL_BELL;
+        }
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
     }
-    else
+
+    for (battler = 0; battler < gBattlersCount; battler++)
     {
-        // MOVE_RESULT_NO_EFFECT was set
-        battler = GetBattlerForBattleScript(cmd->battler);
-        if (gSpecialStatuses[battler].shellBellDmg == 0)
-            gSpecialStatuses[battler].shellBellDmg = IGNORE_SHELL_BELL;
+        if (gBattleStruct->damageTaken[battler] == 0)
+            continue;
+        else
+            gBattleMoveDamage = gBattleStruct->damageTaken[battler];
+
+        if (!(gMoveResultFlags & MOVE_RESULT_NO_EFFECT) || (gHitMarker & HITMARKER_PASSIVE_DAMAGE))
+        {
+                    u32 battler = GetBattlerForBattleScript(cmd->battler);
+            if (DoesSubstituteBlockMove(gBattlerAttacker, battler, gCurrentMove) && gDisableStructs[battler].substituteHP && !(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE))
+            {
+                if (gDisableStructs[battler].substituteHP >= gBattleMoveDamage)
+                {
+                    if (gSpecialStatuses[battler].shellBellDmg == 0)
+                        gSpecialStatuses[battler].shellBellDmg = gBattleMoveDamage;
+                    gDisableStructs[battler].substituteHP -= gBattleMoveDamage;
+                    gHpDealt = gBattleMoveDamage;
+                }
+                else
+                {
+                    if (gSpecialStatuses[battler].shellBellDmg == 0)
+                        gSpecialStatuses[battler].shellBellDmg = gDisableStructs[battler].substituteHP;
+                    gHpDealt = gDisableStructs[battler].substituteHP;
+                    gDisableStructs[battler].substituteHP = 0;
+                }
+                // check substitute fading
+                if (gDisableStructs[battler].substituteHP == 0)
+                {
+                    gBattlescriptCurrInstr = cmd->nextInstr;
+                    BattleScriptPushCursor();
+                    gBattlescriptCurrInstr = BattleScript_SubstituteFade;
+                    return;
+                }
+            }
+            else if (DoesDisguiseBlockMove(battler, gCurrentMove))
+            {
+                // TODO: Convert this to a proper FORM_CHANGE type.
+                u32 side = GetBattlerSide(battler);
+                gBattleScripting.battler = battler;
+                if (gBattleStruct->changedSpecies[side][gBattlerPartyIndexes[battler]] == SPECIES_NONE)
+                    gBattleStruct->changedSpecies[side][gBattlerPartyIndexes[battler]] = gBattleMons[battler].species;
+                if (gBattleMons[battler].species == SPECIES_MIMIKYU_TOTEM_DISGUISED)
+                    gBattleMons[battler].species = SPECIES_MIMIKYU_TOTEM_BUSTED;
+                else
+                    gBattleMons[battler].species = SPECIES_MIMIKYU_BUSTED;
+                if (B_DISGUISE_HP_LOSS >= GEN_8)
+                    gBattleMoveDamage = GetNonDynamaxMaxHP(battler) / 8;
+                BattleScriptPush(cmd->nextInstr);
+                gBattlescriptCurrInstr = BattleScript_TargetFormChange;
+                return;
+            }
+            else
+            {
+                gHitMarker &= ~HITMARKER_IGNORE_SUBSTITUTE;
+                if (gBattleMoveDamage < 0)
+                {
+                    // Negative damage is HP gain
+                    gBattleMons[battler].hp += -gBattleMoveDamage;
+                    if (gBattleMons[battler].hp > gBattleMons[battler].maxHP)
+                        gBattleMons[battler].hp = gBattleMons[battler].maxHP;
+                }
+                else
+                {
+                    if (gHitMarker & HITMARKER_IGNORE_BIDE)
+                    {
+                        gHitMarker &= ~HITMARKER_IGNORE_BIDE;
+                    }
+                    else
+                    {
+                        gBideDmg[battler] += gBattleMoveDamage;
+                        if (cmd->battler == BS_TARGET)
+                            gBideTarget[battler] = gBattlerAttacker;
+                        else
+                            gBideTarget[battler] = gBattlerTarget;
+                    }
+
+                    // Deal damage to the battler
+                    if (gBattleMons[battler].hp > gBattleMoveDamage)
+                    {
+                        gBattleMons[battler].hp -= gBattleMoveDamage;
+                        gHpDealt = gBattleMoveDamage;
+                    }
+                    else
+                    {
+                        gHpDealt = gBattleMons[battler].hp;
+                        gBattleMons[battler].hp = 0;
+                    }
+
+                    // Record damage for Shell Bell
+                    if (gSpecialStatuses[battler].shellBellDmg == 0 && !(gHitMarker & HITMARKER_PASSIVE_DAMAGE))
+                        gSpecialStatuses[battler].shellBellDmg = gHpDealt;
+
+                    // Note: While physicalDmg/specialDmg below are only distinguished between for Counter/Mirror Coat, they are
+                    //       used in combination as general damage trackers for other purposes. specialDmg is additionally used
+                    //       to help determine if a fire move should defrost the target.
+                    if (IS_MOVE_PHYSICAL(gCurrentMove) && !(gHitMarker & HITMARKER_PASSIVE_DAMAGE) && gMovesInfo[gCurrentMove].effect != EFFECT_PAIN_SPLIT)
+                    {
+                        gProtectStructs[battler].physicalDmg = gHpDealt;
+                        gSpecialStatuses[battler].physicalDmg = gHpDealt;
+                        if (cmd->battler == BS_TARGET)
+                        {
+                            gProtectStructs[battler].physicalBattlerId = gBattlerAttacker;
+                            gSpecialStatuses[battler].physicalBattlerId = gBattlerAttacker;
+                        }
+                        else
+                        {
+                            gProtectStructs[battler].physicalBattlerId = gBattlerTarget;
+                            gSpecialStatuses[battler].physicalBattlerId = gBattlerTarget;
+                        }
+                    }
+                    else if (!IS_MOVE_PHYSICAL(gCurrentMove) && !(gHitMarker & HITMARKER_PASSIVE_DAMAGE) && gMovesInfo[gCurrentMove].effect != EFFECT_PAIN_SPLIT)
+                    {
+                        // Record special damage/attacker for Mirror Coat
+                        gProtectStructs[battler].specialDmg = gHpDealt;
+                        gSpecialStatuses[battler].specialDmg = gHpDealt;
+                        if (cmd->battler == BS_TARGET)
+                        {
+                            gProtectStructs[battler].specialBattlerId = gBattlerAttacker;
+                            gSpecialStatuses[battler].specialBattlerId = gBattlerAttacker;
+                        }
+                        else
+                        {
+                            gProtectStructs[battler].specialBattlerId = gBattlerTarget;
+                            gSpecialStatuses[battler].specialBattlerId = gBattlerTarget;
+                        }
+                    }
+                }
+                gHitMarker &= ~HITMARKER_PASSIVE_DAMAGE;
+
+                // Send updated HP
+                BtlController_EmitSetMonData(battler, BUFFER_A, REQUEST_HP_BATTLE, 0, sizeof(gBattleMons[battler].hp), &gBattleMons[battler].hp);
+                MarkBattlerForControllerExec(battler);
+            }
+        }
+        else
+        {
+            // MOVE_RESULT_NO_EFFECT was set
+            battler = GetBattlerForBattleScript(cmd->battler);
+            if (gSpecialStatuses[battler].shellBellDmg == 0)
+                gSpecialStatuses[battler].shellBellDmg = IGNORE_SHELL_BELL;
+        }
     }
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
@@ -2513,9 +2673,11 @@ static void Cmd_effectivenesssound(void)
 {
     CMD_ARGS();
 
+    // DebugPrintf("[1] EFFECTIVENESS_SOUND");
     if (gBattleControllerExecFlags)
         return;
 
+    // DebugPrintf("[2] EFFECTIVENESS_SOUND");
     if (!(gMoveResultFlags & MOVE_RESULT_MISSED))
     {
         switch (gMoveResultFlags & ~MOVE_RESULT_MISSED)
@@ -6340,8 +6502,6 @@ static void Cmd_moveend(void)
               && (gBattleMons[gBattlerAttacker].status2 & STATUS2_LOCK_CONFUSE) != STATUS2_LOCK_CONFUSE_TURN(1))  // And won't end this turn
                 CancelMultiTurnMoves(gBattlerAttacker); // Cancel it
 
-            // if (gBattleStruct->tookSpreadDamage & gBitTable[gBattlerTarget])
-            //     DebugPrintf("11");
             gBattleStruct->targetsDone[gBattlerAttacker] = 0;
             gProtectStructs[gBattlerAttacker].targetAffected = FALSE;
             gProtectStructs[gBattlerAttacker].shellTrap = FALSE;
@@ -6365,6 +6525,7 @@ static void Cmd_moveend(void)
             gBattleStruct->poisonPuppeteerConfusion = FALSE;
             gBattleStruct->distortedTypeMatchups = 0;
             gBattleStruct->tookSpreadDamage = 0;
+            gBattleStruct->numSpreadTargets = 0;
             gBattleScripting.moveendState++;
             break;
         case MOVEEND_COUNT:
@@ -7566,6 +7727,7 @@ static void Cmd_hitanimation(void)
 {
     CMD_ARGS(u8 battler);
 
+    // DebugPrintf("HIT_ANIMATION");
     if (gBattleStruct->numSpreadTargets < 2)
     {
         u32 battler = GetBattlerForBattleScript(cmd->battler);
@@ -7587,14 +7749,15 @@ static void Cmd_hitanimation(void)
         u32 battlerDef;
 		for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
 		{
-            if (!(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE)
+            if (gHitMarker & HITMARKER_IGNORE_SUBSTITUTE
+             || gBattleStruct->damageTaken[battlerDef] == 0
              || gBattleStruct->resultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT
-             || !(DoesSubstituteBlockMove(gBattlerAttacker, battlerDef, gCurrentMove))
-             || gDisableStructs[battlerDef].substituteHP == 0)
-            {
-                BtlController_EmitHitAnimation(battlerDef, BUFFER_A);
-                MarkBattlerForControllerExec(battlerDef);
-            }
+             || DoesSubstituteBlockMove(gBattlerAttacker, battlerDef, gCurrentMove)
+             || gDisableStructs[battlerDef].substituteHP != 0)
+                continue;
+
+            BtlController_EmitHitAnimation(battlerDef, BUFFER_A);
+            MarkBattlerForControllerExec(battlerDef);
 		}
 	}
 
@@ -13664,8 +13827,22 @@ static void Cmd_jumpifnopursuitswitchdmg(void)
     }
 }
 
-static void Cmd_unused_bb(void)
+static void Cmd_jumpifspreaddamage(void)
 {
+    CMD_ARGS(const u8 *jumpInstr);
+
+    u32 moveTargetType = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
+
+    if (!IsDoubleBattle())
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    if (moveTargetType == MOVE_TARGET_BOTH || moveTargetType == MOVE_TARGET_FOES_AND_ALLY)
+        gBattlescriptCurrInstr = cmd->jumpInstr;
+    else
+        gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
 // Belly Drum, Fillet Away
