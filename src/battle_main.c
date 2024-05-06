@@ -5334,6 +5334,8 @@ static void TurnValuesCleanUp(bool8 var0)
             gBattleMons[i].status2 &= ~STATUS2_SUBSTITUTE;
 
         gSpecialStatuses[i].parentalBondState = PARENTAL_BOND_OFF;
+        gBattleStruct->resultFlags[i] = 0;
+        gBattleStruct->damageTaken[i] = 0;
     }
 
     gSideStatuses[B_SIDE_PLAYER] &= ~(SIDE_STATUS_QUICK_GUARD | SIDE_STATUS_WIDE_GUARD | SIDE_STATUS_CRAFTY_SHIELD | SIDE_STATUS_MAT_BLOCK);
@@ -5342,6 +5344,8 @@ static void TurnValuesCleanUp(bool8 var0)
     gSideTimers[B_SIDE_OPPONENT].followmeTimer = 0;
 
     gBattleStruct->pledgeMove = FALSE; // combined pledge move may not have been used due to a canceller
+    gBattleStruct->tookSpreadDamage = FALSE;
+    gBattleStruct->numSpreadTargets = 0;
 }
 
 void SpecialStatusesClear(void)

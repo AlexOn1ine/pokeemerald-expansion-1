@@ -7587,10 +7587,8 @@ static void Cmd_hitanimation(void)
         u32 battlerDef;
 		for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
 		{
-            if (gBattleStruct->resultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT)
-                continue;
-
             if (!(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE)
+             || gBattleStruct->resultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT
              || !(DoesSubstituteBlockMove(gBattlerAttacker, battlerDef, gCurrentMove))
              || gDisableStructs[battlerDef].substituteHP == 0)
             {
