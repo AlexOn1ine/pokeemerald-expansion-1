@@ -1811,8 +1811,9 @@ static void AccuracyCheck(bool32 recalcDragonDarts)
             {
                 // Smart target to partner if miss
                 gBattlerTarget = BATTLE_PARTNER(gBattlerTarget);
-                gMoveResultFlags & ~MOVE_RESULT_MISSED;
+                gMoveResultFlags &= ~MOVE_RESULT_MISSED;
                 AccuracyCheck(TRUE);
+                return;
             }
 
             if (gBattleTypeFlags & BATTLE_TYPE_DOUBLE &&

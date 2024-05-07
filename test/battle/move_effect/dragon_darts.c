@@ -171,7 +171,7 @@ DOUBLE_BATTLE_TEST("Dragon Darts strikes left ally twice if one strike misses")
 
 DOUBLE_BATTLE_TEST("Dragon Darts strikes right ally twice if one strike misses")
 {
-    KNOWN_FAILING; // The game freezes after the accuract check.
+    // KNOWN_FAILING; // The game freezes after the accuract check.
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         PLAYER(SPECIES_WOBBUFFET);
@@ -187,3 +187,32 @@ DOUBLE_BATTLE_TEST("Dragon Darts strikes right ally twice if one strike misses")
         MESSAGE("Hit 2 time(s)!");
     }
 }
+
+// DOUBLE_BATTLE_TEST("DD")
+// {
+//     s16 damage[2];
+
+//     GIVEN {
+//         PLAYER(SPECIES_WOBBUFFET);
+//         PLAYER(SPECIES_WOBBUFFET);
+//         OPPONENT(SPECIES_CYNDAQUIL) { Ability(ABILITY_FLASH_FIRE); }
+//         OPPONENT(SPECIES_WOBBUFFET);
+//     } WHEN {
+//         TURN { MOVE(opponentLeft, MOVE_EMBER, target: playerRight); MOVE(playerLeft, MOVE_DRAGON_DARTS, target: opponentLeft); }
+//         TURN { MOVE(opponentLeft, MOVE_EMBER, target: playerRight); }
+//     } SCENE {
+//         ANIMATION(ANIM_TYPE_MOVE, MOVE_EMBER, opponentLeft);
+//         HP_BAR(playerRight, captureDamage: &damage[0]);
+
+//         ANIMATION(ANIM_TYPE_MOVE, MOVE_DRAGON_DARTS, playerLeft);
+//         HP_BAR(opponentRight);
+//         ANIMATION(ANIM_TYPE_MOVE, MOVE_DRAGON_DARTS, playerLeft);
+//         HP_BAR(opponentRight);
+//         MESSAGE("Hit 2 time(s)!");
+
+//         ANIMATION(ANIM_TYPE_MOVE, MOVE_EMBER, opponentLeft);
+//         HP_BAR(playerRight, captureDamage: &damage[1]);
+//     } THEN {
+//         EXPECT_EQ(damage[0], damage[1]);
+//     }
+// }
