@@ -219,3 +219,4 @@ SINGLE_BATTLE_TEST("Intimidate can not further lower opponents Atk stat if it is
 }
 
 ddd
+ddd
