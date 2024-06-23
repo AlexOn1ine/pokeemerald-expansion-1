@@ -4757,6 +4757,16 @@ Items: Super Potion / Super Potion
 Double Battle: No
 AI: Check Bad Move / Try To Faint / Check Viability
 
+Throh @ Black Belt
+Adamant Nature
+Level: 18
+Ability: Guts
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Storm Throw
+- Rock Tomb
+- Assurance
+- Power Up Punch
+
 Machop
 Level: 16
 IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
