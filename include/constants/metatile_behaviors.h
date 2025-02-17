@@ -9,7 +9,7 @@
 #define MB_UNUSED_05 0x05
 #define MB_DEEP_SAND 0x06
 #define MB_SHORT_GRASS 0x07
-#define MB_CAVE 0x08
+#define MB_UNUSED_0x08 0x08
 #define MB_LONG_GRASS_SOUTH_EDGE 0x09
 #define MB_NO_RUNNING 0x0A
 #define MB_INDOOR_ENCOUNTER 0x0B
@@ -18,16 +18,16 @@
 #define MB_MOSSDEEP_GYM_WARP 0x0E
 #define MB_MT_PYRE_HOLE 0x0F
 #define MB_POND_WATER 0x10
-#define MB_INTERIOR_DEEP_WATER 0x11 // Used by interior maps; functionally the same as MB_DEEP_WATER
+#define MB_UNUSED_0x11 0x11 // Used by interior maps; functionally the same as MB_DEEP_WATER
 #define MB_DEEP_WATER 0x12
 #define MB_WATERFALL 0x13
 #define MB_SOOTOPOLIS_DEEP_WATER 0x14
 #define MB_OCEAN_WATER 0x15
 #define MB_PUDDLE 0x16
 #define MB_SHALLOW_WATER 0x17
-#define MB_UNUSED_SOOTOPOLIS_DEEP_WATER 0x18
+#define MB_UNUSED_0x18 0x18
 #define MB_NO_SURFACING 0x19
-#define MB_UNUSED_SOOTOPOLIS_DEEP_WATER_2 0x1A
+#define MB_UNUSED_0x1A 0x1A
 #define MB_STAIRS_OUTSIDE_ABANDONED_SHIP 0x1B
 #define MB_SHOAL_CAVE_ENTRANCE 0x1C
 #define MB_SIGNPOST 0x1D
@@ -161,7 +161,7 @@
 #define MB_SECRET_BASE_SPOT_TREE_RIGHT_OPEN 0x9D
 #define MB_UNUSED_9E 0x9E
 #define MB_UNUSED_9F 0x9F
-#define MB_BERRY_TREE_SOIL 0xA0
+#define MB_UNUSED_0xA0 0xA0
 #define MB_UNUSED_A1 0xA1
 #define MB_UNUSED_A2 0xA2
 #define MB_UNUSED_A3 0xA3

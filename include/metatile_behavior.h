@@ -10,7 +10,6 @@ enum {
 };
 
 bool8 MetatileBehavior_IsATile(u8);
-bool8 MetatileBehavior_IsEncounterTile(u8);
 bool8 MetatileBehavior_IsJumpEast(u8);
 bool8 MetatileBehavior_IsJumpWest(u8);
 bool8 MetatileBehavior_IsJumpNorth(u8);
@@ -77,14 +76,11 @@ bool8 MetatileBehavior_HasRipples(u8);
 bool8 MetatileBehavior_IsPuddle(u8);
 bool8 MetatileBehavior_IsTallGrass(u8);
 bool8 MetatileBehavior_IsLongGrass(u8);
-bool8 MetatileBehavior_IsBerryTreeSoil(u8);
 bool8 MetatileBehavior_IsAshGrass(u8);
 bool8 MetatileBehavior_IsFootprints(u8);
 bool8 MetatileBehavior_IsBridgeOverWater(u8);
 u8 MetatileBehavior_GetBridgeType(u8);
 bool8 MetatileBehavior_IsBridgeOverWaterNoEdge(u8);
-bool8 MetatileBehavior_IsLandWildEncounter(u8);
-bool8 MetatileBehavior_IsWaterWildEncounter(u8);
 bool8 MetatileBehavior_IsIndoorEncounter(u8);
 bool8 MetatileBehavior_IsMountain(u8);
 bool8 MetatileBehavior_IsDiveable(u8);
@@ -120,7 +116,6 @@ bool8 MetatileBehavior_IsLavaridge1FWarp(u8);
 bool8 MetatileBehavior_IsAquaHideoutWarp(u8);
 bool8 MetatileBehavior_IsUnionRoomWarp(u8);
 bool8 MetatileBehavior_IsMossdeepGymWarp(u8);
-bool8 MetatileBehavior_IsSurfableFishableWater(u8);
 bool8 MetatileBehavior_IsMtPyreHole(u8);
 bool8 MetatileBehavior_IsCrackedFloorHole(u8);
 bool8 MetatileBehavior_IsCrackedFloor(u8);
@@ -132,7 +127,6 @@ bool8 MetatileBehavior_IsVerticalRail(u8);
 bool8 MetatileBehavior_IsHorizontalRail(u8);
 bool8 MetatileBehavior_IsSeaweed(u8);
 bool8 MetatileBehavior_IsRunningDisallowed(u8);
-bool8 MetatileBehavior_IsCuttableGrass(u8);
 bool8 MetatileBehavior_IsRunningShoesManual(u8);
 bool8 MetatileBehavior_IsPictureBookShelf(u8);
 bool8 MetatileBehavior_IsBookShelf(u8);
@@ -165,5 +159,6 @@ bool8 MetatileBehavior_IsSidewaysStairsRightSideBottom(u8 metatileBehavior);
 bool8 MetatileBehavior_IsSidewaysStairsLeftSideBottom(u8 metatileBehavior);
 bool8 MetatileBehavior_IsSidewaysStairsRightSideAny(u8 metatileBehavior);
 bool8 MetatileBehavior_IsSidewaysStairsLeftSideAny(u8 metatileBehavior);
+bool32 TestMetatileAttributeBit(u32 attr, u32 bitmask);
 
 #endif // GUARD_METATILE_BEHAVIOR_H

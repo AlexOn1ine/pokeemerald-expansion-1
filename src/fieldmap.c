@@ -48,6 +48,31 @@ static const struct MapConnection *GetIncomingConnection(u8 direction, int x, in
 static bool8 IsPosInIncomingConnectingMap(u8 direction, int x, int y, const struct MapConnection *connection);
 static bool8 IsCoordInIncomingConnectingMap(int coord, int srcMax, int destMax, int offset);
 
+
+// Masks/shifts for metatile attributes
+// This is the format of the data stored in each data/tilesets/*/*/metatile_attributes.bin file
+static const u32 sMetatileAttrMasks[METATILE_ATTRIBUTE_COUNT] = {
+    [METATILE_ATTRIBUTE_BEHAVIOR]       = 0x000001ff, // Bits 0-8
+    [METATILE_ATTRIBUTE_TERRAIN]        = 0x00003e00, // Bits 9-13
+    [METATILE_ATTRIBUTE_2]              = 0x0003c000, // Bits 14-17
+    [METATILE_ATTRIBUTE_3]              = 0x00fc0000, // Bits 18-23
+    [METATILE_ATTRIBUTE_ENCOUNTER_TYPE] = 0x07000000, // Bits 24-26
+    [METATILE_ATTRIBUTE_5]              = 0x18000000, // Bits 27-28
+    [METATILE_ATTRIBUTE_LAYER_TYPE]     = 0x60000000, // Bits 29-30
+    [METATILE_ATTRIBUTE_7]              = 0x80000000  // Bit  31
+};
+
+static const u8 sMetatileAttrShifts[METATILE_ATTRIBUTE_COUNT] = {
+    [METATILE_ATTRIBUTE_BEHAVIOR]       = 0,
+    [METATILE_ATTRIBUTE_TERRAIN]        = 9,
+    [METATILE_ATTRIBUTE_2]              = 14,
+    [METATILE_ATTRIBUTE_3]              = 18,
+    [METATILE_ATTRIBUTE_ENCOUNTER_TYPE] = 24,
+    [METATILE_ATTRIBUTE_5]              = 27,
+    [METATILE_ATTRIBUTE_LAYER_TYPE]     = 29,
+    [METATILE_ATTRIBUTE_7]              = 31
+};
+
 static inline u16 GetBorderBlockAt(int x, int y)
 {
     int i = (x + 1) & 1;
@@ -368,16 +393,28 @@ u32 MapGridGetMetatileIdAt(int x, int y)
     return block & MAPGRID_METATILE_ID_MASK;
 }
 
+u32 ExtractMetatileAttribute(u32 attributes, u32 attributeType)
+{
+    if (attributeType >= METATILE_ATTRIBUTE_COUNT) // Check for METATILE_ATTRIBUTES_ALL
+        return attributes;
+
+    return (attributes & sMetatileAttrMasks[attributeType]) >> sMetatileAttrShifts[attributeType];
+}
+
+u32 MapGridGetMetatileAttributeAt(u32 x, u32 y, u32 attributeType)
+{
+    u32 metatileId = MapGridGetMetatileIdAt(x, y);
+    return GetMetatileAttributesById(metatileId, attributeType);
+}
+
 u32 MapGridGetMetatileBehaviorAt(int x, int y)
 {
-    u16 metatile = MapGridGetMetatileIdAt(x, y);
-    return GetMetatileAttributesById(metatile) & METATILE_ATTR_BEHAVIOR_MASK;
+    return MapGridGetMetatileAttributeAt(x, y, METATILE_ATTRIBUTE_BEHAVIOR);
 }
 
 u8 MapGridGetMetatileLayerTypeAt(int x, int y)
 {
-    u16 metatile = MapGridGetMetatileIdAt(x, y);
-    return (GetMetatileAttributesById(metatile) & METATILE_ATTR_LAYER_MASK) >> METATILE_ATTR_LAYER_SHIFT;
+    return MapGridGetMetatileAttributeAt(x, y, METATILE_ATTRIBUTE_LAYER_TYPE);
 }
 
 void MapGridSetMetatileIdAt(int x, int y, u16 metatile)
@@ -400,18 +437,18 @@ void MapGridSetMetatileEntryAt(int x, int y, u16 metatile)
     }
 }
 
-u16 GetMetatileAttributesById(u16 metatile)
+u32 GetMetatileAttributesById(u32 metatile, u32 attributeType)
 {
-    const u16 *attributes;
+    const u32 *attributes;
     if (metatile < NUM_METATILES_IN_PRIMARY)
     {
         attributes = gMapHeader.mapLayout->primaryTileset->metatileAttributes;
-        return attributes[metatile];
+        return ExtractMetatileAttribute(attributes[metatile], attributeType);
     }
     else if (metatile < NUM_METATILES_TOTAL)
     {
         attributes = gMapHeader.mapLayout->secondaryTileset->metatileAttributes;
-        return attributes[metatile - NUM_METATILES_IN_PRIMARY];
+        return ExtractMetatileAttribute(attributes[metatile - NUM_METATILES_IN_PRIMARY], attributeType);
     }
     else
     {

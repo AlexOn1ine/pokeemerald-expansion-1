@@ -665,7 +665,7 @@ static void PlayerNotOnBikeMoving(u8 direction, u16 heldKeys)
             return;
         }
     }
-    
+
     gPlayerAvatar.creeping = FALSE;
     if (gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_SURFING)
     {
@@ -1367,7 +1367,7 @@ bool8 IsPlayerFacingSurfableFishableWater(void)
     MoveCoords(playerObjEvent->facingDirection, &x, &y);
     if (GetCollisionAtCoords(playerObjEvent, x, y, playerObjEvent->facingDirection) == COLLISION_ELEVATION_MISMATCH
      && PlayerGetElevation() == 3
-     && MetatileBehavior_IsSurfableFishableWater(MapGridGetMetatileBehaviorAt(x, y)))
+     && TestMetatileAttributeBit(MapGridGetMetatileAttributeAt(x, y, METATILE_ATTRIBUTE_TERRAIN), TILE_TERRAIN_WATER))
         return TRUE;
     else
         return FALSE;
@@ -2277,7 +2277,7 @@ static bool32 CheckTileQualification(s16 tile[], s16 player[], u32 facingDirecti
         return FALSE;
     else if (IsMetatileBlocking(tile[AXIS_X], tile[AXIS_Y], collison))
         return TRUE;
-    else if (MetatileBehavior_IsSurfableFishableWater(MapGridGetMetatileBehaviorAt(tile[AXIS_X], tile[AXIS_Y])))
+    else if (TestMetatileAttributeBit(MapGridGetMetatileAttributeAt(tile[AXIS_X], tile[AXIS_Y], METATILE_ATTRIBUTE_TERRAIN), TILE_TERRAIN_WATER))
         return FALSE;
     else if (IsMetatileLand(tile[AXIS_X], tile[AXIS_Y], collison))
         isTileLand[direction] = TRUE;

@@ -620,6 +620,7 @@ static bool8 DexNavPickTile(u8 environment, u8 areaX, u8 areaY, bool8 smallScan)
     u8 *yPos = AllocZeroed((botX - topX) * (botY - topY) * sizeof(u8));
     u32 iter = 0;
     bool32 ret = FALSE;
+    u32 curMetatileEncounterType;
 
     // loop through every tile in area and evaluate
     while (topY < botY)
@@ -658,41 +659,42 @@ static bool8 DexNavPickTile(u8 environment, u8 areaX, u8 areaY, bool8 smallScan)
             }
 
             weight = 0; // initiliaze weight
-            switch (environment)
-            {
-            case ENCOUNTER_TYPE_LAND:
-                if (MetatileBehavior_IsLandWildEncounter(tileBehaviour))
-                {
-                    if (currMapType == MAP_TYPE_UNDERGROUND)
-                    {
-                        // inside (cave)
-                        if (IsElevationMismatchAt(gObjectEvents[gPlayerAvatar.spriteId].currentElevation, topX, topY))
-                            break; //occurs at same z coord
+            // curMetatileEncounterType = ExtractMetatileAttribute(currMetatileAttrs, METATILE_ATTRIBUTE_ENCOUNTER_TYPE);
+            // switch (environment)
+            // {
+            // case ENCOUNTER_TYPE_LAND:
+            //     if (curMetatileEncounterType == TILE_ENCOUNTER_LAND)
+            //     {
+            //         if (currMapType == MAP_TYPE_UNDERGROUND)
+            //         {
+            //             // inside (cave)
+            //             if (IsElevationMismatchAt(gObjectEvents[gPlayerAvatar.spriteId].currentElevation, topX, topY))
+            //                 break; //occurs at same z coord
 
-                        scale = 440 - (smallScan * 200) - (GetPlayerDistance(topX, topY) / 2)  - (2 * (topX + topY));
-                        weight = ((Random() % scale) < 1) && !MapGridGetCollisionAt(topX, topY);
-                    }
-                    else
-                    {
-                        // outdoors: grass
-                        scale = 100 - (GetPlayerDistance(topX, topY) * 2);
-                        weight = (Random() % scale <= 5) && !MapGridGetCollisionAt(topX, topY);
-                    }
-                }
-                break;
-            case ENCOUNTER_TYPE_WATER:
-                if (MetatileBehavior_IsSurfableWaterOrUnderwater(tileBehaviour))
-                {
-                    u8 scale = 320 - (smallScan * 200) - (GetPlayerDistance(topX, topY) / 2);
-                    if (IsElevationMismatchAt(gObjectEvents[gPlayerAvatar.spriteId].currentElevation, topX, topY))
-                        break;
+            //             scale = 440 - (smallScan * 200) - (GetPlayerDistance(topX, topY) / 2)  - (2 * (topX + topY));
+            //             weight = ((Random() % scale) < 1) && !MapGridGetCollisionAt(topX, topY);
+            //         }
+            //         else
+            //         {
+            //             // outdoors: grass
+            //             scale = 100 - (GetPlayerDistance(topX, topY) * 2);
+            //             weight = (Random() % scale <= 5) && !MapGridGetCollisionAt(topX, topY);
+            //         }
+            //     }
+            //     break;
+            // case ENCOUNTER_TYPE_WATER:
+            //     if (curMetatileEncounterType == TILE_ENCOUNTER_WATER)
+            //     {
+            //         u8 scale = 320 - (smallScan * 200) - (GetPlayerDistance(topX, topY) / 2);
+            //         if (IsElevationMismatchAt(gObjectEvents[gPlayerAvatar.spriteId].currentElevation, topX, topY))
+            //             break;
 
-                    weight = (Random() % scale <= 1) && !MapGridGetCollisionAt(topX, topY);
-                }
-                break;
-            default:
-                break;
-            }
+            //         weight = (Random() % scale <= 1) && !MapGridGetCollisionAt(topX, topY);
+            //     }
+            //     break;
+            // default:
+            //     break;
+            // }
 
             if (weight > 0)
             {

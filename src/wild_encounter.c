@@ -619,15 +619,18 @@ static bool8 AreLegendariesInSootopolisPreventingEncounters(void)
     return FlagGet(FLAG_LEGENDARIES_IN_SOOTOPOLIS);
 }
 
-bool8 StandardWildEncounter(u16 curMetatileBehavior, u16 prevMetatileBehavior)
+bool32 StandardWildEncounter(u32 currMetatileAttrs, u32 prevMetatileBehavior)
 {
     u16 headerId;
     struct Roamer *roamer;
+    u32 curMetatileBehavior;
 
     if (sWildEncountersDisabled == TRUE)
         return FALSE;
 
     headerId = GetCurrentMapWildMonHeaderId();
+    curMetatileBehavior = ExtractMetatileAttribute(currMetatileAttrs, METATILE_ATTRIBUTE_BEHAVIOR);
+
     if (headerId == HEADER_NONE)
     {
         if (gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_WILD_MONS)
@@ -662,7 +665,8 @@ bool8 StandardWildEncounter(u16 curMetatileBehavior, u16 prevMetatileBehavior)
     }
     else
     {
-        if (MetatileBehavior_IsLandWildEncounter(curMetatileBehavior) == TRUE)
+        u32 curMetatileEncounterType = ExtractMetatileAttribute(currMetatileAttrs, METATILE_ATTRIBUTE_ENCOUNTER_TYPE);
+        if (curMetatileEncounterType == TILE_ENCOUNTER_LAND)
         {
             if (gWildMonHeaders[headerId].landMonsInfo == NULL)
                 return FALSE;
@@ -708,7 +712,7 @@ bool8 StandardWildEncounter(u16 curMetatileBehavior, u16 prevMetatileBehavior)
                 return FALSE;
             }
         }
-        else if (MetatileBehavior_IsWaterWildEncounter(curMetatileBehavior) == TRUE
+        else if (curMetatileEncounterType == TILE_ENCOUNTER_WATER
                  || (TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_SURFING) && MetatileBehavior_IsBridgeOverWater(curMetatileBehavior) == TRUE))
         {
             if (AreLegendariesInSootopolisPreventingEncounters() == TRUE)
@@ -817,7 +821,8 @@ bool8 SweetScentWildEncounter(void)
     }
     else
     {
-        if (MetatileBehavior_IsLandWildEncounter(MapGridGetMetatileBehaviorAt(x, y)) == TRUE)
+        u32 metatileEncounterType = MapGridGetMetatileAttributeAt(x, y, METATILE_ATTRIBUTE_ENCOUNTER_TYPE);
+        if (metatileEncounterType == TILE_ENCOUNTER_LAND)
         {
             if (gWildMonHeaders[headerId].landMonsInfo == NULL)
                 return FALSE;
@@ -836,7 +841,7 @@ bool8 SweetScentWildEncounter(void)
             BattleSetup_StartWildBattle();
             return TRUE;
         }
-        else if (MetatileBehavior_IsWaterWildEncounter(MapGridGetMetatileBehaviorAt(x, y)) == TRUE)
+        else if (metatileEncounterType == TILE_ENCOUNTER_WATER)
         {
             if (AreLegendariesInSootopolisPreventingEncounters() == TRUE)
                 return FALSE;

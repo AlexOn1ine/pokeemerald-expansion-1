@@ -134,6 +134,11 @@ static const struct SpriteTemplate sSpriteTemplate_CutGrass =
     .callback = CutGrassSpriteCallback1,
 };
 
+static u32 MetatileAtCoordsIsGrassTile(int x, int y)
+{
+    return TestMetatileAttributeBit(MapGridGetMetatileAttributeAt(x, y, METATILE_ATTRIBUTE_TERRAIN), TILE_TERRAIN_GRASS);
+}
+
 // code
 bool8 SetUpFieldMove_Cut(void)
 {
@@ -203,7 +208,7 @@ bool8 SetUpFieldMove_Cut(void)
                     else
                     {
                         cutTiles[i * 3 + j] = TRUE;
-                        if (MetatileBehavior_IsCuttableGrass(tileBehavior) == TRUE)
+                        if (MetatileAtCoordsIsGrassTile(x, y) == TRUE)
                             sHyperCutTiles[6 + (i * 5) + j] = TRUE;
                     }
                 }
@@ -257,7 +262,7 @@ bool8 SetUpFieldMove_Cut(void)
                         }
                         else
                         {
-                            if (MetatileBehavior_IsCuttableGrass(tileBehavior) == TRUE)
+                            if (MetatileAtCoordsIsGrassTile(x, y) == TRUE)
                                 sHyperCutTiles[tileArrayId] = TRUE;
                         }
                     }
