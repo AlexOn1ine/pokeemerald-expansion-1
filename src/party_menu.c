@@ -567,7 +567,7 @@ static void InitPartyMenu(u8 menuType, u8 layout, u8 partyAction, bool8 keepCurs
         else if (gPartyMenu.slotId > PARTY_SIZE - 1 || GetMonData(&gParty[B_PLAYER][gPartyMenu.slotId], MON_DATA_SPECIES) == SPECIES_NONE)
             gPartyMenu.slotId = 0;
 
-        if (gPlayerPartyCount == 0)
+        if (gPartyCount[B_PLAYER] == 0)
             gPartyMenu.slotId = PARTY_SIZE + 1; // Cancel
 
         gTextFlags.autoScroll = 0;
@@ -1001,7 +1001,7 @@ static void RenderPartyMenuBox(u8 slot)
         PutWindowTilemap(sPartyMenuBoxes[slot].windowId);
         ScheduleBgCopyTilemapToVram(2);
     }
-    else if (gPlayerPartyCount != 0)
+    else if (gPartyCount[B_PLAYER] != 0)
     {
         if (GetMonData(&gParty[B_PLAYER][slot], MON_DATA_SPECIES) == SPECIES_NONE)
         {
@@ -1723,7 +1723,7 @@ static u16 PartyMenuButtonHandler(s8 *slotPtr)
     if (JOY_NEW(START_BUTTON))
         return START_BUTTON;
 
-    if (movementDir && gPlayerPartyCount != 0)
+    if (movementDir && gPartyCount[B_PLAYER] != 0)
     {
         UpdateCurrentPartySelection(slotPtr, movementDir);
         return 0;
@@ -1766,14 +1766,14 @@ static void UpdatePartySelectionSingleLayout(s8 *slotPtr, s8 movementDir)
         }
         else if (*slotPtr == PARTY_SIZE)
         {
-            *slotPtr = gPlayerPartyCount - 1;
+            *slotPtr = gPartyCount[B_PLAYER] - 1;
         }
         else if (*slotPtr == PARTY_SIZE + 1)
         {
             if (sPartyMenuInternal->chooseHalf)
                 *slotPtr = PARTY_SIZE;
             else
-                *slotPtr = gPlayerPartyCount - 1;
+                *slotPtr = gPartyCount[B_PLAYER] - 1;
         }
         else
         {
@@ -1787,7 +1787,7 @@ static void UpdatePartySelectionSingleLayout(s8 *slotPtr, s8 movementDir)
         }
         else
         {
-            if (*slotPtr == gPlayerPartyCount - 1)
+            if (*slotPtr == gPartyCount[B_PLAYER] - 1)
             {
                 if (sPartyMenuInternal->chooseHalf)
                     *slotPtr = PARTY_SIZE;
@@ -1801,7 +1801,7 @@ static void UpdatePartySelectionSingleLayout(s8 *slotPtr, s8 movementDir)
         }
         break;
     case MENU_DIR_RIGHT:
-        if (gPlayerPartyCount != 1 && *slotPtr == 0)
+        if (gPartyCount[B_PLAYER] != 1 && *slotPtr == 0)
         {
             if (sPartyMenuInternal->lastSelectedSlot == 0)
                 *slotPtr = 1;
@@ -1835,7 +1835,7 @@ static void UpdatePartySelectionDoubleLayout(s8 *slotPtr, s8 movementDir)
         }
         else if (*slotPtr == PARTY_SIZE)
         {
-            *slotPtr = gPlayerPartyCount - 1;
+            *slotPtr = gPartyCount[B_PLAYER] - 1;
             break;
         }
         else if (*slotPtr == PARTY_SIZE + 1)
@@ -2188,12 +2188,12 @@ static void SetPartyMonsAllowedInMinigame(void)
         gPartyMenu.data1 = 0;
         if (gSpecialVar_0x8005 == 0)
         {
-            for (i = 0; i < gPlayerPartyCount; i++)
+            for (i = 0; i < gPartyCount[B_PLAYER]; i++)
                 *ptr += IsMonAllowedInPokemonJump(&gParty[B_PLAYER][i]) << i;
         }
         else
         {
-            for (i = 0; i < gPlayerPartyCount; i++)
+            for (i = 0; i < gPartyCount[B_PLAYER]; i++)
                 *ptr += IsMonAllowedInDodrioBerryPicking(&gParty[B_PLAYER][i]) << i;
         }
     }
@@ -2738,7 +2738,7 @@ void DisplayPartyMenuStdMessage(u32 stringId)
             else if (!ShouldUseChooseMonText())
                 stringId = PARTY_MSG_CHOOSE_MON_OR_CANCEL;
 
-            if (gPlayerPartyCount == 0)
+            if (gPartyCount[B_PLAYER] == 0)
                 stringId = PARTY_MSG_NO_POKEMON;
         }
         DrawStdFrameWithCustomTileAndPalette(*windowPtr, FALSE, 0x4F, 13);
@@ -3043,11 +3043,11 @@ static void CB2_ShowPokemonSummaryScreen(void)
     if (gPartyMenu.menuType == PARTY_MENU_TYPE_IN_BATTLE)
     {
         UpdatePartyToBattleOrder();
-        ShowPokemonSummaryScreen(SUMMARY_MODE_LOCK_MOVES, gParty[B_PLAYER], gPartyMenu.slotId, gPlayerPartyCount - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
+        ShowPokemonSummaryScreen(SUMMARY_MODE_LOCK_MOVES, gParty[B_PLAYER], gPartyMenu.slotId, gPartyCount[B_PLAYER] - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
     }
     else
     {
-        ShowPokemonSummaryScreen(SUMMARY_MODE_NORMAL, gParty[B_PLAYER], gPartyMenu.slotId, gPlayerPartyCount - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
+        ShowPokemonSummaryScreen(SUMMARY_MODE_NORMAL, gParty[B_PLAYER], gPartyMenu.slotId, gPartyCount[B_PLAYER] - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
     }
 }
 
@@ -5540,7 +5540,7 @@ static void Task_ShowSummaryScreenToForgetMove(u8 taskId)
 
 static void CB2_ShowSummaryScreenToForgetMove(void)
 {
-    ShowSelectMovePokemonSummaryScreen(gParty[B_PLAYER], gPartyMenu.slotId, gPlayerPartyCount - 1, CB2_ReturnToPartyMenuWhileLearningMove, gPartyMenu.data1);
+    ShowSelectMovePokemonSummaryScreen(gParty[B_PLAYER], gPartyMenu.slotId, gPartyCount[B_PLAYER] - 1, CB2_ReturnToPartyMenuWhileLearningMove, gPartyMenu.data1);
 }
 
 static void CB2_ReturnToPartyMenuWhileLearningMove(void)
@@ -6250,7 +6250,7 @@ static void RestoreFusionMon(struct Pokemon *mon)
     else
     {
         CopyMon(&gParty[B_PLAYER][i], mon, sizeof(*mon));
-        gPlayerPartyCount = i + 1;
+        gPartyCount[B_PLAYER] = i + 1;
     }
 }
 
@@ -6380,7 +6380,7 @@ void ItemUseCB_Fusion(u8 taskId, TaskFunc taskFunc)
         case UNFUSE_MON:
             if (task->fusionType == FUSE_MON) // Cancel if An already Fused Mon Is Chosen For The Second Fusion Mon
                 break;
-            if (gPlayerPartyCount == PARTY_SIZE)
+            if (gPartyCount[B_PLAYER] == PARTY_SIZE)
             {
                 gPartyMenuUseExitCallback = FALSE;
                 DisplayPartyMenuMessage(gText_YourPartysFull, TRUE);
@@ -7248,7 +7248,7 @@ static u8 GetPartyLayoutFromBattleType(void)
 {
     if (IsMultiBattle() == TRUE)
         return PARTY_LAYOUT_MULTI;
-    if (!IsDoubleBattle() || gPlayerPartyCount == 1) // Draw the single layout in a double battle where the player has only one pokemon.
+    if (!IsDoubleBattle() || gPartyCount[B_PLAYER] == 1) // Draw the single layout in a double battle where the player has only one pokemon.
         return PARTY_LAYOUT_SINGLE;
     return PARTY_LAYOUT_DOUBLE;
 }
@@ -7830,7 +7830,7 @@ static void Task_BattlePyramidChooseMonHeldItems(u8 taskId)
 
 void MoveDeleterChooseMoveToForget(void)
 {
-    ShowPokemonSummaryScreen(SUMMARY_MODE_SELECT_MOVE, gParty[B_PLAYER], gSpecialVar_0x8004, gPlayerPartyCount - 1, CB2_ReturnToField);
+    ShowPokemonSummaryScreen(SUMMARY_MODE_SELECT_MOVE, gParty[B_PLAYER], gSpecialVar_0x8004, gPartyCount[B_PLAYER] - 1, CB2_ReturnToField);
     gFieldCallback = FieldCB_ContinueScriptHandleMusic;
 }
 

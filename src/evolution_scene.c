@@ -555,33 +555,33 @@ static void CreateShedinja(u32 preEvoSpecies, u32 postEvoSpecies, struct Pokemon
     {
         if (evolutions[i].method == EVO_SPLIT_FROM_EVO
          && evolutions[i].param == postEvoSpecies
-         && gPlayerPartyCount < PARTY_SIZE
+         && gPartyCount[B_PLAYER] < PARTY_SIZE
          && DoesMonMeetAdditionalConditions(mon, evolutions[i].params, NULL, PARTY_SIZE, NULL, CHECK_EVO))
         {
             s32 j;
-            struct Pokemon *shedinja = &gParty[B_PLAYER][gPlayerPartyCount];
+            struct Pokemon *shedinja = &gParty[B_PLAYER][gPartyCount[B_PLAYER]];
 
-            CopyMon(&gParty[B_PLAYER][gPlayerPartyCount], mon, sizeof(struct Pokemon));
-            SetMonData(&gParty[B_PLAYER][gPlayerPartyCount], MON_DATA_SPECIES, &evolutions[i].targetSpecies);
-            SetMonData(&gParty[B_PLAYER][gPlayerPartyCount], MON_DATA_NICKNAME, GetSpeciesName(evolutions[i].targetSpecies));
-            SetMonData(&gParty[B_PLAYER][gPlayerPartyCount], MON_DATA_HELD_ITEM, &data);
-            SetMonData(&gParty[B_PLAYER][gPlayerPartyCount], MON_DATA_MARKINGS, &data);
+            CopyMon(&gParty[B_PLAYER][gPartyCount[B_PLAYER]], mon, sizeof(struct Pokemon));
+            SetMonData(&gParty[B_PLAYER][gPartyCount[B_PLAYER]], MON_DATA_SPECIES, &evolutions[i].targetSpecies);
+            SetMonData(&gParty[B_PLAYER][gPartyCount[B_PLAYER]], MON_DATA_NICKNAME, GetSpeciesName(evolutions[i].targetSpecies));
+            SetMonData(&gParty[B_PLAYER][gPartyCount[B_PLAYER]], MON_DATA_HELD_ITEM, &data);
+            SetMonData(&gParty[B_PLAYER][gPartyCount[B_PLAYER]], MON_DATA_MARKINGS, &data);
             if (P_SHEDINJA_BALL >= GEN_4)
             {
-                SetMonData(&gParty[B_PLAYER][gPlayerPartyCount], MON_DATA_POKEBALL, &ball);
+                SetMonData(&gParty[B_PLAYER][gPartyCount[B_PLAYER]], MON_DATA_POKEBALL, &ball);
                 RemoveBagItem(ball, 1);
             }
 
             for (j = MON_DATA_COOL_RIBBON; j < MON_DATA_COOL_RIBBON + CONTEST_CATEGORIES_COUNT; j++)
-                SetMonData(&gParty[B_PLAYER][gPlayerPartyCount], j, &data);
+                SetMonData(&gParty[B_PLAYER][gPartyCount[B_PLAYER]], j, &data);
             for (j = MON_DATA_CHAMPION_RIBBON; j <= MON_DATA_WORLD_RIBBON; j++)
-                SetMonData(&gParty[B_PLAYER][gPlayerPartyCount], j, &data);
+                SetMonData(&gParty[B_PLAYER][gPartyCount[B_PLAYER]], j, &data);
 
-            SetMonData(&gParty[B_PLAYER][gPlayerPartyCount], MON_DATA_STATUS, &data);
+            SetMonData(&gParty[B_PLAYER][gPartyCount[B_PLAYER]], MON_DATA_STATUS, &data);
             data = MAIL_NONE;
-            SetMonData(&gParty[B_PLAYER][gPlayerPartyCount], MON_DATA_MAIL, &data);
+            SetMonData(&gParty[B_PLAYER][gPartyCount[B_PLAYER]], MON_DATA_MAIL, &data);
 
-            CalculateMonStats(&gParty[B_PLAYER][gPlayerPartyCount]);
+            CalculateMonStats(&gParty[B_PLAYER][gPartyCount[B_PLAYER]]);
             CalculatePlayerPartyCount();
 
             GetSetPokedexFlag(SpeciesToNationalPokedexNum(evolutions[i].targetSpecies), FLAG_SET_SEEN);
@@ -974,7 +974,7 @@ static void Task_EvolutionScene(u8 taskId)
             {
                 FreeAllWindowBuffers();
                 ShowSelectMovePokemonSummaryScreen(gParty[B_PLAYER], gTasks[taskId].tPartyId,
-                            gPlayerPartyCount - 1, CB2_EvolutionSceneLoadGraphics,
+                            gPartyCount[B_PLAYER] - 1, CB2_EvolutionSceneLoadGraphics,
                             gMoveToLearn);
                 gTasks[taskId].tLearnMoveState++;
             }
@@ -1358,7 +1358,7 @@ static void Task_TradeEvolutionScene(u8 taskId)
                 FreeAllWindowBuffers();
 
                 ShowSelectMovePokemonSummaryScreen(gParty[B_PLAYER], gTasks[taskId].tPartyId,
-                            gPlayerPartyCount - 1, CB2_TradeEvolutionSceneLoadGraphics,
+                            gPartyCount[B_PLAYER] - 1, CB2_TradeEvolutionSceneLoadGraphics,
                             gMoveToLearn);
                 gTasks[taskId].tLearnMoveState++;
             }

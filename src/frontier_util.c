@@ -2433,12 +2433,12 @@ void SaveGameFrontier(void)
     for (i = 0; i < PARTY_SIZE; i++)
         monsParty[i] = gParty[B_PLAYER][i];
 
-    i = gPlayerPartyCount;
+    i = gPartyCount[B_PLAYER];
     LoadPlayerParty();
     SetContinueGameWarpStatusToDynamicWarp();
     TrySavingData(SAVE_LINK);
     ClearContinueGameWarpStatus2();
-    gPlayerPartyCount = i;
+    gPartyCount[B_PLAYER] = i;
 
     for (i = 0; i < PARTY_SIZE; i++)
         gParty[B_PLAYER][i] = monsParty[i];

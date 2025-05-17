@@ -1183,7 +1183,7 @@ static bool8 TryProduceOrHatchEgg(struct DayCare *daycare)
 
         daycare->stepCounter = 0;
 
-        for (i = 0; i < gPlayerPartyCount; i++)
+        for (i = 0; i < gPartyCount[B_PLAYER]; i++)
         {
             if (!GetMonData(&gParty[B_PLAYER][i], MON_DATA_IS_EGG))
                 continue;

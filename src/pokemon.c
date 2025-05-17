@@ -84,9 +84,7 @@ static bool8 ShouldSkipFriendshipChange(void);
 void TrySpecialOverworldEvo();
 
 EWRAM_DATA static u8 sLearningMoveTableID = 0;
-EWRAM_DATA u8 gPlayerPartyCount = 0;
-EWRAM_DATA u8 gEnemyPartyCount = 0;
-
+EWRAM_DATA u8 gPartyCount[NUM_TRAINERS] = {0};
 EWRAM_DATA struct Pokemon gParty[NUM_TRAINERS][PARTY_SIZE] = {0};
 
 EWRAM_DATA struct SpriteTemplate gMultiuseSpriteTemplate = {0};
@@ -3350,7 +3348,7 @@ u8 GiveMonToPlayer(struct Pokemon *mon)
         return CopyMonToPC(mon);
 
     CopyMon(&gParty[B_PLAYER][i], mon, sizeof(*mon));
-    gPlayerPartyCount = i + 1;
+    gPartyCount[B_PLAYER] = i + 1;
     return MON_GIVEN_TO_PARTY;
 }
 
@@ -3417,14 +3415,14 @@ u8 CalculatePartyCountOfSide(u32 battler, struct Pokemon *party)
 
 u8 CalculatePlayerPartyCount(void)
 {
-    gPlayerPartyCount = CalculatePartyCount(gParty[B_PLAYER]);
-    return gPlayerPartyCount;
+    gPartyCount[B_PLAYER] = CalculatePartyCount(gParty[B_PLAYER]);
+    return gPartyCount[B_PLAYER];
 }
 
 u8 CalculateEnemyPartyCount(void)
 {
-    gEnemyPartyCount = CalculatePartyCount(gParty[B_ENEMY]);
-    return gEnemyPartyCount;
+    gPartyCount[B_ENEMY] = CalculatePartyCount(gParty[B_ENEMY]);
+    return gPartyCount[B_ENEMY];
 }
 
 u8 CalculateEnemyPartyCountInSide(u32 battler)
@@ -3441,10 +3439,10 @@ u8 GetMonsStateToDoubles(void)
     if (OW_DOUBLE_APPROACH_WITH_ONE_MON)
         return PLAYER_HAS_TWO_USABLE_MONS;
 
-    if (gPlayerPartyCount == 1)
-        return gPlayerPartyCount; // PLAYER_HAS_ONE_MON
+    if (gPartyCount[B_PLAYER] == 1)
+        return gPartyCount[B_PLAYER]; // PLAYER_HAS_ONE_MON
 
-    for (i = 0; i < gPlayerPartyCount; i++)
+    for (i = 0; i < gPartyCount[B_PLAYER]; i++)
     {
         if (GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES_OR_EGG, NULL) != SPECIES_EGG
          && GetMonData(&gParty[B_PLAYER][i], MON_DATA_HP, NULL) != 0

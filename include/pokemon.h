@@ -612,9 +612,7 @@ extern const struct Fusion *const gFusionTablePointers[NUM_SPECIES];
 
 #define GET_SHINY_VALUE(otId, personality) (HIHALF(otId) ^ LOHALF(otId) ^ HIHALF(personality) ^ LOHALF(personality))
 
-extern u8 gPlayerPartyCount;
-extern u8 gEnemyPartyCount;
-
+extern u8 gPartyCount[NUM_TRAINERS];
 extern struct Pokemon gParty[NUM_TRAINERS][PARTY_SIZE];
 
 extern struct SpriteTemplate gMultiuseSpriteTemplate;

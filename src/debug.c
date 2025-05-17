@@ -3764,7 +3764,7 @@ static void DebugAction_Give_Pokemon_ComplexCreateMon(u8 taskId) //https://githu
     {
         sentToPc = MON_GIVEN_TO_PARTY;
         CopyMon(&gParty[B_PLAYER][i], &mon, sizeof(mon));
-        gPlayerPartyCount = i + 1;
+        gPartyCount[B_PLAYER] = i + 1;
     }
 
     //Pokedex entry

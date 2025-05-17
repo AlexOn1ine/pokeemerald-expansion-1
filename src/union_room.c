@@ -4180,7 +4180,7 @@ static s32 IsRequestedTradeInPlayerParty(u32 type, u32 species)
 
     if (species == SPECIES_EGG)
     {
-        for (i = 0; i < gPlayerPartyCount; i++)
+        for (i = 0; i < gPartyCount[B_PLAYER]; i++)
         {
             species = GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES_OR_EGG);
             if (species == SPECIES_EGG)
@@ -4190,7 +4190,7 @@ static s32 IsRequestedTradeInPlayerParty(u32 type, u32 species)
     }
     else
     {
-        for (i = 0; i < gPlayerPartyCount; i++)
+        for (i = 0; i < gPartyCount[B_PLAYER]; i++)
         {
             species = GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES_OR_EGG);
             if (gSpeciesInfo[species].types[0] == type || gSpeciesInfo[species].types[1] == type)
@@ -4322,7 +4322,7 @@ static bool32 HasAtLeastTwoMonsOfLevel30OrLower(void)
     s32 i;
     s32 count = 0;
 
-    for (i = 0; i < gPlayerPartyCount; i++)
+    for (i = 0; i < gPartyCount[B_PLAYER]; i++)
     {
         if (GetMonData(&gParty[B_PLAYER][i], MON_DATA_LEVEL) <= UNION_ROOM_MAX_LEVEL
          && GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES_OR_EGG) != SPECIES_EGG)
@@ -4391,7 +4391,7 @@ static u32 GetPartyPositionOfRegisteredMon(struct UnionRoomTrade *trade, u8 mult
     }
 
     // Find party position by comparing to personality and species
-    for (i = 0; i < gPlayerPartyCount; i++)
+    for (i = 0; i < gPartyCount[B_PLAYER]; i++)
     {
         cur_personality = GetMonData(&gParty[B_PLAYER][i], MON_DATA_PERSONALITY);
         if (cur_personality != personality)

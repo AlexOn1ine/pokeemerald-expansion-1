@@ -439,7 +439,7 @@ void CB2_StartCreateTradeMenu(void)
 {
     SetMainCallback2(CB2_CreateTradeMenu);
     gMain.callback1 = NULL;
-    gEnemyPartyCount = 0;
+    gPartyCount[B_ENEMY] = 0;
 }
 
 static void CB2_CreateTradeMenu(void)
@@ -558,8 +558,8 @@ static void CB2_CreateTradeMenu(void)
         CalculateEnemyPartyCount();
         SetGpuReg(REG_OFFSET_DISPCNT, 0);
         SetGpuReg(REG_OFFSET_BLDCNT, 0);
-        sTradeMenu->partyCounts[TRADE_PLAYER] = gPlayerPartyCount;
-        sTradeMenu->partyCounts[TRADE_PARTNER] = gEnemyPartyCount;
+        sTradeMenu->partyCounts[TRADE_PLAYER] = gPartyCount[B_PLAYER];
+        sTradeMenu->partyCounts[TRADE_PARTNER] = gPartyCount[B_ENEMY];
 
         for (i = 0; i < sTradeMenu->partyCounts[TRADE_PLAYER]; i++)
         {
@@ -744,8 +744,8 @@ static void CB2_ReturnToTradeMenu(void)
         break;
     case 7:
         CalculateEnemyPartyCount();
-        sTradeMenu->partyCounts[TRADE_PLAYER] = gPlayerPartyCount;
-        sTradeMenu->partyCounts[TRADE_PARTNER] = gEnemyPartyCount;
+        sTradeMenu->partyCounts[TRADE_PLAYER] = gPartyCount[B_PLAYER];
+        sTradeMenu->partyCounts[TRADE_PARTNER] = gPartyCount[B_ENEMY];
         ClearWindowTilemap(0);
         PrintPartyNicknames(TRADE_PLAYER);
         PrintPartyNicknames(TRADE_PARTNER);
@@ -1509,7 +1509,7 @@ static void CB_ProcessSelectedMonInput(void)
         sTradeMenu->callbackId = CB_SHOW_MON_SUMMARY;
         break;
     case 1: // Trade
-        switch (CanTradeSelectedMon(gParty[B_PLAYER], gPlayerPartyCount, sTradeMenu->cursorPosition))
+        switch (CanTradeSelectedMon(gParty[B_PLAYER], gPartyCount[B_PLAYER], sTradeMenu->cursorPosition))
         {
         case CAN_TRADE_MON:
             SetReadyToTrade();
@@ -2573,7 +2573,7 @@ int CanSpinTradeMon(struct Pokemon *mon, u16 monIdx)
     int speciesArray[PARTY_SIZE];
 
     // Make Eggs not count for numMonsLeft
-    for (i = 0; i < gPlayerPartyCount; i++)
+    for (i = 0; i < gPartyCount[B_PLAYER]; i++)
     {
         speciesArray[i] = GetMonData(&mon[i], MON_DATA_SPECIES_OR_EGG);
         if (speciesArray[i] == SPECIES_EGG)
@@ -2617,7 +2617,7 @@ int CanSpinTradeMon(struct Pokemon *mon, u16 monIdx)
     }
 
     numMonsLeft = 0;
-    for (i = 0; i < gPlayerPartyCount; i++)
+    for (i = 0; i < gPartyCount[B_PLAYER]; i++)
     {
         if (monIdx != i)
             numMonsLeft += speciesArray[i];

@@ -35,7 +35,7 @@ static void HealPlayerBoxes(void);
 void HealPlayerParty(void)
 {
     u32 i;
-    for (i = 0; i < gPlayerPartyCount; i++)
+    for (i = 0; i < gPartyCount[B_PLAYER]; i++)
         HealPokemon(&gParty[B_PLAYER][i]);
     if (OW_PC_HEAL >= GEN_8)
         HealPlayerBoxes();
@@ -165,7 +165,7 @@ void ScriptSetMonMoveSlot(u8 monIndex, u16 move, u8 slot)
 #else
     if (monIndex > PARTY_SIZE)
 #endif
-        monIndex = gPlayerPartyCount - 1;
+        monIndex = gPartyCount[B_PLAYER] - 1;
 
     SetMonMoveSlot(&gParty[B_PLAYER][monIndex], move, slot);
 }
@@ -454,7 +454,7 @@ static u32 ScriptGiveMonParameterized(u8 side, u8 slot, u16 species, u8 level, u
         {
             sentToPc = MON_GIVEN_TO_PARTY;
             CopyMon(&gParty[B_PLAYER][i], &mon, sizeof(mon));
-            gPlayerPartyCount = i + 1;
+            gPartyCount[B_PLAYER] = i + 1;
         }
     }
 

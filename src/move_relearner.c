@@ -666,7 +666,7 @@ static void DoMoveRelearnerMain(void)
     case MENU_STATE_SHOW_MOVE_SUMMARY_SCREEN:
         if (!gPaletteFade.active)
         {
-            ShowSelectMovePokemonSummaryScreen(gParty[B_PLAYER], sMoveRelearnerStruct->partyMon, gPlayerPartyCount - 1, CB2_InitLearnMoveReturnFromSelectMove, GetCurrentSelectedMove());
+            ShowSelectMovePokemonSummaryScreen(gParty[B_PLAYER], sMoveRelearnerStruct->partyMon, gPartyCount[B_PLAYER] - 1, CB2_InitLearnMoveReturnFromSelectMove, GetCurrentSelectedMove());
             FreeMoveRelearnerResources();
         }
         break;
@@ -691,13 +691,13 @@ static void DoMoveRelearnerMain(void)
                 switch (gOriginSummaryScreenPage)
                 {
                 case PSS_PAGE_BATTLE_MOVES:
-                    ShowPokemonSummaryScreen(SUMMARY_MODE_RELEARNER_BATTLE, gParty[B_PLAYER], sMoveRelearnerStruct->partyMon, gPlayerPartyCount - 1, gInitialSummaryScreenCallback);
+                    ShowPokemonSummaryScreen(SUMMARY_MODE_RELEARNER_BATTLE, gParty[B_PLAYER], sMoveRelearnerStruct->partyMon, gPartyCount[B_PLAYER] - 1, gInitialSummaryScreenCallback);
                     break;
                 case PSS_PAGE_CONTEST_MOVES:
-                    ShowPokemonSummaryScreen(SUMMARY_MODE_RELEARNER_CONTEST, gParty[B_PLAYER], sMoveRelearnerStruct->partyMon, gPlayerPartyCount - 1, gInitialSummaryScreenCallback);
+                    ShowPokemonSummaryScreen(SUMMARY_MODE_RELEARNER_CONTEST, gParty[B_PLAYER], sMoveRelearnerStruct->partyMon, gPartyCount[B_PLAYER] - 1, gInitialSummaryScreenCallback);
                     break;
                 default:
-                    ShowPokemonSummaryScreen(SUMMARY_MODE_NORMAL, gParty[B_PLAYER], sMoveRelearnerStruct->partyMon, gPlayerPartyCount - 1, gInitialSummaryScreenCallback);
+                    ShowPokemonSummaryScreen(SUMMARY_MODE_NORMAL, gParty[B_PLAYER], sMoveRelearnerStruct->partyMon, gPartyCount[B_PLAYER] - 1, gInitialSummaryScreenCallback);
                     break;
                 }
                 gOriginSummaryScreenPage = 0;

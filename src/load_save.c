@@ -174,7 +174,7 @@ void SavePlayerParty(void)
 {
     int i;
 
-    gSaveBlock1Ptr->playerPartyCount = gPlayerPartyCount;
+    gSaveBlock1Ptr->playerPartyCount = gPartyCount[B_PLAYER];
 
     for (i = 0; i < PARTY_SIZE; i++)
         gSaveBlock1Ptr->playerParty[i] = gParty[B_PLAYER][i];
@@ -184,7 +184,7 @@ void LoadPlayerParty(void)
 {
     int i;
 
-    gPlayerPartyCount = gSaveBlock1Ptr->playerPartyCount;
+    gPartyCount[B_PLAYER] = gSaveBlock1Ptr->playerPartyCount;
 
     for (i = 0; i < PARTY_SIZE; i++)
     {

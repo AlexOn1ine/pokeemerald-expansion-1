@@ -4746,7 +4746,7 @@ static inline void ShowUtilityPrompt(s16 mode)
 static void CB2_ReturnToSummaryScreenFromNamingScreen(void)
 {
     SetMonData(&gParty[B_PLAYER][gSpecialVar_0x8004], MON_DATA_NICKNAME, gStringVar2);
-    ShowPokemonSummaryScreen(SUMMARY_MODE_NORMAL, gParty[B_PLAYER], gSpecialVar_0x8004, gPlayerPartyCount - 1, gInitialSummaryScreenCallback);
+    ShowPokemonSummaryScreen(SUMMARY_MODE_NORMAL, gParty[B_PLAYER], gSpecialVar_0x8004, gPartyCount[B_PLAYER] - 1, gInitialSummaryScreenCallback);
 }
 
 static void CB2_PssChangePokemonNickname(void)

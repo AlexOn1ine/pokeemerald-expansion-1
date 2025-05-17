@@ -97,7 +97,7 @@ bool8 CheckRelicanthWailord(void)
     {
         CalculatePlayerPartyCount();
         // Last comes Relicanth
-        if (GetMonData(&gParty[B_PLAYER][gPlayerPartyCount - 1], MON_DATA_SPECIES_OR_EGG, 0) == SPECIES_RELICANTH)
+        if (GetMonData(&gParty[B_PLAYER][gPartyCount[B_PLAYER] - 1], MON_DATA_SPECIES_OR_EGG, 0) == SPECIES_RELICANTH)
             return TRUE;
     }
     return FALSE;
