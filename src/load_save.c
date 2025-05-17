@@ -177,7 +177,7 @@ void SavePlayerParty(void)
     gSaveBlock1Ptr->playerPartyCount = gPlayerPartyCount;
 
     for (i = 0; i < PARTY_SIZE; i++)
-        gSaveBlock1Ptr->playerParty[i] = gPlayerParty[i];
+        gSaveBlock1Ptr->playerParty[i] = gParty[B_PLAYER][i];
 }
 
 void LoadPlayerParty(void)
@@ -189,14 +189,14 @@ void LoadPlayerParty(void)
     for (i = 0; i < PARTY_SIZE; i++)
     {
         u32 data;
-        gPlayerParty[i] = gSaveBlock1Ptr->playerParty[i];
+        gParty[B_PLAYER][i] = gSaveBlock1Ptr->playerParty[i];
 
         // TODO: Turn this into a save migration once those are available.
         // At which point we can remove hp and status from Pokemon entirely.
-        data = gPlayerParty[i].maxHP - gPlayerParty[i].hp;
-        SetBoxMonData(&gPlayerParty[i].box, MON_DATA_HP_LOST, &data);
-        data = gPlayerParty[i].status;
-        SetBoxMonData(&gPlayerParty[i].box, MON_DATA_STATUS, &data);
+        data = gParty[B_PLAYER][i].maxHP - gParty[B_PLAYER][i].hp;
+        SetBoxMonData(&gParty[B_PLAYER][i].box, MON_DATA_HP_LOST, &data);
+        data = gParty[B_PLAYER][i].status;
+        SetBoxMonData(&gParty[B_PLAYER][i].box, MON_DATA_STATUS, &data);
     }
 }
 

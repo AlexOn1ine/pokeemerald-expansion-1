@@ -118,7 +118,7 @@ void HandleIntroSlide(u8 environment)
     {
         taskId = CreateTask(BattleIntroSlide3, 0);
     }
-    else if (GetMonData(&gEnemyParty[0], MON_DATA_SPECIES, NULL) == SPECIES_KYOGRE)
+    else if (GetMonData(&gParty[B_ENEMY][0], MON_DATA_SPECIES, NULL) == SPECIES_KYOGRE)
     {
         environment = BATTLE_ENVIRONMENT_UNDERWATER;
         taskId = CreateTask(BattleIntroSlide2, 0);

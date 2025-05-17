@@ -91,7 +91,7 @@ WILD_BATTLE_TEST("Embargo doesn't block held item effects that affect effort val
         MESSAGE("The wild Caterpie fainted!");
     } THEN {
         finalHPEVAmount = (GetMonData(&PLAYER_PARTY[0], MON_DATA_HP_EV) + gItemsInfo[ITEM_POWER_WEIGHT].holdEffectParam + gSpeciesInfo[SPECIES_CATERPIE].evYield_HP);
-        EXPECT_EQ(GetMonData(&gPlayerParty[0], MON_DATA_HP_EV), finalHPEVAmount);
+        EXPECT_EQ(GetMonData(&gParty[B_PLAYER][0], MON_DATA_HP_EV), finalHPEVAmount);
     }
 }
 
@@ -132,7 +132,7 @@ WILD_BATTLE_TEST("Embargo doesn't block held item effects that affect friendship
         MESSAGE("Wild Wobbuffet fell asleep!");
     } THEN {
         initialFriendship = GetMonData(&PLAYER_PARTY[0], MON_DATA_FRIENDSHIP);
-        finalFriendship = GetMonData(&gPlayerParty[0], MON_DATA_FRIENDSHIP);
+        finalFriendship = GetMonData(&gParty[B_PLAYER][0], MON_DATA_FRIENDSHIP);
         EXPECT_EQ(finalFriendship, initialFriendship + 2);
     }
 }

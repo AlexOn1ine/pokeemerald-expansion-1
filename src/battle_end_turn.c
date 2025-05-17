@@ -391,9 +391,9 @@ static bool32 HandleEndTurnWish(u32 battler)
         if (B_WISH_HP_SOURCE >= GEN_5)
         {
             if (IsOnPlayerSide(battler))
-                gBattleStruct->moveDamage[battler] = max(1, GetMonData(&gPlayerParty[gWishFutureKnock.wishPartyId[battler]], MON_DATA_MAX_HP) / 2);
+                gBattleStruct->moveDamage[battler] = max(1, GetMonData(&gParty[B_PLAYER][gWishFutureKnock.wishPartyId[battler]], MON_DATA_MAX_HP) / 2);
             else
-                gBattleStruct->moveDamage[battler] = max(1, GetMonData(&gEnemyParty[gWishFutureKnock.wishPartyId[battler]], MON_DATA_MAX_HP) / 2);
+                gBattleStruct->moveDamage[battler] = max(1, GetMonData(&gParty[B_ENEMY][gWishFutureKnock.wishPartyId[battler]], MON_DATA_MAX_HP) / 2);
         }
         else
         {

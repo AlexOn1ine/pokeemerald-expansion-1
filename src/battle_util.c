@@ -2568,7 +2568,7 @@ bool32 HasNoMonsToSwitch(u32 battler, u8 partyIdBattlerOn1, u8 partyIdBattlerOn2
     {
         flankId = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
         playerId = GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT);
-        party = gEnemyParty;
+        party = gParty[B_ENEMY];
 
         // Edge case: If both opposing Pokemon were knocked out on the same turn,
         // make sure opponent only sends out the final Pokemon once.
@@ -2638,13 +2638,13 @@ bool32 HasNoMonsToSwitch(u32 battler, u8 partyIdBattlerOn1, u8 partyIdBattlerOn2
         {
             if (isPlayerside)
             {
-                party = gPlayerParty;
+                party = gParty[B_PLAYER];
                 flankId = GetBattlerMultiplayerId(battler);
                 playerId = GetLinkTrainerFlankId(flankId);
             }
             else
             {
-                party = gEnemyParty;
+                party = gParty[B_ENEMY];
                 if (battler == 1)
                     playerId = 0;
                 else
@@ -2667,7 +2667,7 @@ bool32 HasNoMonsToSwitch(u32 battler, u8 partyIdBattlerOn1, u8 partyIdBattlerOn2
     }
     else if ((gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS) && !isPlayerside)
     {
-        party = gEnemyParty;
+        party = gParty[B_ENEMY];
 
         if (battler == 1)
             playerId = 0;
@@ -2687,13 +2687,13 @@ bool32 HasNoMonsToSwitch(u32 battler, u8 partyIdBattlerOn1, u8 partyIdBattlerOn2
         {
             flankId = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
             playerId = GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT);
-            party = gEnemyParty;
+            party = gParty[B_ENEMY];
         }
         else
         {
             flankId = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
             playerId = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
-            party = gPlayerParty;
+            party = gParty[B_PLAYER];
         }
 
         if (partyIdBattlerOn1 == PARTY_SIZE)
@@ -10616,12 +10616,12 @@ void TryRestoreHeldItems(void)
             u16 lostItem = gBattleStruct->itemLost[B_SIDE_PLAYER][i].originalItem;
 
             // Check if the lost item is a berry and the mon is not holding it
-            if (ItemId_GetPocket(lostItem) == POCKET_BERRIES && GetMonData(&gPlayerParty[i], MON_DATA_HELD_ITEM) != lostItem)
+            if (ItemId_GetPocket(lostItem) == POCKET_BERRIES && GetMonData(&gParty[B_PLAYER][i], MON_DATA_HELD_ITEM) != lostItem)
                 lostItem = ITEM_NONE;
 
             // Check if the lost item should be restored
             if ((lostItem != ITEM_NONE || returnNPCItems) && ItemId_GetPocket(lostItem) != POCKET_BERRIES)
-                SetMonData(&gPlayerParty[i], MON_DATA_HELD_ITEM, &lostItem);
+                SetMonData(&gParty[B_PLAYER][i], MON_DATA_HELD_ITEM, &lostItem);
         }
     }
 }

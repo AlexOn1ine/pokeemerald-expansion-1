@@ -672,7 +672,7 @@ void StartDodrioBerryPicking(u16 partyId, void (*exitCallback)(void))
         sGame->exitCallback = exitCallback;
         sGame->multiplayerId = GetMultiplayerId();
         sGame->player = sGame->players[sGame->multiplayerId];
-        InitMonInfo(&sGame->monInfo[sGame->multiplayerId], &gPlayerParty[partyId]);
+        InitMonInfo(&sGame->monInfo[sGame->multiplayerId], &gParty[B_PLAYER][partyId]);
         CreateTask(Task_StartDodrioGame, 1);
         SetMainCallback2(CB2_DodrioGame);
         SetRandomPrize();
@@ -2911,8 +2911,8 @@ void IsDodrioInParty(void)
     int i;
     for (i = 0; i < PARTY_SIZE; i++)
     {
-        if (GetMonData(&gPlayerParty[i], MON_DATA_SANITY_HAS_SPECIES)
-            && GetMonData(&gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) == SPECIES_DODRIO)
+        if (GetMonData(&gParty[B_PLAYER][i], MON_DATA_SANITY_HAS_SPECIES)
+            && GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES_OR_EGG) == SPECIES_DODRIO)
         {
             gSpecialVar_Result = TRUE;
             return;

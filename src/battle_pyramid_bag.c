@@ -1422,7 +1422,7 @@ static void CancelItemSwap(u8 taskId)
 void TryStoreHeldItemsInPyramidBag(void)
 {
     u8 i;
-    struct Pokemon *party = gPlayerParty;
+    struct Pokemon *party = gParty[B_PLAYER];
     u16 *newItems = Alloc(PYRAMID_BAG_ITEMS_COUNT * sizeof(*newItems));
 #if MAX_PYRAMID_BAG_ITEM_CAPACITY > 255
     u16 *newQuantities = Alloc(PYRAMID_BAG_ITEMS_COUNT * sizeof(*newQuantities));

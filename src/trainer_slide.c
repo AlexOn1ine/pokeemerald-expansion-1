@@ -97,10 +97,10 @@ static u32 GetEnemyMonCount(u32 firstId, u32 lastId, bool32 onlyAlive)
 
     for (i = firstId; i < lastId; i++)
     {
-        u32 species = GetMonData(&gEnemyParty[i], MON_DATA_SPECIES_OR_EGG, NULL);
+        u32 species = GetMonData(&gParty[B_ENEMY][i], MON_DATA_SPECIES_OR_EGG, NULL);
         if (species != SPECIES_NONE
                 && species != SPECIES_EGG
-                && (!onlyAlive || GetMonData(&gEnemyParty[i], MON_DATA_HP, NULL)))
+                && (!onlyAlive || GetMonData(&gParty[B_ENEMY][i], MON_DATA_HP, NULL)))
             count++;
     }
 

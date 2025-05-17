@@ -1418,7 +1418,7 @@ DOUBLE_BATTLE_TEST("Dynamax: G-Max Sweetness cures allies' status conditions")
         STATUS_ICON(playerRight, none: TRUE);
     } THEN {
         for (j = 0; j < PARTY_SIZE; j++)
-            EXPECT_EQ(GetMonData(&gPlayerParty[0], MON_DATA_STATUS), STATUS1_NONE);
+            EXPECT_EQ(GetMonData(&gParty[B_PLAYER][0], MON_DATA_STATUS), STATUS1_NONE);
     }
 }
 

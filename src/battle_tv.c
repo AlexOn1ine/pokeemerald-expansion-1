@@ -664,9 +664,9 @@ void TryPutLinkBattleTvShowOnAir(void)
     movePoints = &gBattleStruct->tvMovePoints;
     for (i = 0; i < PARTY_SIZE; i++)
     {
-        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL) != SPECIES_NONE)
+        if (GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES, NULL) != SPECIES_NONE)
             countPlayer++;
-        if (GetMonData(&gEnemyParty[i], MON_DATA_SPECIES, NULL) != SPECIES_NONE)
+        if (GetMonData(&gParty[B_ENEMY][i], MON_DATA_SPECIES, NULL) != SPECIES_NONE)
             countOpponent++;
     }
 
@@ -675,8 +675,8 @@ void TryPutLinkBattleTvShowOnAir(void)
 
     for (i = 0; i < PARTY_SIZE; i++)
     {
-        species = GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL);
-        if (species != SPECIES_NONE && !GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG, NULL))
+        species = GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES, NULL);
+        if (species != SPECIES_NONE && !GetMonData(&gParty[B_PLAYER][i], MON_DATA_IS_EGG, NULL))
         {
             for (sum = 0, j = 0; j < MAX_MON_MOVES; j++)
                 sum += movePoints->points[zero][i * 4 + j];
@@ -689,15 +689,15 @@ void TryPutLinkBattleTvShowOnAir(void)
             }
         }
 
-        species = GetMonData(&gEnemyParty[i], MON_DATA_SPECIES, NULL);
-        if (species != SPECIES_NONE && !GetMonData(&gEnemyParty[i], MON_DATA_IS_EGG, NULL))
+        species = GetMonData(&gParty[B_ENEMY][i], MON_DATA_SPECIES, NULL);
+        if (species != SPECIES_NONE && !GetMonData(&gParty[B_ENEMY][i], MON_DATA_IS_EGG, NULL))
         {
             for (sum = 0, j = 0; j < MAX_MON_MOVES; j++)
                 sum += movePoints->points[one][i * 4 + j];
 
             if (opponentBestSum == sum)
             {
-                if (GetMonData(&gEnemyParty[i], MON_DATA_EXP, NULL) > GetMonData(&gEnemyParty[opponentBestMonId], MON_DATA_EXP, NULL))
+                if (GetMonData(&gParty[B_ENEMY][i], MON_DATA_EXP, NULL) > GetMonData(&gParty[B_ENEMY][opponentBestMonId], MON_DATA_EXP, NULL))
                 {
                     opponentBestMonId = i;
                     opponentBestSum = sum;
@@ -722,7 +722,7 @@ void TryPutLinkBattleTvShowOnAir(void)
         }
     }
 
-    move = GetMonData(&gPlayerParty[playerBestMonId], MON_DATA_MOVE1 + i, NULL);
+    move = GetMonData(&gParty[B_PLAYER][playerBestMonId], MON_DATA_MOVE1 + i, NULL);
     if (playerBestSum == 0 || move == MOVE_NONE)
         return;
 

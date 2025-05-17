@@ -84,9 +84,9 @@ void SetUpBattleVarsAndBirchZigzagoon(void)
     if (gBattleTypeFlags & BATTLE_TYPE_FIRST_BATTLE)
     {
         ZeroEnemyPartyMons();
-        CreateMon(&gEnemyParty[0], SPECIES_ZIGZAGOON, 2, USE_RANDOM_IVS, 0, 0, OT_ID_PLAYER_ID, 0);
+        CreateMon(&gParty[B_ENEMY][0], SPECIES_ZIGZAGOON, 2, USE_RANDOM_IVS, 0, 0, OT_ID_PLAYER_ID, 0);
         i = 0;
-        SetMonData(&gEnemyParty[0], MON_DATA_HELD_ITEM, &i);
+        SetMonData(&gParty[B_ENEMY][0], MON_DATA_HELD_ITEM, &i);
     }
 }
 
@@ -634,7 +634,7 @@ static void SetBattlePartyIds(void)
                 {
                     if (IsOnPlayerSide(i))
                     {
-                        if (IsValidForBattle(&gPlayerParty[j]))
+                        if (IsValidForBattle(&gParty[B_PLAYER][j]))
                         {
                             gBattlerPartyIndexes[i] = j;
                             break;
@@ -642,7 +642,7 @@ static void SetBattlePartyIds(void)
                     }
                     else
                     {
-                        if (IsValidForBattle(&gEnemyParty[j]))
+                        if (IsValidForBattle(&gParty[B_ENEMY][j]))
                         {
                             gBattlerPartyIndexes[i] = j;
                             break;
@@ -653,7 +653,7 @@ static void SetBattlePartyIds(void)
                 {
                     if (IsOnPlayerSide(i))
                     {
-                        if (IsValidForBattle(&gPlayerParty[j]) && gBattlerPartyIndexes[i - 2] != j)
+                        if (IsValidForBattle(&gParty[B_PLAYER][j]) && gBattlerPartyIndexes[i - 2] != j)
                         {
                             gBattlerPartyIndexes[i] = j;
                             break;
@@ -661,7 +661,7 @@ static void SetBattlePartyIds(void)
                     }
                     else
                     {
-                        if (IsValidForBattle(&gEnemyParty[j]) && gBattlerPartyIndexes[i - 2] != j)
+                        if (IsValidForBattle(&gParty[B_ENEMY][j]) && gBattlerPartyIndexes[i - 2] != j)
                         {
                             gBattlerPartyIndexes[i] = j;
                             break;
@@ -2859,12 +2859,12 @@ void BtlController_HandleFaintingCry(u32 battler)
 
     if (IsOnPlayerSide(battler))
     {
-        party = gPlayerParty;
+        party = gParty[B_PLAYER];
         pan = -25;
     }
     else
     {
-        party = gEnemyParty;
+        party = gParty[B_ENEMY];
         pan = 25;
     }
 
@@ -3158,7 +3158,7 @@ bool32 TryShinyAnimAfterMonAnimUtil(u32 battler)
     if (gSprites[gBattlerSpriteIds[battler]].callback != SpriteCallbackDummy
      || gSprites[gBattlerSpriteIds[battler]].x2 != 0)
         return FALSE;
-    
+
     if (!gBattleSpritesDataPtr->healthBoxesData[battler].triedShinyMonAnim)
     {
         TryShinyAnimation(battler, GetBattlerMon(battler));
@@ -3200,7 +3200,7 @@ bool32 SwitchIn_HandleSoundAndEndUtil(u32 battler)
 {
     if (gBattleSpritesDataPtr->healthBoxesData[battler].specialAnimActive || IsCryPlayingOrClearCrySongs())
         return FALSE;
-    
+
     if (gSprites[gBattlerSpriteIds[battler]].callback != SpriteCallbackDummy
      && gSprites[gBattlerSpriteIds[battler]].callback != SpriteCallbackDummy_2
      && GetBattlerSide(battler) == B_SIDE_OPPONENT)

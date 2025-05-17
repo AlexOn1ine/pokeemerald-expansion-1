@@ -922,7 +922,7 @@ static bool8 TryInflictRandomStatus(void)
             j = 0;
             for (i = 0; i < FRONTIER_PARTY_SIZE; i++)
             {
-                mon = &gPlayerParty[indices[i]];
+                mon = &gParty[B_PLAYER][indices[i]];
                 if (GetAilmentFromStatus(GetMonData(mon, MON_DATA_STATUS)) == AILMENT_NONE
                     && GetMonData(mon, MON_DATA_HP) != 0)
                 {
@@ -965,7 +965,7 @@ static bool8 TryInflictRandomStatus(void)
     j = 0;
     for (i = 0; i < FRONTIER_PARTY_SIZE; i++)
     {
-        mon = &gPlayerParty[indices[i]];
+        mon = &gParty[B_PLAYER][indices[i]];
         if (GetAilmentFromStatus(GetMonData(mon, MON_DATA_STATUS)) == AILMENT_NONE
             && GetMonData(mon, MON_DATA_HP) != 0)
         {
@@ -997,7 +997,7 @@ static bool8 AtLeastOneHealthyMon(void)
     healthyMonsCount = 0;
     for (i = 0; i < FRONTIER_PARTY_SIZE; i++)
     {
-        struct Pokemon *mon = &gPlayerParty[i];
+        struct Pokemon *mon = &gParty[B_PLAYER][i];
         if (GetAilmentFromStatus(GetMonData(mon, MON_DATA_STATUS)) == AILMENT_NONE
             && GetMonData(mon, MON_DATA_HP) != 0)
         {
@@ -1112,7 +1112,7 @@ bool32 TryGenerateBattlePikeWildMon(bool8 checkKeenEyeIntimidate)
     u32 lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
     const struct PikeWildMon *const *const wildMons = sWildMons[lvlMode];
     u32 abilityNum;
-    s32 pikeMonId = GetMonData(&gEnemyParty[0], MON_DATA_SPECIES, NULL);
+    s32 pikeMonId = GetMonData(&gParty[B_ENEMY][0], MON_DATA_SPECIES, NULL);
     pikeMonId = SpeciesToPikeMonId(pikeMonId);
 
     if (gSaveBlock2Ptr->frontier.lvlMode != FRONTIER_LVL_50)
@@ -1137,7 +1137,7 @@ bool32 TryGenerateBattlePikeWildMon(bool8 checkKeenEyeIntimidate)
     if (checkKeenEyeIntimidate == TRUE && !CanEncounterWildMon(monLevel))
         return FALSE;
 
-    SetMonData(&gEnemyParty[0],
+    SetMonData(&gParty[B_ENEMY][0],
                MON_DATA_EXP,
                &gExperienceTables[gSpeciesInfo[wildMons[headerId][pikeMonId].species].growthRate][monLevel]);
 
@@ -1145,11 +1145,11 @@ bool32 TryGenerateBattlePikeWildMon(bool8 checkKeenEyeIntimidate)
         abilityNum = Random() % 2;
     else
         abilityNum = 0;
-    SetMonData(&gEnemyParty[0], MON_DATA_ABILITY_NUM, &abilityNum);
+    SetMonData(&gParty[B_ENEMY][0], MON_DATA_ABILITY_NUM, &abilityNum);
     for (i = 0; i < MAX_MON_MOVES; i++)
-        SetMonMoveSlot(&gEnemyParty[0], wildMons[headerId][pikeMonId].moves[i], i);
+        SetMonMoveSlot(&gParty[B_ENEMY][0], wildMons[headerId][pikeMonId].moves[i], i);
 
-    CalculateMonStats(&gEnemyParty[0]);
+    CalculateMonStats(&gParty[B_ENEMY][0]);
     return TRUE;
 }
 
@@ -1276,7 +1276,7 @@ static void TryHealMons(u8 healCount)
     for (i = 0; i < FRONTIER_PARTY_SIZE; i++)
     {
         bool32 canBeHealed = FALSE;
-        struct Pokemon *mon = &gPlayerParty[indices[i]];
+        struct Pokemon *mon = &gParty[B_PLAYER][indices[i]];
         u16 curr = GetMonData(mon, MON_DATA_HP);
         u16 max = GetMonData(mon, MON_DATA_MAX_HP);
         if (curr < max)
@@ -1305,7 +1305,7 @@ static void TryHealMons(u8 healCount)
 
         if (canBeHealed == TRUE)
         {
-            HealMon(&gPlayerParty[indices[i]]);
+            HealMon(&gParty[B_PLAYER][indices[i]]);
             if (--healCount == 0)
                 break;
         }
@@ -1478,7 +1478,7 @@ static bool8 AtLeastTwoAliveMons(void)
     struct Pokemon *mon;
     u8 i, countDead;
 
-    mon = &gPlayerParty[0];
+    mon = &gParty[B_PLAYER][0];
     countDead = 0;
     for (i = 0; i < FRONTIER_PARTY_SIZE; i++, mon++)
     {
@@ -1550,7 +1550,7 @@ static void IsPartyFullHealed(void)
     for (i = 0; i < FRONTIER_PARTY_SIZE; i++)
     {
         bool32 canBeHealed = FALSE;
-        struct Pokemon *mon = &gPlayerParty[i];
+        struct Pokemon *mon = &gParty[B_PLAYER][i];
         u16 curr = GetMonData(mon, MON_DATA_HP);
         u16 max = GetMonData(mon, MON_DATA_MAX_HP);
         if (curr >= max && GetAilmentFromStatus(GetMonData(mon, MON_DATA_STATUS)) == AILMENT_NONE)
@@ -1599,7 +1599,7 @@ static void RestoreMonHeldItems(void)
 
     for (i = 0; i < FRONTIER_PARTY_SIZE; i++)
     {
-        SetMonData(&gPlayerParty[gSaveBlock2Ptr->frontier.selectedPartyMons[i] - 1],
+        SetMonData(&gParty[B_PLAYER][gSaveBlock2Ptr->frontier.selectedPartyMons[i] - 1],
                    MON_DATA_HELD_ITEM,
                    &gSaveBlock2Ptr->frontier.pikeHeldItemsBackup[i]);
     }
@@ -1621,12 +1621,12 @@ static void InitPikeChallenge(void)
 
 static bool8 CanEncounterWildMon(u8 enemyMonLevel)
 {
-    if (!GetMonData(&gPlayerParty[0], MON_DATA_SANITY_IS_EGG))
+    if (!GetMonData(&gParty[B_PLAYER][0], MON_DATA_SANITY_IS_EGG))
     {
-        u16 monAbility = GetMonAbility(&gPlayerParty[0]);
+        u16 monAbility = GetMonAbility(&gParty[B_PLAYER][0]);
         if (monAbility == ABILITY_KEEN_EYE || monAbility == ABILITY_INTIMIDATE)
         {
-            u8 playerMonLevel = GetMonData(&gPlayerParty[0], MON_DATA_LEVEL);
+            u8 playerMonLevel = GetMonData(&gParty[B_PLAYER][0], MON_DATA_LEVEL);
             if (playerMonLevel > 5 && enemyMonLevel <= playerMonLevel - 5 && Random() % 2 == 0)
                 return FALSE;
         }

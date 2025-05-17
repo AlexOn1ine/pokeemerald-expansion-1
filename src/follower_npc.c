@@ -137,7 +137,7 @@ const u8 *GetFollowerNPCScriptPointer(void)
 #if FNPC_ENABLE_NPC_FOLLOWERS
     if (PlayerHasFollowerNPC())
         return gSaveBlock3Ptr->NPCfollower.script;
-        
+
 #endif
     return NULL;
 }
@@ -293,7 +293,7 @@ static u32 GetFollowerNPCSprite(void)
 
 static bool32 IsStateMovement(u32 state)
 {
-    switch (state) 
+    switch (state)
     {
     case MOVEMENT_ACTION_FACE_DOWN:
     case MOVEMENT_ACTION_FACE_UP:
@@ -409,7 +409,7 @@ static void SetSurfJump(void)
     SetUpSurfBlobFieldEffect(follower);
 
     // Adjust surf head spawn location infront of follower.
-    switch (direction) 
+    switch (direction)
     {
     case DIR_SOUTH:
         gFieldEffectArguments[1]++; // effect_y
@@ -735,7 +735,7 @@ u32 DetermineFollowerNPCState(struct ObjectEvent *follower, u32 state, u32 direc
             follower->facingDirectionLocked = TRUE;
 
         newState = delayedState + (direction -1);
-    }    
+    }
 
     // Clear ice tile stuff.
     follower->disableAnim = FALSE;
@@ -755,7 +755,7 @@ u32 DetermineFollowerNPCState(struct ObjectEvent *follower, u32 state, u32 direc
         break;
     }
 
-    switch (state) 
+    switch (state)
     {
     case MOVEMENT_ACTION_WALK_SLOW_DOWN ... MOVEMENT_ACTION_WALK_SLOW_RIGHT:
         // Slow walk.
@@ -986,9 +986,9 @@ static void ChooseFirstThreeEligibleMons(void)
 
     for (i = 0; i < PARTY_SIZE; i++)
     {
-        if (GetMonData(&gPlayerParty[i], MON_DATA_HP) != 0
-         && GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG) == FALSE
-         && GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) != SPECIES_NONE)
+        if (GetMonData(&gParty[B_PLAYER][i], MON_DATA_HP) != 0
+         && GetMonData(&gParty[B_PLAYER][i], MON_DATA_IS_EGG) == FALSE
+         && GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES) != SPECIES_NONE)
         {
             gSelectedOrderFromParty[count] = (i + 1);
             count++;
@@ -1102,7 +1102,7 @@ void NPCFollow(struct ObjectEvent *npc, u32 state, bool32 ignoreScriptActive)
     ObjectEventSetHeldMovement(follower, newState);
     PlayerLogCoordinates(player);
 
-    switch (newState) 
+    switch (newState)
     {
     case MOVEMENT_ACTION_JUMP_2_DOWN ... MOVEMENT_ACTION_JUMP_2_RIGHT:
     case MOVEMENT_ACTION_JUMP_DOWN ... MOVEMENT_ACTION_JUMP_RIGHT:
@@ -1543,7 +1543,7 @@ void Task_MoveNPCFollowerAfterForcedMovement(u8 taskId)
         // Lock follower facing direction for muddy slope.
         if (follower->currentMetatileBehavior == MB_MUDDY_SLOPE)
             follower->facingDirectionLocked = TRUE;
-            
+
         if (TryDoMetatileBehaviorForcedMovement() == 0)
             gTasks[taskId].tState = NPC_INTO_PLAYER;
 
@@ -1576,7 +1576,7 @@ void Task_MoveNPCFollowerAfterForcedMovement(u8 taskId)
 void Task_HideNPCFollowerAfterMovementFinish(u8 taskId)
 {
     struct ObjectEvent *npcFollower = &gObjectEvents[GetFollowerNPCObjectId()];
-    
+
     if (ObjectEventClearHeldMovementIfFinished(npcFollower) != 0)
     {
         HideNPCFollower();
@@ -1624,7 +1624,7 @@ void ScriptFaceFollowerNPC(struct ScriptContext *ctx)
         followerDirection = playerDirection;
 
         //Flip direction.
-        switch (playerDirection) 
+        switch (playerDirection)
         {
         case DIR_NORTH:
             playerDirection = DIR_SOUTH;
@@ -1645,7 +1645,7 @@ void ScriptFaceFollowerNPC(struct ScriptContext *ctx)
     }
 }
 
-static const u8 *const FollowerNPCHideMovementsSpeedTable[][4] = 
+static const u8 *const FollowerNPCHideMovementsSpeedTable[][4] =
 {
     [DIR_SOUTH] = {Common_Movement_WalkDownSlow, Common_Movement_WalkDown, Common_Movement_WalkDownFast, Common_Movement_WalkDownFaster},
     [DIR_NORTH] = {Common_Movement_WalkUpSlow, Common_Movement_WalkUp, Common_Movement_WalkUpFast, Common_Movement_WalkUpFaster},

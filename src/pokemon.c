@@ -86,8 +86,9 @@ void TrySpecialOverworldEvo();
 EWRAM_DATA static u8 sLearningMoveTableID = 0;
 EWRAM_DATA u8 gPlayerPartyCount = 0;
 EWRAM_DATA u8 gEnemyPartyCount = 0;
-EWRAM_DATA struct Pokemon gPlayerParty[PARTY_SIZE] = {0};
-EWRAM_DATA struct Pokemon gEnemyParty[PARTY_SIZE] = {0};
+
+EWRAM_DATA struct Pokemon gParty[NUM_TRAINERS][PARTY_SIZE] = {0};
+
 EWRAM_DATA struct SpriteTemplate gMultiuseSpriteTemplate = {0};
 EWRAM_DATA static struct MonSpritesGfxManager *sMonSpritesGfxManagers[MON_SPR_GFX_MANAGERS_COUNT] = {NULL};
 EWRAM_DATA static u8 sTriedEvolving = 0;
@@ -1086,14 +1087,14 @@ void ZeroPlayerPartyMons(void)
 {
     s32 i;
     for (i = 0; i < PARTY_SIZE; i++)
-        ZeroMonData(&gPlayerParty[i]);
+        ZeroMonData(&gParty[B_PLAYER][i]);
 }
 
 void ZeroEnemyPartyMons(void)
 {
     s32 i;
     for (i = 0; i < PARTY_SIZE; i++)
-        ZeroMonData(&gEnemyParty[i]);
+        ZeroMonData(&gParty[B_ENEMY][i]);
 }
 
 void CreateMon(struct Pokemon *mon, u16 species, u8 level, u8 fixedIV, u8 hasFixedPersonality, u32 fixedPersonality, u8 otIdType, u32 fixedOtId)
@@ -1717,13 +1718,13 @@ void CreateEnemyEventMon(void)
     s32 itemId = gSpecialVar_0x8006;
 
     ZeroEnemyPartyMons();
-    CreateEventMon(&gEnemyParty[0], species, level, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
+    CreateEventMon(&gParty[B_ENEMY][0], species, level, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
     if (itemId)
     {
         u8 heldItem[2];
         heldItem[0] = itemId;
         heldItem[1] = itemId >> 8;
-        SetMonData(&gEnemyParty[0], MON_DATA_HELD_ITEM, heldItem);
+        SetMonData(&gParty[B_ENEMY][0], MON_DATA_HELD_ITEM, heldItem);
     }
 }
 
@@ -3341,14 +3342,14 @@ u8 GiveMonToPlayer(struct Pokemon *mon)
 
     for (i = 0; i < PARTY_SIZE; i++)
     {
-        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL) == SPECIES_NONE)
+        if (GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES, NULL) == SPECIES_NONE)
             break;
     }
 
     if (i >= PARTY_SIZE)
         return CopyMonToPC(mon);
 
-    CopyMon(&gPlayerParty[i], mon, sizeof(*mon));
+    CopyMon(&gParty[B_PLAYER][i], mon, sizeof(*mon));
     gPlayerPartyCount = i + 1;
     return MON_GIVEN_TO_PARTY;
 }
@@ -3416,19 +3417,19 @@ u8 CalculatePartyCountOfSide(u32 battler, struct Pokemon *party)
 
 u8 CalculatePlayerPartyCount(void)
 {
-    gPlayerPartyCount = CalculatePartyCount(gPlayerParty);
+    gPlayerPartyCount = CalculatePartyCount(gParty[B_PLAYER]);
     return gPlayerPartyCount;
 }
 
 u8 CalculateEnemyPartyCount(void)
 {
-    gEnemyPartyCount = CalculatePartyCount(gEnemyParty);
+    gEnemyPartyCount = CalculatePartyCount(gParty[B_ENEMY]);
     return gEnemyPartyCount;
 }
 
 u8 CalculateEnemyPartyCountInSide(u32 battler)
 {
-    return CalculatePartyCountOfSide(battler, gEnemyParty);
+    return CalculatePartyCountOfSide(battler, gParty[B_ENEMY]);
 }
 
 u8 GetMonsStateToDoubles(void)
@@ -3445,9 +3446,9 @@ u8 GetMonsStateToDoubles(void)
 
     for (i = 0; i < gPlayerPartyCount; i++)
     {
-        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES_OR_EGG, NULL) != SPECIES_EGG
-         && GetMonData(&gPlayerParty[i], MON_DATA_HP, NULL) != 0
-         && GetMonData(&gPlayerParty[i], MON_DATA_SPECIES_OR_EGG, NULL) != SPECIES_NONE)
+        if (GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES_OR_EGG, NULL) != SPECIES_EGG
+         && GetMonData(&gParty[B_PLAYER][i], MON_DATA_HP, NULL) != 0
+         && GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES_OR_EGG, NULL) != SPECIES_NONE)
             aliveCount++;
     }
 
@@ -3465,9 +3466,9 @@ u8 GetMonsStateToDoubles_2(void)
 
     for (i = 0; i < PARTY_SIZE; i++)
     {
-        u32 species = GetMonData(&gPlayerParty[i], MON_DATA_SPECIES_OR_EGG, NULL);
+        u32 species = GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES_OR_EGG, NULL);
         if (species != SPECIES_EGG && species != SPECIES_NONE
-         && GetMonData(&gPlayerParty[i], MON_DATA_HP, NULL) != 0)
+         && GetMonData(&gParty[B_PLAYER][i], MON_DATA_HP, NULL) != 0)
             aliveCount++;
     }
 
@@ -3520,7 +3521,7 @@ void CreateSecretBaseEnemyParty(struct SecretBase *secretBaseRecord)
     {
         if (gBattleResources->secretBase->party.species[i])
         {
-            CreateMon(&gEnemyParty[i],
+            CreateMon(&gParty[B_ENEMY][i],
                 gBattleResources->secretBase->party.species[i],
                 gBattleResources->secretBase->party.levels[i],
                 15,
@@ -3529,16 +3530,16 @@ void CreateSecretBaseEnemyParty(struct SecretBase *secretBaseRecord)
                 OT_ID_RANDOM_NO_SHINY,
                 0);
 
-            SetMonData(&gEnemyParty[i], MON_DATA_HELD_ITEM, &gBattleResources->secretBase->party.heldItems[i]);
+            SetMonData(&gParty[B_ENEMY][i], MON_DATA_HELD_ITEM, &gBattleResources->secretBase->party.heldItems[i]);
 
             for (j = 0; j < NUM_STATS; j++)
-                SetMonData(&gEnemyParty[i], MON_DATA_HP_EV + j, &gBattleResources->secretBase->party.EVs[i]);
+                SetMonData(&gParty[B_ENEMY][i], MON_DATA_HP_EV + j, &gBattleResources->secretBase->party.EVs[i]);
 
             for (j = 0; j < MAX_MON_MOVES; j++)
             {
-                SetMonData(&gEnemyParty[i], MON_DATA_MOVE1 + j, &gBattleResources->secretBase->party.moves[i * MAX_MON_MOVES + j]);
+                SetMonData(&gParty[B_ENEMY][i], MON_DATA_MOVE1 + j, &gBattleResources->secretBase->party.moves[i * MAX_MON_MOVES + j]);
                 u32 pp = GetMovePP(gBattleResources->secretBase->party.moves[i * MAX_MON_MOVES + j]);
-                SetMonData(&gEnemyParty[i], MON_DATA_PP1 + j, &pp);
+                SetMonData(&gParty[B_ENEMY][i], MON_DATA_PP1 + j, &pp);
             }
         }
     }
@@ -3561,7 +3562,7 @@ bool8 IsPlayerPartyAndPokemonStorageFull(void)
     s32 i;
 
     for (i = 0; i < PARTY_SIZE; i++)
-        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL) == SPECIES_NONE)
+        if (GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES, NULL) == SPECIES_NONE)
             return FALSE;
 
     return IsPokemonStorageFull();
@@ -4612,7 +4613,7 @@ bool32 DoesMonMeetAdditionalConditions(struct Pokemon *mon, const struct Evoluti
         case IF_SPECIES_IN_PARTY:
             for (j = 0; j < PARTY_SIZE; j++)
             {
-                if (GetMonData(&gPlayerParty[j], MON_DATA_SPECIES, NULL) == params[i].arg1)
+                if (GetMonData(&gParty[B_PLAYER][j], MON_DATA_SPECIES, NULL) == params[i].arg1)
                 {
                     currentCondition = TRUE;
                     break;
@@ -4640,7 +4641,7 @@ bool32 DoesMonMeetAdditionalConditions(struct Pokemon *mon, const struct Evoluti
         case IF_TYPE_IN_PARTY:
             for (j = 0; j < PARTY_SIZE; j++)
             {
-                u16 currSpecies = GetMonData(&gPlayerParty[j], MON_DATA_SPECIES, NULL);
+                u16 currSpecies = GetMonData(&gParty[B_PLAYER][j], MON_DATA_SPECIES, NULL);
                 if (gSpeciesInfo[currSpecies].types[0] == params[i].arg1
                  || gSpeciesInfo[currSpecies].types[1] == params[i].arg1)
                 {
@@ -5535,9 +5536,9 @@ void UpdatePartyPokerusTime(u16 days)
     int i;
     for (i = 0; i < PARTY_SIZE; i++)
     {
-        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, 0))
+        if (GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES, 0))
         {
-            u8 pokerus = GetMonData(&gPlayerParty[i], MON_DATA_POKERUS, 0);
+            u8 pokerus = GetMonData(&gParty[B_PLAYER][i], MON_DATA_POKERUS, 0);
             if (pokerus & 0xF)
             {
                 if ((pokerus & 0xF) < days || days > 4)
@@ -5548,7 +5549,7 @@ void UpdatePartyPokerusTime(u16 days)
                 if (pokerus == 0)
                     pokerus = 0x10;
 
-                SetMonData(&gPlayerParty[i], MON_DATA_POKERUS, &pokerus);
+                SetMonData(&gParty[B_PLAYER][i], MON_DATA_POKERUS, &pokerus);
             }
         }
     }
@@ -5813,7 +5814,7 @@ u16 GetBattleBGM(void)
 {
     if (gBattleTypeFlags & BATTLE_TYPE_LEGENDARY)
     {
-        switch (GetMonData(&gEnemyParty[0], MON_DATA_SPECIES, NULL))
+        switch (GetMonData(&gParty[B_ENEMY][0], MON_DATA_SPECIES, NULL))
         {
         case SPECIES_RAYQUAZA:
             return MUS_VS_RAYQUAZA;
@@ -6082,10 +6083,10 @@ static s32 GetWildMonTableIdInAlteringCave(u16 species)
 static inline bool32 CanFirstMonBoostHeldItemRarity(void)
 {
     u32 ability;
-    if (GetMonData(&gPlayerParty[0], MON_DATA_SANITY_IS_EGG))
+    if (GetMonData(&gParty[B_PLAYER][0], MON_DATA_SANITY_IS_EGG))
         return FALSE;
 
-    ability = GetMonAbility(&gPlayerParty[0]);
+    ability = GetMonAbility(&gParty[B_PLAYER][0]);
     if (ability == ABILITY_COMPOUND_EYES)
         return TRUE;
     else if ((OW_SUPER_LUCK >= GEN_8) && ability == ABILITY_SUPER_LUCK)
@@ -6107,11 +6108,11 @@ void SetWildMonHeldItem(void)
 
         for (i = 0; i < count; i++)
         {
-            if (GetMonData(&gEnemyParty[i], MON_DATA_HELD_ITEM, NULL) != ITEM_NONE)
+            if (GetMonData(&gParty[B_ENEMY][i], MON_DATA_HELD_ITEM, NULL) != ITEM_NONE)
                 continue; // prevent overwriting previously set item
 
             rnd = Random() % 100;
-            species = GetMonData(&gEnemyParty[i], MON_DATA_SPECIES, 0);
+            species = GetMonData(&gParty[B_ENEMY][i], MON_DATA_SPECIES, 0);
             if (gMapHeader.mapLayoutId == LAYOUT_ALTERING_CAVE)
             {
                 s32 alteringCaveId = GetWildMonTableIdInAlteringCave(species);
@@ -6120,7 +6121,7 @@ void SetWildMonHeldItem(void)
                     // In active Altering Cave, use special item list
                     if (rnd < chanceNotRare)
                         continue;
-                    SetMonData(&gEnemyParty[i], MON_DATA_HELD_ITEM, &sAlteringCaveWildMonHeldItems[alteringCaveId].item);
+                    SetMonData(&gParty[B_ENEMY][i], MON_DATA_HELD_ITEM, &sAlteringCaveWildMonHeldItems[alteringCaveId].item);
                 }
                 else
                 {
@@ -6128,9 +6129,9 @@ void SetWildMonHeldItem(void)
                     if (rnd < chanceNoItem)
                         continue;
                     if (rnd < chanceNotRare)
-                        SetMonData(&gEnemyParty[i], MON_DATA_HELD_ITEM, &gSpeciesInfo[species].itemCommon);
+                        SetMonData(&gParty[B_ENEMY][i], MON_DATA_HELD_ITEM, &gSpeciesInfo[species].itemCommon);
                     else
-                        SetMonData(&gEnemyParty[i], MON_DATA_HELD_ITEM, &gSpeciesInfo[species].itemRare);
+                        SetMonData(&gParty[B_ENEMY][i], MON_DATA_HELD_ITEM, &gSpeciesInfo[species].itemRare);
                 }
             }
             else
@@ -6138,16 +6139,16 @@ void SetWildMonHeldItem(void)
                 if (gSpeciesInfo[species].itemCommon == gSpeciesInfo[species].itemRare && gSpeciesInfo[species].itemCommon != ITEM_NONE)
                 {
                     // Both held items are the same, 100% chance to hold item
-                    SetMonData(&gEnemyParty[i], MON_DATA_HELD_ITEM, &gSpeciesInfo[species].itemCommon);
+                    SetMonData(&gParty[B_ENEMY][i], MON_DATA_HELD_ITEM, &gSpeciesInfo[species].itemCommon);
                 }
                 else
                 {
                     if (rnd < chanceNoItem)
                         continue;
                     if (rnd < chanceNotRare)
-                        SetMonData(&gEnemyParty[i], MON_DATA_HELD_ITEM, &gSpeciesInfo[species].itemCommon);
+                        SetMonData(&gParty[B_ENEMY][i], MON_DATA_HELD_ITEM, &gSpeciesInfo[species].itemCommon);
                     else
-                        SetMonData(&gEnemyParty[i], MON_DATA_HELD_ITEM, &gSpeciesInfo[species].itemRare);
+                        SetMonData(&gParty[B_ENEMY][i], MON_DATA_HELD_ITEM, &gSpeciesInfo[species].itemRare);
                 }
             }
         }
@@ -6811,16 +6812,16 @@ void TrySpecialOverworldEvo(void)
 
     for (i = 0; i < PARTY_SIZE; i++)
     {
-        u32 targetSpecies = GetEvolutionTargetSpecies(&gPlayerParty[i], EVO_MODE_OVERWORLD_SPECIAL, 0, NULL, &canStopEvo, CHECK_EVO);
+        u32 targetSpecies = GetEvolutionTargetSpecies(&gParty[B_PLAYER][i], EVO_MODE_OVERWORLD_SPECIAL, 0, NULL, &canStopEvo, CHECK_EVO);
 
         if (targetSpecies != SPECIES_NONE && !(sTriedEvolving & (1u << i)))
         {
-            GetEvolutionTargetSpecies(&gPlayerParty[i], EVO_MODE_OVERWORLD_SPECIAL, 0, NULL, &canStopEvo, DO_EVO);
+            GetEvolutionTargetSpecies(&gParty[B_PLAYER][i], EVO_MODE_OVERWORLD_SPECIAL, 0, NULL, &canStopEvo, DO_EVO);
             sTriedEvolving |= 1u << i;
             if(gMain.callback2 == TrySpecialOverworldEvo) // This fixes small graphics glitches.
-                EvolutionScene(&gPlayerParty[i], targetSpecies, canStopEvo, i);
+                EvolutionScene(&gParty[B_PLAYER][i], targetSpecies, canStopEvo, i);
             else
-                BeginEvolutionScene(&gPlayerParty[i], targetSpecies, canStopEvo, i);
+                BeginEvolutionScene(&gParty[B_PLAYER][i], targetSpecies, canStopEvo, i);
 
             if (tryMultiple)
                 gCB2_AfterEvolution = TrySpecialOverworldEvo;
@@ -6850,7 +6851,7 @@ bool32 SpeciesHasGenderDifferences(u16 species)
 
 bool32 TryFormChange(u32 monId, u32 side, enum FormChanges method)
 {
-    struct Pokemon *party = (side == B_SIDE_PLAYER) ? gPlayerParty : gEnemyParty;
+    struct Pokemon *party = (side == B_SIDE_PLAYER) ? gParty[B_PLAYER] : gParty[B_ENEMY];
 
     if (GetMonData(&party[monId], MON_DATA_SPECIES_OR_EGG, 0) == SPECIES_NONE
      || GetMonData(&party[monId], MON_DATA_SPECIES_OR_EGG, 0) == SPECIES_EGG)
@@ -7050,7 +7051,7 @@ void UpdateDaysPassedSinceFormChange(u16 days)
     u32 i;
     for (i = 0; i < PARTY_SIZE; i++)
     {
-        struct Pokemon *mon = &gPlayerParty[i];
+        struct Pokemon *mon = &gParty[B_PLAYER][i];
         u32 currentSpecies = GetMonData(mon, MON_DATA_SPECIES);
         u8 daysSinceFormChange;
 

@@ -55,7 +55,7 @@ void PickLotteryCornerTicket(void)
     box = 0;
     for (i = 0; i < PARTY_SIZE; i++)
     {
-        struct Pokemon *mon = &gPlayerParty[i];
+        struct Pokemon *mon = &gParty[B_PLAYER][i];
 
         if (GetMonData(mon, MON_DATA_SPECIES) != SPECIES_NONE)
         {
@@ -106,7 +106,7 @@ void PickLotteryCornerTicket(void)
         if (box == TOTAL_BOXES_COUNT)
         {
             gSpecialVar_0x8006 = 0;
-            GetMonData(&gPlayerParty[slot], MON_DATA_NICKNAME, gStringVar1);
+            GetMonData(&gParty[B_PLAYER][slot], MON_DATA_NICKNAME, gStringVar1);
         }
         else
         {

@@ -282,7 +282,7 @@ static void ItemUseOnFieldCB_Bike(u8 taskId)
         GetOnOffBike(PLAYER_AVATAR_FLAG_MACH_BIKE);
     else // ACRO_BIKE
         GetOnOffBike(PLAYER_AVATAR_FLAG_ACRO_BIKE);
-    
+
     FollowerNPC_HandleBike();
     ScriptUnfreezeObjectEvents();
     UnlockPlayerFieldControls();
@@ -1571,7 +1571,7 @@ void ItemUseOutOfBattle_PokeFlute(u8 taskId)
 
     for (i = 0; i < CalculatePlayerPartyCount(); i++)
     {
-        if (!ExecuteTableBasedItemEffect(&gPlayerParty[i], ITEM_AWAKENING, i, 0))
+        if (!ExecuteTableBasedItemEffect(&gParty[B_PLAYER][i], ITEM_AWAKENING, i, 0))
             wokeSomeoneUp = TRUE;
     }
 

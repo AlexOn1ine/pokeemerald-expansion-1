@@ -907,7 +907,7 @@ bool8 ScrCmd_gettime(struct ScriptContext *ctx)
 bool8 ScrCmd_gettimeofday(struct ScriptContext *ctx)
 {
     Script_RequestEffects(SCREFF_V1);
-    
+
     gSpecialVar_0x8000 = GetTimeOfDay();
     return FALSE;
 }
@@ -1289,7 +1289,7 @@ bool8 ScrCmd_applymovement(struct ScriptContext *ctx)
     Script_RequestEffects(SCREFF_V1 | SCREFF_HARDWARE);
 
     // When applying script movements to follower, it may have frozen animation that must be cleared
-    if ((localId == OBJ_EVENT_ID_FOLLOWER && (objEvent = GetFollowerObject()) && objEvent->frozen) 
+    if ((localId == OBJ_EVENT_ID_FOLLOWER && (objEvent = GetFollowerObject()) && objEvent->frozen)
             || ((objEvent = &gObjectEvents[GetObjectEventIdByLocalId(localId)]) && IS_OW_MON_OBJ(objEvent)))
     {
         ClearObjectEventMovement(objEvent, &gSprites[objEvent->spriteId]);
@@ -1499,8 +1499,8 @@ bool8 ScrCmd_resetobjectsubpriority(struct ScriptContext *ctx)
 bool8 ScrCmd_faceplayer(struct ScriptContext *ctx)
 {
     Script_RequestEffects(SCREFF_V1 | SCREFF_HARDWARE);
-    if (PlayerHasFollowerNPC() 
-     && gObjectEvents[GetFollowerNPCObjectId()].invisible == FALSE 
+    if (PlayerHasFollowerNPC()
+     && gObjectEvents[GetFollowerNPCObjectId()].invisible == FALSE
      && gSelectedObjectEvent == GetFollowerNPCObjectId())
     {
         struct ObjectEvent *npcFollower = &gObjectEvents[GetFollowerNPCObjectId()];
@@ -2106,7 +2106,7 @@ bool8 ScrCmd_bufferleadmonspeciesname(struct ScriptContext *ctx)
 
     u8 *dest = sScriptStringVars[stringVarIndex];
     u8 partyIndex = GetLeadMonIndex();
-    u32 species = GetMonData(&gPlayerParty[partyIndex], MON_DATA_SPECIES, NULL);
+    u32 species = GetMonData(&gParty[B_PLAYER][partyIndex], MON_DATA_SPECIES, NULL);
     StringCopy(dest, GetSpeciesName(species));
     return FALSE;
 }
@@ -2128,7 +2128,7 @@ bool8 ScrCmd_bufferpartymonnick(struct ScriptContext *ctx)
 
     Script_RequestEffects(SCREFF_V1);
 
-    GetMonData(&gPlayerParty[partyIndex], MON_DATA_NICKNAME, sScriptStringVars[stringVarIndex]);
+    GetMonData(&gParty[B_PLAYER][partyIndex], MON_DATA_NICKNAME, sScriptStringVars[stringVarIndex]);
     StringGet_Nickname(sScriptStringVars[stringVarIndex]);
     return FALSE;
 }
@@ -2289,10 +2289,10 @@ bool8 ScrCmd_checkpartymove(struct ScriptContext *ctx)
     gSpecialVar_Result = PARTY_SIZE;
     for (i = 0; i < PARTY_SIZE; i++)
     {
-        u16 species = GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL);
+        u16 species = GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES, NULL);
         if (!species)
             break;
-        if (!GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG) && MonKnowsMove(&gPlayerParty[i], move) == TRUE)
+        if (!GetMonData(&gParty[B_PLAYER][i], MON_DATA_IS_EGG) && MonKnowsMove(&gParty[B_PLAYER][i], move) == TRUE)
         {
             gSpecialVar_Result = i;
             gSpecialVar_0x8004 = species;
@@ -2421,7 +2421,7 @@ bool8 ScrCmd_updatecoinsbox(struct ScriptContext *ctx)
 bool8 ScrCmd_trainerbattle(struct ScriptContext *ctx)
 {
     Script_RequestEffects(SCREFF_V1 | SCREFF_TRAINERBATTLE);
-    
+
     TrainerBattleLoadArgs(ctx->scriptPtr);
     ctx->scriptPtr = BattleSetup_ConfigureTrainerBattle(ctx->scriptPtr);
     return FALSE;
@@ -2927,7 +2927,7 @@ bool8 ScrCmd_setmodernfatefulencounter(struct ScriptContext *ctx)
 
     Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
 
-    SetMonData(&gPlayerParty[partyIndex], MON_DATA_MODERN_FATEFUL_ENCOUNTER, &isModernFatefulEncounter);
+    SetMonData(&gParty[B_PLAYER][partyIndex], MON_DATA_MODERN_FATEFUL_ENCOUNTER, &isModernFatefulEncounter);
     return FALSE;
 }
 
@@ -2937,7 +2937,7 @@ bool8 ScrCmd_checkmodernfatefulencounter(struct ScriptContext *ctx)
 
     Script_RequestEffects(SCREFF_V1);
 
-    gSpecialVar_Result = GetMonData(&gPlayerParty[partyIndex], MON_DATA_MODERN_FATEFUL_ENCOUNTER, NULL);
+    gSpecialVar_Result = GetMonData(&gParty[B_PLAYER][partyIndex], MON_DATA_MODERN_FATEFUL_ENCOUNTER, NULL);
     return FALSE;
 }
 
@@ -2982,7 +2982,7 @@ bool8 ScrCmd_setmonmetlocation(struct ScriptContext *ctx)
     Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
 
     if (partyIndex < PARTY_SIZE)
-        SetMonData(&gPlayerParty[partyIndex], MON_DATA_MET_LOCATION, &location);
+        SetMonData(&gParty[B_PLAYER][partyIndex], MON_DATA_MET_LOCATION, &location);
     return FALSE;
 }
 
@@ -3124,7 +3124,7 @@ bool8 Scrcmd_checkspecies_choose(struct ScriptContext *ctx)
 
     Script_RequestEffects(SCREFF_V1);
 
-    gSpecialVar_Result = (GetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPECIES) == givenSpecies);
+    gSpecialVar_Result = (GetMonData(&gParty[B_PLAYER][gSpecialVar_0x8004], MON_DATA_SPECIES) == givenSpecies);
 
     return FALSE;
 }
@@ -3173,7 +3173,7 @@ bool8 ScrCmd_addtime(struct ScriptContext *ctx)
     u32 minutes = ScriptReadWord(ctx);
 
     Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
-    
+
     FakeRtc_AdvanceTimeBy(days, hours, minutes, 0);
 
     return FALSE;
@@ -3184,7 +3184,7 @@ bool8 ScrCmd_adddays(struct ScriptContext *ctx)
     u32 days = ScriptReadWord(ctx);
 
     Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
-    
+
     FakeRtc_AdvanceTimeBy(days, 0, 0, 0);
 
     return FALSE;
@@ -3195,7 +3195,7 @@ bool8 ScrCmd_addhours(struct ScriptContext *ctx)
     u32 hours = ScriptReadWord(ctx);
 
     Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
-    
+
     FakeRtc_AdvanceTimeBy(0, hours, 0, 0);
 
     return FALSE;
@@ -3206,7 +3206,7 @@ bool8 ScrCmd_addminutes(struct ScriptContext *ctx)
     u32 minutes = ScriptReadWord(ctx);
 
     Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
-    
+
     FakeRtc_AdvanceTimeBy(0, 0, minutes, 0);
 
     return FALSE;
@@ -3218,7 +3218,7 @@ bool8 ScrCmd_fwdtime(struct ScriptContext *ctx)
     u32 minutes = ScriptReadWord(ctx);
 
     Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
-    
+
     FakeRtc_ForwardTimeTo(hours, minutes, 0);
 
     return FALSE;
@@ -3227,12 +3227,12 @@ bool8 ScrCmd_fwdtime(struct ScriptContext *ctx)
 bool8 ScrCmd_fwdweekday(struct ScriptContext *ctx)
 {
     struct SiiRtcInfo *rtc = FakeRtc_GetCurrentTime();
-    
+
     u32 weekdayTarget = ScriptReadWord(ctx);
     u32 daysToAdd = ((weekdayTarget - rtc->dayOfWeek) + WEEKDAY_COUNT) % WEEKDAY_COUNT;
-    
+
     Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
-    
+
     FakeRtc_AdvanceTimeBy(daysToAdd, 0, 0, 0);
     return FALSE;
 }

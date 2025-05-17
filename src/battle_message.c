@@ -2886,11 +2886,11 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst, u32 dstSize)
                         dstID++;
                         toCpy++;
                     }
-                    GetMonData(&gEnemyParty[gBattleStruct->scriptPartyIdx], MON_DATA_NICKNAME, text);
+                    GetMonData(&gParty[B_ENEMY][gBattleStruct->scriptPartyIdx], MON_DATA_NICKNAME, text);
                 }
                 else
                 {
-                    GetMonData(&gPlayerParty[gBattleStruct->scriptPartyIdx], MON_DATA_NICKNAME, text);
+                    GetMonData(&gParty[B_PLAYER][gBattleStruct->scriptPartyIdx], MON_DATA_NICKNAME, text);
                 }
                 StringGet_Nickname(text);
                 toCpy = text;
@@ -3177,8 +3177,8 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst, u32 dstSize)
 static void IllusionNickHack(u32 battler, u32 partyId, u8 *dst)
 {
     u32 id = PARTY_SIZE;
-    // we know it's gEnemyParty
-    struct Pokemon *mon = &gEnemyParty[partyId], *partnerMon;
+    // we know it's gParty[B_ENEMY]
+    struct Pokemon *mon = &gParty[B_ENEMY][partyId], *partnerMon;
 
     if (GetMonAbility(mon) == ABILITY_ILLUSION)
     {
@@ -3187,11 +3187,11 @@ static void IllusionNickHack(u32 battler, u32 partyId, u8 *dst)
         else
             partnerMon = mon;
 
-        id = GetIllusionMonPartyId(gEnemyParty, mon, partnerMon);
+        id = GetIllusionMonPartyId(gParty[B_ENEMY], mon, partnerMon);
     }
-    
+
     if (id != PARTY_SIZE)
-        GetMonData(&gEnemyParty[id], MON_DATA_NICKNAME, dst);
+        GetMonData(&gParty[B_ENEMY][id], MON_DATA_NICKNAME, dst);
     else
         GetMonData(mon, MON_DATA_NICKNAME, dst);
 }
@@ -3241,7 +3241,7 @@ void ExpandBattleTextBuffPlaceholders(const u8 *src, u8 *dst)
         case B_BUFF_MON_NICK_WITH_PREFIX_LOWER: // poke nick with lowercase prefix
             if (IsOnPlayerSide(src[srcID + 1]))
             {
-                GetMonData(&gPlayerParty[src[srcID + 2]], MON_DATA_NICKNAME, nickname);
+                GetMonData(&gParty[B_PLAYER][src[srcID + 2]], MON_DATA_NICKNAME, nickname);
             }
             else
             {
@@ -3260,7 +3260,7 @@ void ExpandBattleTextBuffPlaceholders(const u8 *src, u8 *dst)
                         StringAppend(dst, sText_WildPkmnPrefix);
                 }
 
-                GetMonData(&gEnemyParty[src[srcID + 2]], MON_DATA_NICKNAME, nickname);
+                GetMonData(&gParty[B_ENEMY][src[srcID + 2]], MON_DATA_NICKNAME, nickname);
             }
             StringGet_Nickname(nickname);
             StringAppend(dst, nickname);
@@ -3288,9 +3288,9 @@ void ExpandBattleTextBuffPlaceholders(const u8 *src, u8 *dst)
             else
             {
                 if (IsOnPlayerSide(src[srcID + 1]))
-                    GetMonData(&gPlayerParty[src[srcID + 2]], MON_DATA_NICKNAME, dst);
+                    GetMonData(&gParty[B_PLAYER][src[srcID + 2]], MON_DATA_NICKNAME, dst);
                 else
-                    GetMonData(&gEnemyParty[src[srcID + 2]], MON_DATA_NICKNAME, dst);
+                    GetMonData(&gParty[B_ENEMY][src[srcID + 2]], MON_DATA_NICKNAME, dst);
                 StringGet_Nickname(dst);
             }
             srcID += 3;

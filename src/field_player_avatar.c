@@ -521,8 +521,8 @@ static bool8 DoForcedMovement(u8 direction, void (*moveFunc)(u8))
     {
         playerAvatar->runningState = MOVING;
         moveFunc(direction);
-        if (PlayerHasFollowerNPC() 
-         && gObjectEvents[GetFollowerNPCObjectId()].invisible == FALSE 
+        if (PlayerHasFollowerNPC()
+         && gObjectEvents[GetFollowerNPCObjectId()].invisible == FALSE
          && FindTaskIdByFunc(Task_MoveNPCFollowerAfterForcedMovement) == TASK_NONE)
             CreateTask(Task_MoveNPCFollowerAfterForcedMovement, 3);
         return TRUE;
@@ -767,7 +767,7 @@ bool32 CanTriggerSpinEvolution()
     {
         for (u32 i = 0; i < PARTY_SIZE; i++)
         {
-            u16 species = GetEvolutionTargetSpecies(&gPlayerParty[i], EVO_MODE_OVERWORLD_SPECIAL, 0, NULL, &canStopEvo, CHECK_EVO);
+            u16 species = GetEvolutionTargetSpecies(&gParty[B_PLAYER][i], EVO_MODE_OVERWORLD_SPECIAL, 0, NULL, &canStopEvo, CHECK_EVO);
             if (species != SPECIES_NONE)
             {
                 return TRUE;
@@ -1219,8 +1219,8 @@ void PlayerOnBikeCollide(u8 direction)
         struct ObjectEvent *npcFollower = &gObjectEvents[GetFollowerNPCObjectId()];
         struct ObjectEvent *player = &gObjectEvents[gPlayerAvatar.objectEventId];
 
-        if (npcFollower->invisible == FALSE 
-         && player->currentMetatileBehavior != MB_MUDDY_SLOPE 
+        if (npcFollower->invisible == FALSE
+         && player->currentMetatileBehavior != MB_MUDDY_SLOPE
          && npcFollower->currentMetatileBehavior == MB_MUDDY_SLOPE)
         {
             gPlayerAvatar.preventStep = TRUE;
@@ -1513,9 +1513,9 @@ bool8 PartyHasMonWithSurf(void)
     {
         for (i = 0; i < PARTY_SIZE; i++)
         {
-            if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) == SPECIES_NONE)
+            if (GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES) == SPECIES_NONE)
                 break;
-            if (MonKnowsMove(&gPlayerParty[i], MOVE_SURF))
+            if (MonKnowsMove(&gParty[B_PLAYER][i], MOVE_SURF))
                 return TRUE;
         }
     }
@@ -2323,10 +2323,10 @@ static bool32 Fishing_DoesFirstMonInPartyHaveSuctionCupsOrStickyHold(void)
 {
     u32 ability;
 
-    if (GetMonData(&gPlayerParty[0], MON_DATA_SANITY_IS_EGG))
+    if (GetMonData(&gParty[B_PLAYER][0], MON_DATA_SANITY_IS_EGG))
         return FALSE;
 
-    ability = GetMonAbility(&gPlayerParty[0]);
+    ability = GetMonAbility(&gParty[B_PLAYER][0]);
 
     return (ability == ABILITY_SUCTION_CUPS || ability == ABILITY_STICKY_HOLD);
 }

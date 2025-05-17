@@ -100,19 +100,19 @@ void MoveAllRoamers(void)
 static void CreateInitialRoamerMon(u8 index, u16 species, u8 level)
 {
     ClearRoamerLocationHistory(index);
-    CreateMon(&gEnemyParty[0], species, level, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
-    ROAMER(index)->ivs = GetMonData(&gEnemyParty[0], MON_DATA_IVS);
-    ROAMER(index)->personality = GetMonData(&gEnemyParty[0], MON_DATA_PERSONALITY);
+    CreateMon(&gParty[B_ENEMY][0], species, level, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
+    ROAMER(index)->ivs = GetMonData(&gParty[B_ENEMY][0], MON_DATA_IVS);
+    ROAMER(index)->personality = GetMonData(&gParty[B_ENEMY][0], MON_DATA_PERSONALITY);
     ROAMER(index)->species = species;
     ROAMER(index)->level = level;
     ROAMER(index)->statusA = 0;
     ROAMER(index)->statusB = 0;
-    ROAMER(index)->hp = GetMonData(&gEnemyParty[0], MON_DATA_MAX_HP);
-    ROAMER(index)->cool = GetMonData(&gEnemyParty[0], MON_DATA_COOL);
-    ROAMER(index)->beauty = GetMonData(&gEnemyParty[0], MON_DATA_BEAUTY);
-    ROAMER(index)->cute = GetMonData(&gEnemyParty[0], MON_DATA_CUTE);
-    ROAMER(index)->smart = GetMonData(&gEnemyParty[0], MON_DATA_SMART);
-    ROAMER(index)->tough = GetMonData(&gEnemyParty[0], MON_DATA_TOUGH);
+    ROAMER(index)->hp = GetMonData(&gParty[B_ENEMY][0], MON_DATA_MAX_HP);
+    ROAMER(index)->cool = GetMonData(&gParty[B_ENEMY][0], MON_DATA_COOL);
+    ROAMER(index)->beauty = GetMonData(&gParty[B_ENEMY][0], MON_DATA_BEAUTY);
+    ROAMER(index)->cute = GetMonData(&gParty[B_ENEMY][0], MON_DATA_CUTE);
+    ROAMER(index)->smart = GetMonData(&gParty[B_ENEMY][0], MON_DATA_SMART);
+    ROAMER(index)->tough = GetMonData(&gParty[B_ENEMY][0], MON_DATA_TOUGH);
     ROAMER(index)->active = TRUE;
     sRoamerLocation[index][MAP_GRP] = ROAMER_MAP_GROUP;
     sRoamerLocation[index][MAP_NUM] = sRoamerLocations[Random() % NUM_LOCATION_SETS][0];
@@ -240,7 +240,7 @@ bool8 IsRoamerAt(u32 roamerIndex, u8 mapGroup, u8 mapNum)
 void CreateRoamerMonInstance(u32 roamerIndex)
 {
     u32 status = ROAMER(roamerIndex)->statusA + (ROAMER(roamerIndex)->statusB << 8);
-    struct Pokemon *mon = &gEnemyParty[0];
+    struct Pokemon *mon = &gParty[B_ENEMY][0];
     ZeroEnemyPartyMons();
     CreateMonWithIVsPersonality(mon, ROAMER(roamerIndex)->species, ROAMER(roamerIndex)->level, ROAMER(roamerIndex)->ivs, ROAMER(roamerIndex)->personality);
     // The roamer's status field is u16, but SetMonData expects status to be u32, so will set the roamer's status

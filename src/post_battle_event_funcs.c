@@ -44,7 +44,7 @@ int GameClear(void)
 
     for (i = 0; i < PARTY_SIZE; i++)
     {
-        struct Pokemon *mon = &gPlayerParty[i];
+        struct Pokemon *mon = &gParty[B_PLAYER][i];
 
         ribbonCounts[i].partyIndex = i;
         ribbonCounts[i].count = 0;
@@ -77,7 +77,7 @@ int GameClear(void)
 
         if (ribbonCounts[0].count > NUM_CUTIES_RIBBONS)
         {
-            TryPutSpotTheCutiesOnAir(&gPlayerParty[ribbonCounts[0].partyIndex], MON_DATA_CHAMPION_RIBBON);
+            TryPutSpotTheCutiesOnAir(&gParty[B_PLAYER][ribbonCounts[0].partyIndex], MON_DATA_CHAMPION_RIBBON);
         }
     }
 

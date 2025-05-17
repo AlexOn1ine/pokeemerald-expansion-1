@@ -760,7 +760,7 @@ void DrawMainBattleBackground(void)
     }
     else if (gBattleTypeFlags & BATTLE_TYPE_LEGENDARY)
     {
-        switch (GetMonData(&gEnemyParty[0], MON_DATA_SPECIES, NULL))
+        switch (GetMonData(&gParty[B_ENEMY][0], MON_DATA_SPECIES, NULL))
         {
         case SPECIES_GROUDON:
             LZDecompressVram(gBattleEnvironmentTiles_Cave, (void*)(BG_CHAR_ADDR(2)));
@@ -1165,7 +1165,7 @@ void DrawBattleEntryBackground(void)
     }
     else if (gBattleTypeFlags & BATTLE_TYPE_LEGENDARY)
     {
-        switch (GetMonData(&gEnemyParty[0], MON_DATA_SPECIES, NULL))
+        switch (GetMonData(&gParty[B_ENEMY][0], MON_DATA_SPECIES, NULL))
         {
         case SPECIES_GROUDON:
             LZDecompressVram(gBattleEnvironmentAnimTiles_Cave, (void*)(BG_CHAR_ADDR(1)));
@@ -1240,7 +1240,7 @@ bool8 LoadChosenBattleElement(u8 caseId)
         }
         else if (gBattleTypeFlags & BATTLE_TYPE_LEGENDARY)
         {
-            switch (GetMonData(&gEnemyParty[0], MON_DATA_SPECIES, NULL))
+            switch (GetMonData(&gParty[B_ENEMY][0], MON_DATA_SPECIES, NULL))
             {
             case SPECIES_GROUDON:
                 LZDecompressVram(gBattleEnvironmentTiles_Cave, (void*)(BG_CHAR_ADDR(2)));
@@ -1307,7 +1307,7 @@ bool8 LoadChosenBattleElement(u8 caseId)
         }
         else if (gBattleTypeFlags & BATTLE_TYPE_LEGENDARY)
         {
-            if (GetMonData(&gEnemyParty[0], MON_DATA_SPECIES, NULL) == SPECIES_GROUDON)
+            if (GetMonData(&gParty[B_ENEMY][0], MON_DATA_SPECIES, NULL) == SPECIES_GROUDON)
                 LZDecompressVram(gBattleEnvironmentTilemap_Cave, (void*)(BG_SCREEN_ADDR(26)));
             else
                 LZDecompressVram(gBattleEnvironmentTilemap_Water, (void *)(BG_SCREEN_ADDR(26)));
@@ -1369,7 +1369,7 @@ bool8 LoadChosenBattleElement(u8 caseId)
         }
         else if (gBattleTypeFlags & BATTLE_TYPE_LEGENDARY)
         {
-            if (GetMonData(&gEnemyParty[0], MON_DATA_SPECIES, NULL) == SPECIES_GROUDON)
+            if (GetMonData(&gParty[B_ENEMY][0], MON_DATA_SPECIES, NULL) == SPECIES_GROUDON)
                 LoadPalette(gBattleEnvironmentPalette_Groudon, BG_PLTT_ID(2), 3 * PLTT_SIZE_4BPP);
             else
                 LoadPalette(gBattleEnvironmentPalette_Kyogre, BG_PLTT_ID(2), 3 * PLTT_SIZE_4BPP);

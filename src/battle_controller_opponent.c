@@ -651,7 +651,7 @@ static void OpponentHandleChoosePokemon(u32 battler)
             GetAIPartyIndexes(battler, &firstId, &lastId);
             for (chosenMonId = (lastId-1); chosenMonId >= firstId; chosenMonId--)
             {
-                if (!IsValidForBattle(&gEnemyParty[chosenMonId])
+                if (!IsValidForBattle(&gParty[B_ENEMY][chosenMonId])
                  || chosenMonId == gBattlerPartyIndexes[battler1]
                  || chosenMonId == gBattlerPartyIndexes[battler2])
                     continue;
@@ -683,7 +683,7 @@ static u8 CountAIAliveNonEggMonsExcept(u8 slotToIgnore)
     for (i = 0, count = 0; i < PARTY_SIZE; i++)
     {
         if (i != slotToIgnore
-            && IsValidForBattle(&gEnemyParty[i]))
+            && IsValidForBattle(&gParty[B_ENEMY][i]))
         {
             count++;
         }

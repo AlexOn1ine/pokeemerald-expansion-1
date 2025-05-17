@@ -1462,9 +1462,9 @@ static void Debug_GenerateListMenuNames(u32 totalItems)
                 name = sDebugText_Continue;
                 StringCopy(&sDebugMenuListData->itemNames[i][0], name);
             }
-            else if (GetMonData(&gEnemyParty[i], MON_DATA_SANITY_HAS_SPECIES))
+            else if (GetMonData(&gParty[B_ENEMY][i], MON_DATA_SANITY_HAS_SPECIES))
             {
-                species = GetMonData(&gEnemyParty[i], MON_DATA_SPECIES);
+                species = GetMonData(&gParty[B_ENEMY][i], MON_DATA_SPECIES);
                 StringCopy(gStringVar1, GetSpeciesName(species));
                 StringCopy(&sDebugMenuListData->itemNames[i][0], gStringVar1);
             }
@@ -1819,9 +1819,9 @@ static void Debug_InitializeBattle(u8 taskId)
     // Populate enemy party
     for (i = 0; i < PARTY_SIZE; i++)
     {
-        ZeroMonData(&gEnemyParty[i]);
-        if (GetMonData(&gPlayerParty[i], MON_DATA_SANITY_HAS_SPECIES))
-            gEnemyParty[i] = gPlayerParty[i];
+        ZeroMonData(&gParty[B_ENEMY][i]);
+        if (GetMonData(&gParty[B_PLAYER][i], MON_DATA_SANITY_HAS_SPECIES))
+            gParty[B_ENEMY][i] = gParty[B_PLAYER][i];
     }
 
     // Set AI flags
@@ -2710,9 +2710,9 @@ static void DebugAction_FlagsVars_PokedexFlags_Reset(u8 taskId)
     // Add party Pokemon to Pokedex
     for (partyId = 0; partyId < PARTY_SIZE; partyId++)
     {
-        if (GetMonData(&gPlayerParty[partyId], MON_DATA_SANITY_HAS_SPECIES))
+        if (GetMonData(&gParty[B_PLAYER][partyId], MON_DATA_SANITY_HAS_SPECIES))
         {
-            species = GetMonData(&gPlayerParty[partyId], MON_DATA_SPECIES);
+            species = GetMonData(&gParty[B_PLAYER][partyId], MON_DATA_SPECIES);
             GetSetPokedexFlag(SpeciesToNationalPokedexNum(species), FLAG_SET_CAUGHT);
             GetSetPokedexFlag(SpeciesToNationalPokedexNum(species), FLAG_SET_SEEN);
         }
@@ -3752,7 +3752,7 @@ static void DebugAction_Give_Pokemon_ComplexCreateMon(u8 taskId) //https://githu
     SetMonData(&mon, MON_DATA_OT_GENDER, &gSaveBlock2Ptr->playerGender);
     for (i = 0; i < PARTY_SIZE; i++)
     {
-        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL) == SPECIES_NONE)
+        if (GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES, NULL) == SPECIES_NONE)
             break;
     }
 
@@ -3763,7 +3763,7 @@ static void DebugAction_Give_Pokemon_ComplexCreateMon(u8 taskId) //https://githu
     else
     {
         sentToPc = MON_GIVEN_TO_PARTY;
-        CopyMon(&gPlayerParty[i], &mon, sizeof(mon));
+        CopyMon(&gParty[B_PLAYER][i], &mon, sizeof(mon));
         gPlayerPartyCount = i + 1;
     }
 

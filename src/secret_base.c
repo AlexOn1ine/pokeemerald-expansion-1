@@ -790,17 +790,17 @@ void SetPlayerSecretBaseParty(void)
             party->personality[i] = 0;
             party->EVs[i] = 0;
 
-            if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) != SPECIES_NONE
-            && !GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG))
+            if (GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES) != SPECIES_NONE
+            && !GetMonData(&gParty[B_PLAYER][i], MON_DATA_IS_EGG))
             {
                 for (moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
-                    party->moves[partyId * MAX_MON_MOVES + moveIndex] = GetMonData(&gPlayerParty[i], MON_DATA_MOVE1 + moveIndex);
+                    party->moves[partyId * MAX_MON_MOVES + moveIndex] = GetMonData(&gParty[B_PLAYER][i], MON_DATA_MOVE1 + moveIndex);
 
-                party->species[partyId] = GetMonData(&gPlayerParty[i], MON_DATA_SPECIES);
-                party->heldItems[partyId] = GetMonData(&gPlayerParty[i], MON_DATA_HELD_ITEM);
-                party->levels[partyId] = GetMonData(&gPlayerParty[i], MON_DATA_LEVEL);
-                party->personality[partyId] = GetMonData(&gPlayerParty[i], MON_DATA_PERSONALITY);
-                party->EVs[partyId] = GetAverageEVs(&gPlayerParty[i]);
+                party->species[partyId] = GetMonData(&gParty[B_PLAYER][i], MON_DATA_SPECIES);
+                party->heldItems[partyId] = GetMonData(&gParty[B_PLAYER][i], MON_DATA_HELD_ITEM);
+                party->levels[partyId] = GetMonData(&gParty[B_PLAYER][i], MON_DATA_LEVEL);
+                party->personality[partyId] = GetMonData(&gParty[B_PLAYER][i], MON_DATA_PERSONALITY);
+                party->EVs[partyId] = GetAverageEVs(&gParty[B_PLAYER][i]);
                 partyId++;
             }
         }
