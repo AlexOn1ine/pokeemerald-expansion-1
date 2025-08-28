@@ -2607,6 +2607,10 @@ BattleScript_EffectMiracleEye::
 	goto BattleScript_IdentifiedFoe
 
 BattleScript_EffectGravity::
+	call BattleScript_EffectGravityInternal
+	goto BattleScript_MoveEnd
+
+BattleScript_EffectGravityInternal:
 	attackcanceler
 	attackstring
 	ppreduce
@@ -4790,7 +4794,11 @@ BattleScript_EffectYawn::
 	setyawn BattleScript_ButItFailed
 	attackanimation
 	waitanimation
-BattleScript_EffectYawnSuccess::
+	printstring STRINGID_PKMNWASMADEDROWSY
+	waitmessage B_WAIT_TIME_LONG
+	goto BattleScript_MoveEnd
+
+BattleScript_MoveEffectYawnFoe::
 	printstring STRINGID_PKMNWASMADEDROWSY
 	waitmessage B_WAIT_TIME_LONG
 	return
@@ -9324,6 +9332,7 @@ BattleScript_RaiseSideStatsEnd:
 	return
 
 BattleScript_EffectLowerStatFoes::
+	return
 	savetarget
 	copybyte sBATTLER, gBattlerTarget
 BattleScript_LowerSideStatsLoop:
@@ -9415,12 +9424,6 @@ BattleScript_EffectPoisonParalyzeSide::
 BattleScript_PoisonParalyzeSideLoop:
 	jumpifabsent BS_TARGET, BattleScript_PoisonParalyzeSideIncrement
 	trysetpoisonparalysis BattleScript_PoisonParalyzeSideIncrement
-	statusanimation BS_TARGET
-	updatestatusicon BS_TARGET
-	printfromtable gStatusConditionsStringIds
-	waitmessage B_WAIT_TIME_LONG
-	updatestatusicon BS_EFFECT_BATTLER
-	waitstate
 BattleScript_PoisonParalyzeSideIncrement:
 	jumpifbytenotequal gBattlerTarget, sBATTLER, BattleScript_PoisonParalyzeSideEnd
 	setallytonexttarget BattleScript_PoisonParalyzeSideLoop
@@ -9434,12 +9437,6 @@ BattleScript_EffectEffectSporeSide::
 BattleScript_EffectSporeSideLoop:
 	jumpifabsent BS_TARGET, BattleScript_EffectSporeSideIncrement
 	tryseteffectspore BattleScript_EffectSporeSideIncrement
-	statusanimation BS_TARGET
-	updatestatusicon BS_TARGET
-	printfromtable gStatusConditionsStringIds
-	waitmessage B_WAIT_TIME_LONG
-	updatestatusicon BS_EFFECT_BATTLER
-	waitstate
 BattleScript_EffectSporeSideIncrement:
 	jumpifbytenotequal gBattlerTarget, sBATTLER, BattleScript_EffectSporeSideEnd
 	setallytonexttarget BattleScript_EffectSporeSideLoop
