@@ -72,16 +72,22 @@ SINGLE_BATTLE_TEST("Synchronize - X")
 {
 
     GIVEN {
-        PLAYER(SPECIES_WOBBUFFET) { Ability(ABILITY_TOXIC_CHAIN); Item(ITEM_LUM_BERRY); };
+        PLAYER(SPECIES_WOBBUFFET) { Item(ITEM_LUM_BERRY); Ability(ABILITY_TOXIC_CHAIN); };
         OPPONENT(SPECIES_ABRA) { Item(ITEM_LUM_BERRY); Ability(ABILITY_SYNCHRONIZE); }
     } WHEN {
         TURN { MOVE(player, MOVE_NUZZLE); }
     } SCENE {
         ANIMATION(ANIM_TYPE_MOVE, MOVE_NUZZLE, player);
-        // ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PSN, opponent);
-        // STATUS_ICON(opponent, poison: TRUE);
-        // ABILITY_POPUP(opponent, ABILITY_SYNCHRONIZE);
-        // ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PSN, player);
-        // STATUS_ICON(player, poison: TRUE);
+        ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PSN, opponent);
+        STATUS_ICON(opponent, badPoison: TRUE);
+        ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PSN, player);
+        STATUS_ICON(player, badPoison: TRUE);
+        ANIMATION(ANIM_TYPE_GENERAL, B_ANIM_HELD_ITEM_EFFECT, player);
+        ANIMATION(ANIM_TYPE_GENERAL, B_ANIM_HELD_ITEM_EFFECT, opponent);
+        NONE_OF {
+            ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PRZ, opponent);
+            STATUS_ICON(opponent, badPoison: TRUE);
+            STATUS_ICON(player, paralysis: TRUE);
+        }
     }
 }

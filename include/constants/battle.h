@@ -508,6 +508,8 @@ enum __attribute__((packed)) MoveEffect
 #define MOVE_EFFECT_FREEZE_OR_FROSTBITE MOVE_EFFECT_FREEZE
 #endif
 
+#define MOVE_EFFECT_CONTINUE            0x8000
+
 // Battle environment defines for gBattleEnvironment.
 enum BattleEnvironments
 {

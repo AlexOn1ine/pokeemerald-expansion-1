@@ -2728,6 +2728,7 @@ BattleScript_Hit_RetFromAtkAnimation::
 	waitmessage B_WAIT_TIME_LONG
 	resultmessage
 	waitmessage B_WAIT_TIME_LONG
+	setadditionaleffects
 	return
 
 BattleScript_EffectNaturalGift::
@@ -3441,7 +3442,7 @@ BattleScript_FirstChargingTurnAfterAttackString:
 	setsemiinvulnerablebit @ only for moves with EFFECT_SEMI_INVULNERABLE/EFFECT_SKY_DROP
 	setchargingturn
 	twoturnmoveschargestringandanimation
-	moveendcase MOVEEND_ADDITIONAL_EFFECTS @ only onChargeTurnOnly effects will work here
+	setadditionaleffects @ only onChargeTurnOnly effects will work here
 	return
 
 BattleScript_TwoTurnMovesSecondPowerHerbActivates:
@@ -4783,6 +4784,7 @@ BattleScript_BrickBreakDoHit::
 	resultmessage
 	waitmessage B_WAIT_TIME_LONG
 	tryfaintmon BS_TARGET
+	setadditionaleffects
 	goto BattleScript_MoveEnd
 
 BattleScript_EffectYawn::
@@ -7870,7 +7872,7 @@ BattleScript_FlinchPrevention::
 	call BattleScript_AbilityPopUp
 	printstring STRINGID_PKMNSXPREVENTSFLINCHING
 	waitmessage B_WAIT_TIME_LONG
-	goto BattleScript_MoveEnd
+	return
 
 BattleScript_OwnTempoPrevents::
 	pause B_WAIT_TIME_SHORT
@@ -9295,25 +9297,7 @@ BattleScript_TargetAbilityStatRaiseRet_End:
 BattleScript_EffectMaxMove::
 	attackcanceler
 	accuracycheck BattleScript_ButItFailed, NO_ACC_CALC_CHECK_LOCK_ON
-	attackstring
-	ppreduce
-	critcalc
-	damagecalc
-	adjustdamage
-	attackanimation
-	waitanimation
-	effectivenesssound
-	hitanimation BS_TARGET
-	waitstate
-	healthbarupdate BS_TARGET
-	datahpupdate BS_TARGET
-	critmessage
-	waitmessage B_WAIT_TIME_LONG
-	resultmessage
-	waitmessage B_WAIT_TIME_LONG
-	tryfaintmon BS_TARGET
-	moveendall
-	end
+	goto BattleScript_HitFromAtkString
 
 BattleScript_EffectRaiseStatAllies::
 	savetarget
@@ -9332,7 +9316,6 @@ BattleScript_RaiseSideStatsEnd:
 	return
 
 BattleScript_EffectLowerStatFoes::
-	return
 	savetarget
 	copybyte sBATTLER, gBattlerTarget
 BattleScript_LowerSideStatsLoop:
@@ -9460,11 +9443,11 @@ BattleScript_ConfuseSideIncrement:
 BattleScript_ConfuseSideEnd:
 	restoretarget
 	jumpifbyte CMP_EQUAL, gBattleCommunication + 1, 1, BattleScript_PrintCoinsScattered @ Gold Rush
-	goto BattleScript_MoveEnd
+	return
 
 BattleScript_PrintCoinsScattered:
 	printstring STRINGID_COINSSCATTERED
-	goto BattleScript_MoveEnd
+	return
 
 BattleScript_EffectInfatuateSide::
 	savetarget
@@ -9481,7 +9464,7 @@ BattleScript_InfatuateSideIncrement:
 	setallytonexttarget BattleScript_InfatuateSideLoop
 BattleScript_InfatuateSideEnd:
 	restoretarget
-	goto BattleScript_MoveEnd
+	return
 
 BattleScript_EffectTormentSide::
 	savetarget
@@ -9497,7 +9480,7 @@ BattleScript_TormentSideIncrement:
 	setallytonexttarget BattleScript_TormentSideLoop
 BattleScript_TormentSideEnd:
 	restoretarget
-	goto BattleScript_MoveEnd
+	return
 
 BattleScript_TormentEnds::
 	printstring STRINGID_TORMENTEDNOMORE
@@ -9518,7 +9501,7 @@ BattleScript_MeanLookSideIncrement:
 	setallytonexttarget BattleScript_MeanLookSideLoop
 BattleScript_MeanLookSideEnd:
 	restoretarget
-	goto BattleScript_MoveEnd
+	return
 
 BattleScript_EffectRaiseCritAlliesAnim::
 	savetarget
@@ -9534,7 +9517,7 @@ BattleScript_RaiseCritAlliesIncrement:
 	setallytonexttarget BattleScript_RaiseCritAlliesLoop
 BattleScript_RaiseCritAlliesEnd:
 	restoretarget
-	goto BattleScript_MoveEnd
+	return
 
 BattleScript_EffectHealOneSixthAllies::
 	jumpifteamhealthy BattleScript_MoveEnd
@@ -9553,7 +9536,7 @@ BattleScript_HealOneSixthAlliesIncrement:
 	setallytonexttarget BattleScript_HealOneSixthAlliesLoop
 BattleScript_HealOneSixthAlliesEnd:
 	restoretarget
-	goto BattleScript_MoveEnd
+	return
 
 BattleScript_EffectRecycleBerriesAllies::
 	savetarget
@@ -9570,7 +9553,7 @@ BattleScript_RecycleBerriesAlliesIncrement:
 	setallytonexttarget BattleScript_RecycleBerriesAlliesLoop
 BattleScript_RecycleBerriesAlliesEnd:
 	restoretarget
-	goto BattleScript_MoveEnd
+	return
 
 BattleScript_EffectSteelsurge::
 	setsteelsurge BattleScript_MoveEnd
