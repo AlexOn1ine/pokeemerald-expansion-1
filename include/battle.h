@@ -609,6 +609,7 @@ struct BattleStruct
     u8 eventBlockCounter;
     u8 turnEffectsBattlerId;
     u8 endTurnEventsCounter;
+    u8 moveEndBattlerId;
     u16 wrappedMove[MAX_BATTLERS_COUNT];
     u16 moveTarget[MAX_BATTLERS_COUNT];
     u32 expShareExpValue;

@@ -1018,11 +1018,11 @@ DOUBLE_BATTLE_TEST("Dynamax: G-Max Volt Crash paralyzes both opponents")
     } SCENE {
         MESSAGE("Pikachu used G-Max Volt Crash!");
         ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PRZ, opponentLeft);
-        STATUS_ICON(opponentLeft, paralysis: TRUE);
         MESSAGE("The opposing Wobbuffet is paralyzed, so it may be unable to move!");
+        STATUS_ICON(opponentLeft, paralysis: TRUE);
         ANIMATION(ANIM_TYPE_STATUS, B_ANIM_STATUS_PRZ, opponentRight);
-        STATUS_ICON(opponentRight, paralysis: TRUE);
         MESSAGE("The opposing Wynaut is paralyzed, so it may be unable to move!");
+        STATUS_ICON(opponentRight, paralysis: TRUE);
     }
 }
 

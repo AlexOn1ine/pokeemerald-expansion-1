@@ -128,7 +128,7 @@ enum CmdVarious
 // cases for Cmd_moveend - Order matters!
 enum MoveEndEffects
 {
-    MOVEEND_SUM_DAMAGE,
+    MOVEEND_SET_VALUES,
     MOVEEND_PROTECT_LIKE_EFFECT,
     MOVEEND_ABSORB,
     MOVEEND_RAGE,
@@ -153,9 +153,10 @@ enum MoveEndEffects
     MOVEEND_ITEM_EFFECTS_ATTACKER,
     MOVEEND_ABILITY_BLOCK,
     MOVEEND_SHEER_FORCE, // If move is Sheer Force affected, skip until Opportunist
+    MOVEEND_COLOR_CHANGE, // Color Change / Berserk / Anger Shell
     MOVEEND_RED_CARD, // Red Card triggers before Eject Pack
     MOVEEND_EJECT_BUTTON,
-    MOVEEND_LIFEORB_SHELLBELL, // Includes shell bell, throat spray, etc
+    MOVEEND_LIFEORB_SHELLBELL, // Shell Bell / Life Orb / Throat Spray
     MOVEEND_FORM_CHANGE,
     MOVEEND_EMERGENCY_EXIT,
     MOVEEND_EJECT_PACK,

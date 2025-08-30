@@ -4066,12 +4066,9 @@ void SetMoveEffect(u32 battler, u32 effectBattler, bool32 primary, bool32 certai
 
 static bool32 CanApplyAdditionalEffect(const struct AdditionalEffect *additionalEffect)
 {
-    if (additionalEffect->moveEffect == MOVE_EFFECT_NONE)
-        return FALSE;
-
     if (gBattleStruct->toxicChainPriority && additionalEffect->moveEffect <= MOVE_EFFECT_FROSTBITE)
         return FALSE;
-        
+
     if (additionalEffect->self
      && NumAffectedSpreadMoveTargets() > 1
      && GetNextTarget(GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove), TRUE) != MAX_BATTLERS_COUNT)
@@ -5949,8 +5946,9 @@ static void Cmd_moveend(void)
     {
         switch (gBattleScripting.moveendState)
         {
-        case MOVEEND_SUM_DAMAGE: // Sum and store damage dealt for multi strike recoil
+        case MOVEEND_SET_VALUES: // Sum and store damage dealt for multi strike recoil
             gBattleScripting.savedDmg += gBattleStruct->moveDamage[gBattlerTarget];
+            gBattleStruct->moveEndBattlerId = 0;
             gBattleScripting.moveendState++;
             break;
         case MOVEEND_PROTECT_LIKE_EFFECT:
@@ -6509,6 +6507,19 @@ static void Cmd_moveend(void)
                 gBattleScripting.moveendState = MOVEEND_EJECT_PACK;
             else
                 gBattleScripting.moveendState++;
+            break;
+        case MOVEEND_COLOR_CHANGE:
+            while (gBattleStruct->moveEndBattlerId < gBattlersCount)
+            {
+                u32 battler = gBattleStruct->moveEndBattlerId++;
+                if (battler == gBattlerAttacker)
+                    continue;
+
+                if (AbilityBattleEffects(ABILITYEFFECT_COLOR_CHANGE, battler, GetBattlerAbility(battler), 0, 0))
+                    return;
+            }
+            gBattleStruct->moveEndBattlerId = 0;
+            gBattleScripting.moveendState++;
             break;
         case MOVEEND_RED_CARD:
             {
@@ -12257,8 +12268,9 @@ static void Cmd_jumpifnopursuitswitchdmg(void)
 
 static void Cmd_tryrestorehpberry(void)
 {
-    CMD_ARGS();
-    if (TryRestoreHPBerries(gBattlerAttacker, ITEMEFFECT_TRY_HEALING))
+    CMD_ARGS(u8 battler);
+    u32 battler = GetBattlerForBattleScript(cmd->battler);
+    if (TryRestoreHPBerries(battler, ITEMEFFECT_TRY_HEALING))
         return;
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
