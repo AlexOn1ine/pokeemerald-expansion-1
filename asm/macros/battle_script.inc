@@ -187,7 +187,7 @@
 	.4byte \jumpInstr
 	.endm
 
-	.macro unused_0x21
+	.macro trycurestatus
 	.byte 0x21
 	.endm
 
@@ -419,8 +419,10 @@
 	.4byte \jumpInstr
 	.endm
 
-	.macro unused_0x48
+	.macro trysynchronize moveEffect:req, jumpInstr:req
 	.byte 0x48
+	.byte \moveEffect
+	.4byte \jumpInstr
 	.endm
 
 	.macro moveend endMode:req, endState:req
@@ -2521,14 +2523,4 @@
 	.macro tryboosterenergy onFieldStatus:req
 	callnative BS_TryBoosterEnergy
 	.byte \onFieldStatus
-	.endm
-
-	.macro trysynchronize moveEffect:req, jumpInstr:req
-	callnative BS_TrySynchronize
-	.byte \moveEffect
-	.4byte \jumpInstr
-	.endm
-
-	.macro trycurestatus
-	callnative BS_TryCureStatus
 	.endm

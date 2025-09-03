@@ -1617,6 +1617,9 @@ BattleScript_EffectPsychoShiftCanWork:
 	printstring STRINGID_PKMNSTATUSNORMAL
 	waitmessage B_WAIT_TIME_LONG
 	updatestatusicon BS_ATTACKER
+	trysynchronize 0, BattleScript_EffectPsychoShiftCureStatus
+BattleScript_EffectPsychoShiftCureStatus:
+	trycurestatus
 	goto BattleScript_MoveEnd
 
 BattleScript_EffectSynchronoise::
@@ -6962,7 +6965,11 @@ BattleScript_MoveEffectSleep::
 	statusanimation BS_EFFECT_BATTLER
 	printfromtable gFellAsleepStringIds
 	waitmessage B_WAIT_TIME_LONG
-BattleScript_UpdateEffectStatusIconRet::
+	call BattleScript_UpdateEffectStatusIconRet
+	trycurestatus
+	return
+
+BattleScript_UpdateEffectStatusIconRet:
 	updatestatusicon BS_EFFECT_BATTLER
 	waitstate
 	trytriggerstatusform
@@ -6979,6 +6986,7 @@ BattleScript_YawnMakesAsleep::
 	makevisible BS_EFFECT_BATTLER
 	skydropyawn
 BattleScript_YawnEnd:
+	trycurestatus
 	end2
 
 BattleScript_EmbargoEndTurn::
@@ -7044,8 +7052,6 @@ BattleScript_MoveEffectFreeze::
 	printfromtable gGotFrozenStringIds
 	waitmessage B_WAIT_TIME_LONG
 	call BattleScript_UpdateEffectStatusIconRet
-	trysynchronize MOVE_EFFECT_FREEZE, BattleScript_CureMoveEffectStatus
-	setnonvolatilestatus TRIGGER_ON_ABILITY
 	trycurestatus
 	return
 
@@ -7069,7 +7075,7 @@ BattleScript_MoveEffectToxic::
 	trycurestatus
 	return
 
-BattleScript_CureMoveEffectStatus::
+BattleScript_CureMoveEffectStatus:
 	trycurestatus
 	return
 

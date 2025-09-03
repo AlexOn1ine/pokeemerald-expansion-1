@@ -371,7 +371,7 @@ static void Cmd_jumpifvolatile(void);
 static void Cmd_jumpifability(void);
 static void Cmd_jumpifsideaffecting(void);
 static void Cmd_jumpifstat(void);
-static void Cmd_unused_0x21(void);
+static void Cmd_trycurestatus(void);
 static void Cmd_jumpbasedontype(void);
 static void Cmd_getexp(void);
 static void Cmd_checkteamslost(void);
@@ -410,7 +410,7 @@ static void Cmd_endselectionscript(void);
 static void Cmd_playanimation(void);
 static void Cmd_playanimation_var(void);
 static void Cmd_jumpfifsemiinvulnerable(void);
-static void Cmd_unused_0x48(void);
+static void Cmd_trysynchronize(void);
 static void Cmd_moveend(void);
 static void Cmd_sethealblock(void);
 static void Cmd_returnatktoball(void);
@@ -630,7 +630,7 @@ void (*const gBattleScriptingCommandsTable[])(void) =
     Cmd_jumpifability,                           //0x1E
     Cmd_jumpifsideaffecting,                     //0x1F
     Cmd_jumpifstat,                              //0x20
-    Cmd_unused_0x21,                             //0x21
+    Cmd_trycurestatus,                           //0x21
     Cmd_jumpbasedontype,                         //0x22
     Cmd_getexp,                                  //0x23
     Cmd_checkteamslost,                          //0x24
@@ -669,7 +669,7 @@ void (*const gBattleScriptingCommandsTable[])(void) =
     Cmd_playanimation,                           //0x45
     Cmd_playanimation_var,                       //0x46
     Cmd_jumpfifsemiinvulnerable,                 //0x47
-    Cmd_unused_0x48,                             //0x48
+    Cmd_trysynchronize,                          //0x48
     Cmd_moveend,                                 //0x49
     Cmd_sethealblock,                            //0x4A
     Cmd_returnatktoball,                         //0x4B
@@ -4436,8 +4436,32 @@ static void Cmd_jumpifstat(void)
         gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
-static void Cmd_unused_0x21(void)
+static void Cmd_trycurestatus(void)
 {
+    CMD_ARGS();
+    for (u32 battler = 0; battler < MAX_BATTLERS_COUNT; battler++)
+    {
+        u32 holdEffect = GetBattlerHoldEffect(battler, TRUE);
+
+        if (holdEffect != HOLD_EFFECT_CURE_PAR
+         && holdEffect != HOLD_EFFECT_CURE_PSN
+         && holdEffect != HOLD_EFFECT_CURE_BRN
+         && holdEffect != HOLD_EFFECT_CURE_FRZ
+         && holdEffect != HOLD_EFFECT_CURE_SLP
+         && holdEffect != HOLD_EFFECT_CURE_STATUS)
+            continue;
+
+        if (ItemEffectMoveEnd(battler, holdEffect) != ITEM_NO_EFFECT)
+        {
+            gBattleStruct->battlerState[battler].itemCanBeKnockedOff = FALSE;
+            gPotentialItemEffectBattler = gBattleScripting.battler = battler;
+            BtlController_EmitSetMonData(battler, B_COMM_TO_CONTROLLER, REQUEST_STATUS_BATTLE, 0, 4, &gBattleMons[battler].status1);
+            MarkBattlerForControllerExec(battler);
+            return;
+        }
+    }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
 static void Cmd_jumpbasedontype(void)
@@ -5496,8 +5520,54 @@ static void Cmd_jumpfifsemiinvulnerable(void)
         gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
-static void Cmd_unused_0x48(void)
+static void Cmd_trysynchronize(void)
 {
+    CMD_ARGS(u8 moveEffect, const u8 *jumpInstr);
+    u32 moveEffect = cmd->moveEffect;
+
+    if (moveEffect == MOVE_EFFECT_SLEEP
+     || moveEffect == MOVE_EFFECT_FREEZE
+     || GetBattlerAbility(gEffectBattler) != ABILITY_SYNCHRONIZE)
+    {
+        gBattlescriptCurrInstr = cmd->jumpInstr;
+        return;
+    }
+
+    u32 synchronizeAttacker = gBattlerAttacker;
+    u32 synchronizeBattler = gEffectBattler;
+    // If inflicted status came from target, e.g. static
+    if (gEffectBattler == gBattlerAttacker)
+    {
+        synchronizeBattler = gEffectBattler;
+        synchronizeAttacker = gBattlerTarget;
+    }
+
+    if (B_SYNCHRONIZE_TOXIC < GEN_5 && moveEffect == MOVE_EFFECT_TOXIC)
+        moveEffect = MOVE_EFFECT_POISON;
+
+    gBattleScripting.battler = gBattlerAbility = synchronizeBattler;
+    gLastUsedAbility = ABILITY_SYNCHRONIZE;
+    RecordAbilityBattle(synchronizeBattler, ABILITY_SYNCHRONIZE);
+    PREPARE_ABILITY_BUFFER(gBattleTextBuff1, ABILITY_SYNCHRONIZE);
+
+    if (CanSetNonVolatileStatus(
+            synchronizeBattler,
+            synchronizeAttacker,
+            ABILITY_SYNCHRONIZE,
+            GetBattlerAbility(synchronizeAttacker),
+            moveEffect,
+            CHECK_TRIGGER))
+    {
+        gBattleScripting.moveEffect = moveEffect;
+        BattleScriptPush(cmd->nextInstr);
+        gBattlescriptCurrInstr = BattleScript_AbilityPopUp;
+        gEffectBattler = synchronizeAttacker;
+    }
+    else
+    {
+        BattleScriptPush(cmd->nextInstr);
+        gBattlescriptCurrInstr = BattleScript_AbilityPopUp;
+    }
 }
 
 static inline bool32 TryTriggerSymbiosis(u32 battler, u32 ally)
@@ -17619,26 +17689,32 @@ void BS_TryPsychoShift(void)
     // Psycho shift works
     if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_POISON) && CanBePoisoned(gBattlerAttacker, gBattlerTarget, GetBattlerAbility(gBattlerAttacker), targetAbility))
     {
+        gBattleScripting.moveEffect = MOVE_EFFECT_POISON;
         gBattleCommunication[MULTISTRING_CHOOSER] = 0;
     }
     else if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_TOXIC_POISON) && CanBePoisoned(gBattlerAttacker, gBattlerTarget, GetBattlerAbility(gBattlerAttacker), targetAbility))
     {
+        gBattleScripting.moveEffect = MOVE_EFFECT_TOXIC;
         gBattleCommunication[MULTISTRING_CHOOSER] = 1;
     }
     else if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_BURN) && CanBeBurned(gBattlerAttacker, gBattlerTarget, targetAbility))
     {
+        gBattleScripting.moveEffect = MOVE_EFFECT_BURN;
         gBattleCommunication[MULTISTRING_CHOOSER] = 2;
     }
     else if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_PARALYSIS) && CanBeParalyzed(gBattlerAttacker, gBattlerTarget, targetAbility))
     {
+        gBattleScripting.moveEffect = MOVE_EFFECT_PARALYSIS;
         gBattleCommunication[MULTISTRING_CHOOSER] = 3;
     }
     else if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_SLEEP) && CanBeSlept(gBattlerAttacker, gBattlerTarget, targetAbility, BLOCKED_BY_SLEEP_CLAUSE))
     {
+        gBattleScripting.moveEffect = MOVE_EFFECT_SLEEP;
         gBattleCommunication[MULTISTRING_CHOOSER] = 4;
     }
     else if ((gBattleMons[gBattlerAttacker].status1 & STATUS1_FROSTBITE) && CanBeFrozen(gBattlerAttacker, gBattlerTarget, targetAbility))
     {
+        gBattleScripting.moveEffect = MOVE_EFFECT_FROSTBITE;
         gBattleCommunication[MULTISTRING_CHOOSER] = 5;
     }
     else if (IsSleepClauseActiveForSide(GetBattlerSide(gBattlerTarget)))
@@ -18356,82 +18432,5 @@ void BS_BattlerItemToLastUsedItem(void)
 {
     NATIVE_ARGS();
     gBattleMons[gBattlerTarget].item = gLastUsedItem;
-    gBattlescriptCurrInstr = cmd->nextInstr;
-}
-
-void BS_TrySynchronize(void)
-{
-    NATIVE_ARGS(u8 moveEffect, const u8 *jumpInstr);
-
-    // Add toxicSpikes check
-    if (GetBattlerAbility(gEffectBattler) != ABILITY_SYNCHRONIZE)
-    {
-        gBattlescriptCurrInstr = cmd->jumpInstr;
-        return;
-    }
-
-    u32 synchronizeAttacker = gBattlerAttacker;
-    u32 synchronizeBattler = gEffectBattler;
-    // If inflicted status came from target, e.g. static
-    if (gEffectBattler == gBattlerAttacker)
-    {
-        synchronizeBattler = gEffectBattler;
-        synchronizeAttacker = gBattlerTarget;
-    }
-
-    u32 moveEffect = cmd->moveEffect;
-    if (B_SYNCHRONIZE_TOXIC < GEN_5 && moveEffect == MOVE_EFFECT_TOXIC)
-        moveEffect = MOVE_EFFECT_POISON;
-
-    gBattleScripting.battler = gBattlerAbility = synchronizeBattler;
-    gLastUsedAbility = ABILITY_SYNCHRONIZE;
-    RecordAbilityBattle(synchronizeBattler, ABILITY_SYNCHRONIZE);
-    PREPARE_ABILITY_BUFFER(gBattleTextBuff1, ABILITY_SYNCHRONIZE);
-
-    if (CanSetNonVolatileStatus(
-            synchronizeBattler,
-            synchronizeAttacker,
-            ABILITY_SYNCHRONIZE,
-            GetBattlerAbility(synchronizeAttacker),
-            moveEffect,
-            CHECK_TRIGGER))
-    {
-        gBattleScripting.moveEffect = moveEffect;
-        BattleScriptPush(cmd->nextInstr);
-        gBattlescriptCurrInstr = BattleScript_AbilityPopUp;
-        gEffectBattler = synchronizeAttacker;
-    }
-    else
-    {
-        BattleScriptPush(cmd->nextInstr);
-        gBattlescriptCurrInstr = BattleScript_AbilityPopUp;
-    }
-}
-
-void BS_TryCureStatus(void)
-{
-    NATIVE_ARGS();
-    for (u32 battler = 0; battler < MAX_BATTLERS_COUNT; battler++)
-    {
-        u32 holdEffect = GetBattlerHoldEffect(battler, TRUE);
-
-        if (holdEffect != HOLD_EFFECT_CURE_PAR
-         && holdEffect != HOLD_EFFECT_CURE_PSN
-         && holdEffect != HOLD_EFFECT_CURE_BRN
-         && holdEffect != HOLD_EFFECT_CURE_FRZ
-         && holdEffect != HOLD_EFFECT_CURE_SLP
-         && holdEffect != HOLD_EFFECT_CURE_STATUS)
-            continue;
-
-        if (ItemEffectMoveEnd(battler, holdEffect) != ITEM_NO_EFFECT)
-        {
-            gBattleStruct->battlerState[battler].itemCanBeKnockedOff = FALSE;
-            gPotentialItemEffectBattler = gBattleScripting.battler = battler;
-            BtlController_EmitSetMonData(battler, B_COMM_TO_CONTROLLER, REQUEST_STATUS_BATTLE, 0, 4, &gBattleMons[battler].status1);
-            MarkBattlerForControllerExec(battler);
-            return;
-        }
-    }
-
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
