@@ -10,6 +10,7 @@
 #include "battle_setup.h"
 #include "battle_z_move.h"
 #include "battle_gimmick.h"
+#include "battle_hold_effects.h"
 #include "generational_changes.h"
 #include "party_menu.h"
 #include "pokemon.h"
@@ -3823,6 +3824,8 @@ enum Ability AbilityBattleEffects(u32 caseID, u32 battler, enum Ability ability,
         }
         break;
     case ABILITYEFFECT_ON_SWITCHIN:
+        if (gHoldEffectsInfo[HOLD_EFFECT_MIRROR_HERB].onSwitchIn)
+            break;
         gBattleScripting.battler = battler;
         switch (gLastUsedAbility)
         {
