@@ -1,5 +1,6 @@
 #include "global.h"
 #include "battle.h"
+#include "battle_hold_effects.h"
 #include "battle_message.h"
 #include "battle_anim.h"
 #include "battle_ai_main.h"
@@ -53,7 +54,6 @@
 #include "constants/battle_move_effects.h"
 #include "constants/battle_string_ids.h"
 #include "constants/battle_partner.h"
-#include "constants/hold_effects.h"
 #include "constants/items.h"
 #include "constants/item_effects.h"
 #include "constants/moves.h"
@@ -1365,7 +1365,7 @@ static void AccuracyCheck(bool32 recalcDragonDarts, const u8 *nextInstr, const u
 
     enum BattleMoveEffects effect = GetMoveEffect(move);
     enum Ability abilityAtk = GetBattlerAbility(gBattlerAttacker);
-    enum ItemHoldEffect holdEffectAtk = GetBattlerHoldEffect(gBattlerAttacker);
+    enum HoldEffect holdEffectAtk = GetBattlerHoldEffect(gBattlerAttacker);
 
     if (move == NO_ACC_CALC_CHECK_LOCK_ON)
     {
@@ -1527,7 +1527,7 @@ static inline u32 GetCriticalHitOdds(u32 critChance)
     return sCriticalHitOdds[critChance];
 }
 
-static inline u32 IsBattlerLeekAffected(u32 battler, enum ItemHoldEffect holdEffect)
+static inline u32 IsBattlerLeekAffected(u32 battler, enum HoldEffect holdEffect)
 {
     if (holdEffect == HOLD_EFFECT_LEEK)
     {
@@ -1537,7 +1537,7 @@ static inline u32 IsBattlerLeekAffected(u32 battler, enum ItemHoldEffect holdEff
     return FALSE;
 }
 
-static inline u32 GetHoldEffectCritChanceIncrease(u32 battler, enum ItemHoldEffect holdEffect)
+static inline u32 GetHoldEffectCritChanceIncrease(u32 battler, enum HoldEffect holdEffect)
 {
     u32 critStageIncrease = 0;
 
@@ -1562,7 +1562,7 @@ static inline u32 GetHoldEffectCritChanceIncrease(u32 battler, enum ItemHoldEffe
     return critStageIncrease;
 }
 
-s32 CalcCritChanceStage(u32 battlerAtk, u32 battlerDef, u32 move, bool32 recordAbility, enum Ability abilityAtk, enum Ability abilityDef, enum ItemHoldEffect holdEffectAtk)
+s32 CalcCritChanceStage(u32 battlerAtk, u32 battlerDef, u32 move, bool32 recordAbility, enum Ability abilityAtk, enum Ability abilityDef, enum HoldEffect holdEffectAtk)
 {
     s32 critChance = 0;
 
@@ -1611,7 +1611,7 @@ s32 CalcCritChanceStage(u32 battlerAtk, u32 battlerDef, u32 move, bool32 recordA
 // Threshold = Base Speed / 2
 // High crit move = 8 * (Base Speed / 2)
 // Focus Energy = 4 * (Base Speed / 2)
-s32 CalcCritChanceStageGen1(u32 battlerAtk, u32 battlerDef, u32 move, bool32 recordAbility, enum Ability abilityAtk, enum Ability abilityDef, enum ItemHoldEffect holdEffectAtk)
+s32 CalcCritChanceStageGen1(u32 battlerAtk, u32 battlerDef, u32 move, bool32 recordAbility, enum Ability abilityAtk, enum Ability abilityDef, enum HoldEffect holdEffectAtk)
 {
     s32 critChance = 0;
     s32 moveCritStage = GetMoveCriticalHitStage(gCurrentMove);
@@ -1679,7 +1679,7 @@ static void Cmd_critcalc(void)
         moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove),
         battlerDef;
     bool32 calcSpreadMoveDamage = IsSpreadMove(moveTarget) && !IsBattleMoveStatus(gCurrentMove);
-    enum ItemHoldEffect holdEffectAtk = GetBattlerHoldEffect(gBattlerAttacker);
+    enum HoldEffect holdEffectAtk = GetBattlerHoldEffect(gBattlerAttacker);
     gPotentialItemEffectBattler = gBattlerAttacker;
 
     for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
@@ -1812,7 +1812,7 @@ static void Cmd_adjustdamage(void)
 {
     CMD_ARGS();
 
-    enum ItemHoldEffect holdEffect;
+    enum HoldEffect holdEffect;
     u8 param;
     u32 battlerDef;
     u32 rand = Random() % 100;
@@ -4455,7 +4455,7 @@ static bool32 BattleTypeAllowsExp(void)
 
 static u32 GetMonHoldEffect(struct Pokemon *mon)
 {
-    enum ItemHoldEffect holdEffect;
+    enum HoldEffect holdEffect;
     u32 item = GetMonData(mon, MON_DATA_HELD_ITEM);
 
     if (item == ITEM_ENIGMA_BERRY_E_READER)
@@ -4474,7 +4474,7 @@ static void Cmd_getexp(void)
 {
     CMD_ARGS(u8 battler);
 
-    enum ItemHoldEffect holdEffect;
+    enum HoldEffect holdEffect;
     s32 i; // also used as stringId
     u8 *expMonId = &gBattleStruct->expGetterMonId;
     u32 currLvl;
@@ -5493,7 +5493,7 @@ static u32 GetNextTarget(u32 moveTarget, bool32 excludeCurrent)
     return battler;
 }
 
-static inline bool32 IsProtectivePadsProtected(u32 battler, enum ItemHoldEffect holdEffect)
+static inline bool32 IsProtectivePadsProtected(u32 battler, enum HoldEffect holdEffect)
 {
     if (holdEffect != HOLD_EFFECT_PROTECTIVE_PADS)
         return FALSE;
@@ -5883,6 +5883,7 @@ static void Cmd_moveend(void)
     u32 moveType = 0;
     u32 endMode, endState;
     u32 originallyUsedMove;
+    enum HoldEffect holdEffect = HOLD_EFFECT_NONE;
 
     if (gChosenMove == MOVE_UNAVAILABLE)
         originallyUsedMove = MOVE_NONE;
@@ -6095,7 +6096,7 @@ static void Cmd_moveend(void)
             gBattleScripting.moveendState++;
             break;
         case MOVEEND_ITEM_EFFECTS_TARGET:
-            if (ItemBattleEffects(ITEMEFFECT_TARGET, gBattlerTarget))
+            if (ItemBattleEffects(gBattlerTarget, GetBattlerHoldEffect(gBattlerTarget), IsOnTargetHitActivation))
                 effect = TRUE;
             gBattleScripting.moveendState++;
             break;
@@ -6119,10 +6120,17 @@ static void Cmd_moveend(void)
             gBattleScripting.moveendState++;
             break;
         case MOVEEND_ITEM_EFFECTS_ALL: // item effects for all battlers
-            if (ItemBattleEffects(ITEMEFFECT_MOVE_END, 0))
-                effect = TRUE;
-            else
-                gBattleScripting.moveendState++;
+            while (gBattleStruct->moveEndBattlerId < gBattlersCount)
+            {
+                u32 battler = gBattleStruct->moveEndBattlerId++;
+                if (!IsBattlerAlive(battler))
+                    continue;
+
+                if (ItemBattleEffects(battler, GetBattlerHoldEffect(battler), IsAfterMoveActivation))
+                    return;
+            }
+            gBattleStruct->moveEndBattlerId = 0;
+            gBattleScripting.moveendState++;
             break;
         case MOVEEND_ATTACKER_INVISIBLE: // make attacker sprite invisible
             if (IsSemiInvulnerable(gBattlerAttacker, CHECK_ALL)
@@ -6163,7 +6171,7 @@ static void Cmd_moveend(void)
             break;
         case MOVEEND_KINGSROCK: // King's rock
             // These effects will occur at each hit in a multi-strike move
-            if (ItemBattleEffects(ITEMEFFECT_KINGSROCK, 0))
+            if (ItemBattleEffects(gBattlerAttacker, GetBattlerHoldEffect(gBattlerAttacker), IsKingsRockActivation))
                 effect = TRUE;
             gBattleScripting.moveendState++;
             break;
@@ -6455,7 +6463,7 @@ static void Cmd_moveend(void)
             gBattleScripting.moveendState++;
             break;
         case MOVEEND_ITEM_EFFECTS_ATTACKER:
-            if (ItemBattleEffects(ITEMEFFECT_MOVE_END, gBattlerAttacker))
+            if (ItemBattleEffects(gBattlerAttacker, GetBattlerHoldEffect(gBattlerAttacker), IsOnAttackerAfterHitActivation))
                 effect = TRUE;
             gBattleScripting.moveendState++;
             break;
@@ -6582,7 +6590,7 @@ static void Cmd_moveend(void)
                 gBattleScripting.moveendState++;
             break;
         case MOVEEND_LIFEORB_SHELLBELL:
-            if (ItemBattleEffects(ITEMEFFECT_LIFEORB_SHELLBELL, 0))
+            if (ItemBattleEffects(gBattlerAttacker, GetBattlerHoldEffect(gBattlerAttacker), IsLifeOrbShellBellActivation))
                 effect = TRUE;
             gBattleScripting.moveendState++;
             break;
@@ -6725,7 +6733,10 @@ static void Cmd_moveend(void)
             while (gBattleStruct->moveEndBattlerId < gBattlersCount)
             {
                 u32 battler = gBattleStruct->moveEndBattlerId++;
-                if (ItemBattleEffects(ITEMEFFECT_MIRROR_HERB, battler))
+                if (!IsBattlerAlive(battler))
+                    continue;
+
+                if (ItemBattleEffects(battler, GetBattlerHoldEffect(battler), IsMirrorHerbActivation))
                     return;
             }
             gBattleStruct->moveEndBattlerId = 0;
@@ -6767,14 +6778,16 @@ static void Cmd_moveend(void)
             gBattleScripting.moveendState++;
             break;
         case MOVEEND_WHITE_HERB:
-            for (i = 0; i < gBattlersCount; i++)
+            while (gBattleStruct->moveEndBattlerId < gBattlersCount)
             {
-                if (!IsBattlerAlive(i))
+                u32 battler = gBattleStruct->moveEndBattlerId++;
+                if (!IsBattlerAlive(battler))
                     continue;
 
-                if (ItemBattleEffects(ITEMEFFECT_WHITE_HERB, i))
+                if (ItemBattleEffects(battler, GetBattlerHoldEffect(battler), IsWhiteHerbActivation))
                     return;
             }
+            gBattleStruct->moveEndBattlerId = 0;
             gBattleScripting.moveendState++;
             break;
         case MOVEEND_THIRD_MOVE_BLOCK:
@@ -7793,7 +7806,10 @@ static bool32 DoSwitchInEffectsForBattler(u32 battler)
 
         gDisableStructs[battler].truantSwitchInHack = 0;
 
-        if (DoSwitchInAbilities(battler) || ItemBattleEffects(ITEMEFFECT_ON_SWITCH_IN, battler))
+        if (DoSwitchInAbilities(battler))
+            return TRUE;
+
+        if (ItemBattleEffects(battler, GetBattlerHoldEffect(battler), IsOnSwitchInActivation))
             return TRUE;
 
         for (i = 0; i < gBattlersCount; i++)
@@ -7824,7 +7840,7 @@ static bool32 DoSwitchInEffectsForBattler(u32 battler)
 
         for (i = 0; i < gBattlersCount; i++)
         {
-            if (ItemBattleEffects(ITEMEFFECT_WHITE_HERB, i))
+            if (ItemBattleEffects(i, GetBattlerHoldEffect(i), IsWhiteHerbActivation))
                 return TRUE;
         }
         for (i = 0; i < gBattlersCount; i++)
@@ -7834,7 +7850,7 @@ static bool32 DoSwitchInEffectsForBattler(u32 battler)
         }
         for (i = 0; i < gBattlersCount; i++)
         {
-            if (ItemBattleEffects(ITEMEFFECT_MIRROR_HERB, i))
+            if (ItemBattleEffects(i, GetBattlerHoldEffect(i), IsMirrorHerbActivation))
                 return TRUE;
         }
 
@@ -9747,7 +9763,7 @@ static void Cmd_trysetrest(void)
     gBattlerTarget = gBattlerAttacker;
     gBattleStruct->moveDamage[gBattlerTarget] = gBattleMons[gBattlerTarget].maxHP * (-1);
     enum Ability ability = GetBattlerAbility(gBattlerTarget);
-    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(gBattlerTarget);
+    enum HoldEffect holdEffect = GetBattlerHoldEffect(gBattlerTarget);
 
     if (IsBattlerTerrainAffected(gBattlerTarget, ability, holdEffect, STATUS_FIELD_ELECTRIC_TERRAIN))
     {
@@ -10075,7 +10091,7 @@ static void TryPlayStatChangeAnimation(u32 battler, enum Ability ability, u32 st
 static u32 ChangeStatBuffs(u32 battler, s8 statValue, u32 statId, union StatChangeFlags flags, u32 stats, const u8 *BS_ptr)
 {
     u32 index, battlerAbility;
-    enum ItemHoldEffect battlerHoldEffect;
+    enum HoldEffect battlerHoldEffect;
     battlerAbility = GetBattlerAbility(battler);
     battlerHoldEffect = GetBattlerHoldEffect(battler);
     gSpecialStatuses[battler].changedStatsBattlerId = gBattlerAttacker;
@@ -10776,7 +10792,7 @@ static void Cmd_tryKO(void)
     CMD_ARGS(const u8 *failInstr);
 
     enum BattleMoveEffects effect = GetMoveEffect(gCurrentMove);
-    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(gBattlerTarget);
+    enum HoldEffect holdEffect = GetBattlerHoldEffect(gBattlerTarget);
     enum Ability targetAbility = GetBattlerAbility(gBattlerTarget);
     u32 rand = Random() % 100;
     u32 affectionScore = GetBattlerAffectionHearts(gBattlerTarget);
@@ -12782,7 +12798,7 @@ static void Cmd_setyawn(void)
 {
     CMD_ARGS(const u8 *failInstr);
     enum Ability ability = GetBattlerAbility(gBattlerTarget);
-    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(gBattlerTarget);
+    enum HoldEffect holdEffect = GetBattlerHoldEffect(gBattlerTarget);
 
     if (gBattleMons[gBattlerTarget].volatiles.yawn
         || gBattleMons[gBattlerTarget].status1 & STATUS1_ANY)
@@ -14713,7 +14729,7 @@ u8 GetFirstFaintedPartyIndex(u8 battler)
 
 void ApplyExperienceMultipliers(s32 *expAmount, u8 expGetterMonId, u8 faintedBattler)
 {
-    enum ItemHoldEffect holdEffect = GetMonHoldEffect(&gPlayerParty[expGetterMonId]);
+    enum HoldEffect holdEffect = GetMonHoldEffect(&gPlayerParty[expGetterMonId]);
 
     if (IsTradedMon(&gPlayerParty[expGetterMonId]))
         *expAmount = (*expAmount * 150) / 100;
@@ -15004,7 +15020,7 @@ void BS_SetTerrain(void)
     default:
         break;
     }
-    enum ItemHoldEffect atkHoldEffect = GetBattlerHoldEffect(gBattlerAttacker);
+    enum HoldEffect atkHoldEffect = GetBattlerHoldEffect(gBattlerAttacker);
 
     gFieldStatuses &= ~STATUS_FIELD_TERRAIN_ANY;
     gFieldStatuses |= statusFlag;
@@ -17492,8 +17508,14 @@ void BS_GetTotemBoost(void)
 void BS_ActivateItemEffects(void)
 {
     NATIVE_ARGS();
-    if (ItemBattleEffects(ITEMEFFECT_TRY_HEALING, gBattlerTarget))
-        return;
+    for (u32 battler = 0; battler < gBattlersCount; battler++)
+    {
+        if (!IsBattlerAlive(battler))
+            continue;
+
+        if (ItemBattleEffects(battler, GetBattlerHoldEffect(battler), IsTryHealingActivation))
+            return;
+    }
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
@@ -17785,8 +17807,9 @@ void BS_ConsumeBerry(void)
         gLastUsedItem = gBattleMons[battler].item;
 
     GetBattlerPartyState(battler)->ateBerry = TRUE;
+    // TODO: don't overwrite gBattlerTarget
     gBattleScripting.battler = gEffectBattler = gBattlerTarget = battler;    // Cover all berry effect battler cases. e.g. ChangeStatBuffs uses target ID
-    if (ItemBattleEffects(ITEMEFFECT_USE_LAST_ITEM, battler))
+    if (ItemBattleEffects(battler, GetBattlerHoldEffect(battler), IsConsumeBerryActivation))
         return;
     gBattlescriptCurrInstr = cmd->nextInstr;
 }

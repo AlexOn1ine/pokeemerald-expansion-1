@@ -44,7 +44,6 @@
 #include "constants/battle_move_effects.h"
 #include "constants/battle_script_commands.h"
 #include "constants/battle_string_ids.h"
-#include "constants/hold_effects.h"
 #include "constants/items.h"
 #include "constants/item_effects.h"
 #include "constants/moves.h"
@@ -1338,7 +1337,7 @@ u32 TrySetCantSelectMoveBattleScript(u32 battler)
     u32 limitations = 0;
     u8 moveId = gBattleResources->bufferB[battler][2] & ~RET_GIMMICK;
     u32 move = gBattleMons[battler].moves[moveId];
-    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler);
+    enum HoldEffect holdEffect = GetBattlerHoldEffect(battler);
     u16 *choicedMove = &gBattleStruct->choicedMove[battler];
     enum BattleMoveEffects moveEffect = GetMoveEffect(move);
 
@@ -1600,7 +1599,7 @@ u32 CheckMoveLimitations(u32 battler, u8 unusableMoves, u16 check)
 {
     u32 move;
     enum BattleMoveEffects moveEffect;
-    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler);
+    enum HoldEffect holdEffect = GetBattlerHoldEffect(battler);
     u16 *choicedMove = &gBattleStruct->choicedMove[battler];
     s32 i;
 
@@ -2327,7 +2326,7 @@ static enum MoveCanceller CancellerZMoves(struct BattleContext *ctx)
 static enum MoveCanceller CancellerChoiceLock(struct BattleContext *ctx)
 {
     u16 *choicedMoveAtk = &gBattleStruct->choicedMove[ctx->battlerAtk];
-    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(ctx->battlerAtk);
+    enum HoldEffect holdEffect = GetBattlerHoldEffect(ctx->battlerAtk);
 
     if (gChosenMove != MOVE_STRUGGLE
      && (*choicedMoveAtk == MOVE_NONE || *choicedMoveAtk == MOVE_UNAVAILABLE)
@@ -5864,7 +5863,7 @@ void BattleScriptPushCursorAndCallback(const u8 *BS_ptr)
     gBattleMainFunc = RunBattleScriptCommands;
 }
 
-bool32 IsBattlerTerrainAffected(u32 battler, enum Ability ability, enum ItemHoldEffect holdEffect, u32 terrainFlag)
+bool32 IsBattlerTerrainAffected(u32 battler, enum Ability ability, enum HoldEffect holdEffect, u32 terrainFlag)
 {
     if (!(gFieldStatuses & terrainFlag))
         return FALSE;
@@ -6605,7 +6604,7 @@ static u32 RestoreWhiteHerbStats(u32 battler, enum ItemCaseId caseID)
     return effect;
 }
 
-static u8 ItemEffectMoveEnd(u32 battler, enum ItemHoldEffect holdEffect)
+static u8 ItemEffectMoveEnd(u32 battler, enum HoldEffect holdEffect)
 {
     u8 effect = 0;
 
@@ -6870,7 +6869,7 @@ static inline bool32 TryCureStatus(u32 battler, enum ItemCaseId caseId)
 }
 
 // This is hacky and could potentially be improved because ideally this function wouldn't exist but there is some inconsitency with timings.
-static bool32 ShouldWaitWithActivation(u32 battler, enum ItemHoldEffect holdEffect)
+static bool32 ShouldWaitWithActivation(u32 battler, enum HoldEffect holdEffect)
 {
     if (holdEffect != HOLD_EFFECT_RESTORE_HP
      && holdEffect != HOLD_EFFECT_RESTORE_PCT_HP
@@ -6906,11 +6905,11 @@ static bool32 ShouldWaitWithActivation(u32 battler, enum ItemHoldEffect holdEffe
     return FALSE;
 }
 
-u32 ItemBattleEffects(enum ItemCaseId caseID, u32 battler)
+u32 _ItemBattleEffects(enum ItemCaseId caseID, u32 battler)
 {
     u32 moveType = 0;
     enum ItemEffect effect = ITEM_NO_EFFECT;
-    enum ItemHoldEffect battlerHoldEffect = 0, atkHoldEffect = 0;
+    enum HoldEffect battlerHoldEffect = 0, atkHoldEffect = 0;
     u32 atkHoldEffectParam = 0;
     u32 atkItem = 0;
 
@@ -7325,7 +7324,7 @@ u32 ItemBattleEffects(enum ItemCaseId caseID, u32 battler)
     case ITEMEFFECT_MOVE_END:
         for (battler = 0; battler < gBattlersCount; battler++)
         {
-            enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler);
+            enum HoldEffect holdEffect = GetBattlerHoldEffect(battler);
             if (ShouldWaitWithActivation(battler, holdEffect))
                 continue;
 
@@ -7881,17 +7880,17 @@ u8 GetAttackerObedienceForAction()
     }
 }
 
-enum ItemHoldEffect GetBattlerHoldEffect(u32 battler)
+enum HoldEffect GetBattlerHoldEffect(u32 battler)
 {
     return GetBattlerHoldEffectInternal(battler, GetBattlerAbility(battler));
 }
 
-enum ItemHoldEffect GetBattlerHoldEffectIgnoreAbility(u32 battler)
+enum HoldEffect GetBattlerHoldEffectIgnoreAbility(u32 battler)
 {
     return GetBattlerHoldEffectInternal(battler, ABILITY_NONE);
 }
 
-enum ItemHoldEffect GetBattlerHoldEffectInternal(u32 battler, u32 ability)
+enum HoldEffect GetBattlerHoldEffectInternal(u32 battler, u32 ability)
 {
     if (gBattleMons[battler].volatiles.embargo)
         return HOLD_EFFECT_NONE;
@@ -7908,7 +7907,7 @@ enum ItemHoldEffect GetBattlerHoldEffectInternal(u32 battler, u32 ability)
         return GetItemHoldEffect(gBattleMons[battler].item);
 }
 
-enum ItemHoldEffect GetBattlerHoldEffectIgnoreNegation(u32 battler)
+enum HoldEffect GetBattlerHoldEffectIgnoreNegation(u32 battler)
 {
     gPotentialItemEffectBattler = battler;
     if (gBattleMons[battler].item == ITEM_ENIGMA_BERRY_E_READER)
@@ -7933,7 +7932,7 @@ u32 GetBattlerHoldEffectParam(u32 battler)
         return GetItemHoldEffectParam(gBattleMons[battler].item);
 }
 
-bool32 CanBattlerAvoidContactEffects(u32 battlerAtk, u32 battlerDef, enum Ability abilityAtk, enum ItemHoldEffect holdEffectAtk, u32 move)
+bool32 CanBattlerAvoidContactEffects(u32 battlerAtk, u32 battlerDef, enum Ability abilityAtk, enum HoldEffect holdEffectAtk, u32 move)
 {
     if (holdEffectAtk == HOLD_EFFECT_PROTECTIVE_PADS)
     {
@@ -7944,7 +7943,7 @@ bool32 CanBattlerAvoidContactEffects(u32 battlerAtk, u32 battlerDef, enum Abilit
     return !IsMoveMakingContact(battlerAtk, battlerDef, abilityAtk, holdEffectAtk, move);
 }
 
-bool32 IsMoveMakingContact(u32 battlerAtk, u32 battlerDef, enum Ability abilityAtk, enum ItemHoldEffect holdEffectAtk, u32 move)
+bool32 IsMoveMakingContact(u32 battlerAtk, u32 battlerDef, enum Ability abilityAtk, enum HoldEffect holdEffectAtk, u32 move)
 {
     if (!(MoveMakesContact(move) || (GetMoveEffect(move) == EFFECT_SHELL_SIDE_ARM
                                   && gBattleStruct->shellSideArmCategory[battlerAtk][battlerDef] == DAMAGE_CATEGORY_PHYSICAL)))
@@ -8062,7 +8061,7 @@ enum IronBallCheck
 };
 
 // Only called directly when calculating damage type effectiveness, and Iron Ball's type effectiveness mechanics
-bool32 IsBattlerGroundedInverseCheck(u32 battler, enum Ability ability, enum ItemHoldEffect holdEffect, enum InverseBattleCheck checkInverse)
+bool32 IsBattlerGroundedInverseCheck(u32 battler, enum Ability ability, enum HoldEffect holdEffect, enum InverseBattleCheck checkInverse)
 {
     if (holdEffect == HOLD_EFFECT_IRON_BALL)
         return TRUE;
@@ -8085,7 +8084,7 @@ bool32 IsBattlerGroundedInverseCheck(u32 battler, enum Ability ability, enum Ite
     return TRUE;
 }
 
-bool32 IsBattlerGrounded(u32 battler, enum Ability ability, enum ItemHoldEffect holdEffect)
+bool32 IsBattlerGrounded(u32 battler, enum Ability ability, enum HoldEffect holdEffect)
 {
     return IsBattlerGroundedInverseCheck(battler, ability, holdEffect, NOT_INVERSE_BATTLE);
 }
@@ -8107,7 +8106,7 @@ u32 GetBattlerWeight(u32 battler)
     u32 i;
     u32 weight = GetSpeciesWeight(gBattleMons[battler].species);
     enum Ability ability = GetBattlerAbility(battler);
-    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler);
+    enum HoldEffect holdEffect = GetBattlerHoldEffect(battler);
 
     if (ability == ABILITY_HEAVY_METAL)
         weight *= 2;
@@ -9648,7 +9647,7 @@ static inline uq4_12_t GetDefenderPartnerAbilitiesModifier(u32 battlerPartnerDef
     return UQ_4_12(1.0);
 }
 
-static inline uq4_12_t GetAttackerItemsModifier(u32 battlerAtk, uq4_12_t typeEffectivenessModifier, enum ItemHoldEffect holdEffectAtk)
+static inline uq4_12_t GetAttackerItemsModifier(u32 battlerAtk, uq4_12_t typeEffectivenessModifier, enum HoldEffect holdEffectAtk)
 {
     u32 metronomeTurns;
     uq4_12_t metronomeBoostBase;
@@ -10321,7 +10320,7 @@ bool32 DoesSpeciesUseHoldItemToChangeForm(u16 species, u16 heldItemId)
 
 bool32 CanMegaEvolve(u32 battler)
 {
-    enum ItemHoldEffect holdEffect = GetBattlerHoldEffectIgnoreNegation(battler);
+    enum HoldEffect holdEffect = GetBattlerHoldEffectIgnoreNegation(battler);
 
     // Check if Player has a Mega Ring.
     if (!TESTING
@@ -10359,7 +10358,7 @@ bool32 CanMegaEvolve(u32 battler)
 
 bool32 CanUltraBurst(u32 battler)
 {
-    enum ItemHoldEffect holdEffect = GetBattlerHoldEffectIgnoreNegation(battler);
+    enum HoldEffect holdEffect = GetBattlerHoldEffectIgnoreNegation(battler);
 
     // Check if Player has a Z-Ring
     if (!TESTING && (GetBattlerPosition(battler) == B_POSITION_PLAYER_LEFT
@@ -10647,7 +10646,7 @@ bool32 DoBattlersShareType(u32 battler1, u32 battler2)
 bool32 CanBattlerGetOrLoseItem(u32 battler, u16 itemId)
 {
     u16 species = gBattleMons[battler].species;
-    enum ItemHoldEffect holdEffect = GetItemHoldEffect(itemId);
+    enum HoldEffect holdEffect = GetItemHoldEffect(itemId);
 
     if (ItemIsMail(itemId))
         return FALSE;
@@ -11064,7 +11063,7 @@ void TrySaveExchangedItem(u32 battler, u16 stolenItem)
 bool32 IsBattlerAffectedByHazards(u32 battler, bool32 toxicSpikes)
 {
     bool32 ret = TRUE;
-    enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler);
+    enum HoldEffect holdEffect = GetBattlerHoldEffect(battler);
     if (toxicSpikes && holdEffect == HOLD_EFFECT_HEAVY_DUTY_BOOTS && !IS_BATTLER_OF_TYPE(battler, TYPE_POISON))
     {
         ret = FALSE;
@@ -11782,14 +11781,11 @@ void UpdateStallMons(void)
     //  Handling for moves that target multiple opponents in doubles not handled currently
 }
 
+// TODO: Redundant function
 bool32 TryRestoreHPBerries(u32 battler, enum ItemCaseId caseId)
 {
-    if (gItemsInfo[gBattleMons[battler].item].pocket == POCKET_BERRIES
-     || GetBattlerHoldEffect(battler) == HOLD_EFFECT_RESTORE_HP)  // Edge case for Berry Juice
-    {
-        if (ItemBattleEffects(caseId, battler))
-            return TRUE;
-    }
+    if (ItemBattleEffects(battler, GetBattlerHoldEffect(battler), IsBerryRestoreHpActivation))
+        return TRUE;
     return FALSE;
 }
 

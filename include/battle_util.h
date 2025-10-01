@@ -3,6 +3,7 @@
 
 #include "move.h"
 #include "constants/battle_string_ids.h"
+#include "constants/hold_effects.h"
 
 #define MOVE_LIMITATION_ZEROMOVE                (1 << 0)
 #define MOVE_LIMITATION_PP                      (1 << 1)
@@ -184,8 +185,8 @@ struct DamageContext
     uq4_12_t typeEffectivenessModifier;
     enum Ability abilityAtk;
     enum Ability abilityDef;
-    enum ItemHoldEffect holdEffectAtk:16;
-    enum ItemHoldEffect holdEffectDef:16;
+    enum HoldEffect holdEffectAtk;
+    enum HoldEffect holdEffectDef;
 };
 
 struct BattleContext
@@ -282,20 +283,20 @@ u32 GetProtectType(enum ProtectMethod method);
 bool32 CanBattlerEscape(u32 battler); // no ability check
 void BattleScriptExecute(const u8 *BS_ptr);
 void BattleScriptPushCursorAndCallback(const u8 *BS_ptr);
-u32 ItemBattleEffects(enum ItemCaseId, u32 battler);
+u32 _ItemBattleEffects(enum ItemCaseId, u32 battler);
 void ClearVariousBattlerFlags(u32 battler);
 void HandleAction_RunBattleScript(void);
 u32 SetRandomTarget(u32 battler);
 u32 GetBattleMoveTarget(u16 move, u8 setTarget);
 u8 GetAttackerObedienceForAction();
-enum ItemHoldEffect GetBattlerHoldEffect(u32 battler);
-enum ItemHoldEffect GetBattlerHoldEffectIgnoreAbility(u32 battler);
-enum ItemHoldEffect GetBattlerHoldEffectIgnoreNegation(u32 battler);
-enum ItemHoldEffect GetBattlerHoldEffectInternal(u32 battler, u32 ability);
+enum HoldEffect GetBattlerHoldEffect(u32 battler);
+enum HoldEffect GetBattlerHoldEffectIgnoreAbility(u32 battler);
+enum HoldEffect GetBattlerHoldEffectIgnoreNegation(u32 battler);
+enum HoldEffect GetBattlerHoldEffectInternal(u32 battler, u32 ability);
 u32 GetBattlerHoldEffectParam(u32 battler);
-bool32 CanBattlerAvoidContactEffects(u32 battlerAtk, u32 battlerDef, enum Ability abilityAtk, enum ItemHoldEffect holdEffectAtk, u32 move);
-bool32 IsMoveMakingContact(u32 battlerAtk, u32 battlerDef, enum Ability abilityAtk, enum ItemHoldEffect holdEffectAtk, u32 move);
-bool32 IsBattlerGrounded(u32 battler, enum Ability ability, enum ItemHoldEffect holdEffect);
+bool32 CanBattlerAvoidContactEffects(u32 battlerAtk, u32 battlerDef, enum Ability abilityAtk, enum HoldEffect holdEffectAtk, u32 move);
+bool32 IsMoveMakingContact(u32 battlerAtk, u32 battlerDef, enum Ability abilityAtk, enum HoldEffect holdEffectAtk, u32 move);
+bool32 IsBattlerGrounded(u32 battler, enum Ability ability, enum HoldEffect holdEffect);
 u32 GetMoveSlot(u16 *moves, u32 move);
 u32 GetBattlerWeight(u32 battler);
 u32 CalcRolloutBasePower(u32 battlerAtk, u32 basePower, u32 rolloutTimer);
@@ -380,7 +381,7 @@ bool32 CanBeFrozen(u32 battlerAtk, u32 battlerDef, enum Ability abilityDef);
 bool32 CanGetFrostbite(u32 battlerAtk, u32 battlerDef, enum Ability abilityDef);
 bool32 CanSetNonVolatileStatus(u32 battlerAtk, u32 battlerDef, enum Ability abilityAtk, enum Ability abilityDef, enum MoveEffect secondaryMoveEffect, enum FunctionCallOption option);
 bool32 CanBeConfused(u32 battler);
-bool32 IsBattlerTerrainAffected(u32 battler, enum Ability ability, enum ItemHoldEffect holdEffect, u32 terrainFlag);
+bool32 IsBattlerTerrainAffected(u32 battler, enum Ability ability, enum HoldEffect holdEffect, u32 terrainFlag);
 u32 GetBattlerAffectionHearts(u32 battler);
 void TryToRevertMimicryAndFlags(void);
 bool32 BattleArenaTurnEnd(void);

@@ -117,7 +117,9 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_WHITE_HERB] =
     {
-
+        .whiteHerb = TRUE,
+        .whiteHerbFirstTurn = TRUE,
+        .whiteHerbEndTurn = TRUE,
     },
 
     [HOLD_EFFECT_MACHO_BRACE] =

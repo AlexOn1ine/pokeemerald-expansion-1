@@ -1,5 +1,6 @@
 #include "global.h"
 #include "battle.h"
+#include "battle_hold_effects.h"
 #include "battle_util.h"
 #include "battle_controllers.h"
 #include "battle_ai_util.h"
@@ -7,7 +8,6 @@
 #include "battle_scripts.h"
 #include "constants/battle.h"
 #include "constants/battle_string_ids.h"
-#include "constants/hold_effects.h"
 #include "constants/abilities.h"
 #include "constants/items.h"
 #include "constants/moves.h"
@@ -521,7 +521,7 @@ static bool32 HandleEndTurnFirstEventBlock(u32 battler)
         break;
     }
     case FIRST_EVENT_BLOCK_HEAL_ITEMS:
-        if (ItemBattleEffects(ITEMEFFECT_LEFTOVERS, battler))
+        if (ItemBattleEffects(battler, GetBattlerHoldEffect(battler), IsLeftoversActivation))
             effect = TRUE;
         gBattleStruct->eventBlockCounter = 0;
         gBattleStruct->turnEffectsBattlerId++;
@@ -1021,7 +1021,7 @@ static bool32 HandleEndTurnYawn(u32 battler)
          && !IsLeafGuardProtected(battler, ability))
         {
             gEffectBattler = gBattlerTarget = battler;
-            enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler);
+            enum HoldEffect holdEffect = GetBattlerHoldEffect(battler);
             if (IsBattlerTerrainAffected(battler, ability, holdEffect, STATUS_FIELD_ELECTRIC_TERRAIN))
             {
                 gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_TERRAINPREVENTS_ELECTRIC;
@@ -1431,17 +1431,18 @@ static bool32 HandleEndTurnThirdEventBlock(u32 battler)
     }
     case THIRD_EVENT_BLOCK_ITEMS:
     {
-        enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler);
+        // TODO: simplify
+        enum HoldEffect holdEffect = GetBattlerHoldEffect(battler);
         switch (holdEffect)
         {
         case HOLD_EFFECT_FLAME_ORB:
         case HOLD_EFFECT_STICKY_BARB:
         case HOLD_EFFECT_TOXIC_ORB:
-            if (ItemBattleEffects(ITEMEFFECT_ORBS, battler))
+            if (ItemBattleEffects(battler, holdEffect, IsOrbsActivation))
                 effect = TRUE;
             break;
         case HOLD_EFFECT_WHITE_HERB:
-            if (ItemBattleEffects(ITEMEFFECT_WHITE_HERB_ENDTURN, battler))
+            if (ItemBattleEffects(battler, holdEffect, IsWhiteHerbEndTurnActivation))
                 effect = TRUE;
             break;
         default:
@@ -1496,12 +1497,12 @@ static bool32 HandleEndTurnFourthEventBlock(u32 battler)
         gBattleStruct->eventBlockCounter++;
         break;
     }
-    case FOURTH_EVENT_BLOCK_EJECT_PACK:
+    case FOURTH_EVENT_BLOCK_EJECT_PACK: // TODO: port from master
     {
-        enum ItemHoldEffect holdEffect = GetBattlerHoldEffect(battler);
+        enum HoldEffect holdEffect = GetBattlerHoldEffect(battler);
         if (holdEffect == HOLD_EFFECT_EJECT_PACK)
         {
-            if (ItemBattleEffects(ITEMEFFECT_NORMAL, battler))
+            if (ItemBattleEffects(battler, holdEffect, IsNormalActivation))
                 effect = TRUE;
         }
         gBattleStruct->eventBlockCounter = 0;

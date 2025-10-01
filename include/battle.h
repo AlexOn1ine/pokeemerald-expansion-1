@@ -5,6 +5,7 @@
 #include "constants/abilities.h"
 #include "constants/battle.h"
 #include "constants/form_change_types.h"
+#include "constants/hold_effects.h"
 #include "battle_main.h"
 #include "battle_message.h"
 #include "battle_util.h"
