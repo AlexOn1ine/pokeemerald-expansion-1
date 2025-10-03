@@ -19,21 +19,17 @@ bool32 IsWhiteHerbEndTurnActivation(enum HoldEffect holdEffect)    { return gHol
 bool32 IsHealStatusActivation(enum HoldEffect holdEffect)          { return gHoldEffectsInfo[holdEffect].healStatus; }
 bool32 IsBerryRestoreHpActivation(enum HoldEffect holdEffect)      { return gHoldEffectsInfo[holdEffect].berryRestoreHp; }
 bool32 IsMagicRoomEndsActivation(enum HoldEffect holdEffect)       { return gHoldEffectsInfo[holdEffect].magicRoomEnds; }
-bool32 IsBugBiteEatsActivation(enum HoldEffect holdEffect)         { return gHoldEffectsInfo[holdEffect].bugBiteEats; }
 bool32 IsKeeMarangaBerryActivation(enum HoldEffect holdEffect)     { return gHoldEffectsInfo[holdEffect].keeMarangaBerry; }
 bool32 IsMentalHerbActivation(enum HoldEffect holdEffect)          { return gHoldEffectsInfo[holdEffect].MentalHerb; }
 bool32 IsOnTargetHitActivation(enum HoldEffect holdEffect)         { return gHoldEffectsInfo[holdEffect].onTargetAfterHit; }
 bool32 IsOnAttackerAfterHitActivation(enum HoldEffect holdEffect)  { return gHoldEffectsInfo[holdEffect].onAttackerAfterHit; }
-bool32 IsAfterMoveActivation(enum HoldEffect holdEffect)           { return gHoldEffectsInfo[holdEffect].afterMove; }
 bool32 IsKingsRockActivation(enum HoldEffect holdEffect)           { return gHoldEffectsInfo[holdEffect].kingsRock; }
 bool32 IsLifeOrbShellBellActivation(enum HoldEffect holdEffect)    { return gHoldEffectsInfo[holdEffect].lifeOrbShellBell; }
-bool32 IsTryHealingActivation(enum HoldEffect holdEffect)          { return gHoldEffectsInfo[holdEffect].tryHealing; }
-bool32 IsConsumeBerryActivation(enum HoldEffect holdEffect)        { return gHoldEffectsInfo[holdEffect].consumeBerry; }
 bool32 IsLeftoversActivation(enum HoldEffect holdEffect)           { return gHoldEffectsInfo[holdEffect].leftovers; }
 bool32 IsOrbsActivation(enum HoldEffect holdEffect)                { return gHoldEffectsInfo[holdEffect].orbs; }
-bool32 IsNormalActivation(enum HoldEffect holdEffect)              { return gHoldEffectsInfo[holdEffect].normal; }
 bool32 IsOnEffectActivation(enum HoldEffect holdEffect)            { return gHoldEffectsInfo[holdEffect].onEffect; }
-bool32 IsActivationForceTriggered(enum HoldEffect holdEffect)      { return TRUE; }
+bool32 IsAfterMoveActivation(enum HoldEffect holdEffect)           { return gHoldEffectsInfo[holdEffect].afterMove; }
+bool32 IsActivationForceTriggerItem(enum HoldEffect holdEffect)    { return TRUE; }
 
 static enum ItemEffect TryDoublePrize(u32 battler)
 {
@@ -678,6 +674,7 @@ enum ItemEffect ItemBattleEffects(u32 primaryBattler, u32 secondaryBattler, enum
 
     if (!IsBattlerAlive(primaryBattler)
      && holdEffect != HOLD_EFFECT_ROWAP_BERRY // TODO: hacky workaround for them right now
+     && holdEffect != HOLD_EFFECT_JABOCA_BERRY
      && holdEffect != HOLD_EFFECT_ROCKY_HELMET)
         return effect;
 

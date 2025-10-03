@@ -17523,7 +17523,7 @@ void BS_ActivateItemEffects(void)
         if (!IsBattlerAlive(battler))
             continue;
 
-        if (ItemBattleEffects(battler, 0, GetBattlerHoldEffect(battler), IsTryHealingActivation))
+        if (ItemBattleEffects(battler, 0, GetBattlerHoldEffect(battler), IsActivationForceTriggerItem))
             return;
     }
     gBattlescriptCurrInstr = cmd->nextInstr;
@@ -17803,19 +17803,21 @@ void BS_ConsumeBerry(void)
 {
     NATIVE_ARGS(u8 battler, bool8 fromBattler);
     u32 battler = GetBattlerForBattleScript(cmd->battler);
-    if (gBattleScripting.overrideBerryRequirements == 2)
+    u32 item = gBattleMons[battler].item;
+
+    if (GetItemPocket(item) != POCKET_BERRIES || gBattleScripting.overrideBerryRequirements == 2)
     {
         gBattlescriptCurrInstr = cmd->nextInstr;
         return;
     }
 
     if (cmd->fromBattler)
-        gLastUsedItem = gBattleMons[battler].item;
+        gLastUsedItem = item;
 
     GetBattlerPartyState(battler)->ateBerry = TRUE;
     // TODO: don't overwrite gBattlerTarget
     gBattleScripting.battler = gEffectBattler = gBattlerTarget = battler;    // Cover all berry effect battler cases. e.g. ChangeStatBuffs uses target ID
-    if (ItemBattleEffects(battler, 0, GetBattlerHoldEffect(battler), IsConsumeBerryActivation))
+    if (ItemBattleEffects(battler, 0, GetBattlerHoldEffect(battler), IsActivationForceTriggerItem))
         return;
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
