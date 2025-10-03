@@ -144,7 +144,8 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_MENTAL_HERB] =
     {
-
+        .onTargetAfterHit = TRUE,
+        .onAttackerAfterHit = TRUE,
     },
 
     [HOLD_EFFECT_CHOICE_BAND] =
@@ -154,12 +155,13 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_FLINCH] =
     {
-
+        .kingsRock = TRUE,
     },
 
     [HOLD_EFFECT_DOUBLE_PRIZE] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
     },
 
     [HOLD_EFFECT_REPEL] =
@@ -209,7 +211,7 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_LEFTOVERS] =
     {
-
+        .leftovers = TRUE,
     },
 
     [HOLD_EFFECT_DRAGON_SCALE] =
@@ -234,7 +236,7 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_SHELL_BELL] =
     {
-
+        .lifeOrbShellBell = TRUE,
     },
 
     [HOLD_EFFECT_LUCKY_PUNCH] =
@@ -314,7 +316,7 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_LIFE_ORB] =
     {
-
+        .lifeOrbShellBell = TRUE,
     },
 
     [HOLD_EFFECT_METRONOME] =
@@ -354,17 +356,18 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_FLAME_ORB] =
     {
-
+        .orbs = TRUE,
     },
 
     [HOLD_EFFECT_TOXIC_ORB] =
     {
-
+        .orbs = TRUE,
     },
 
     [HOLD_EFFECT_STICKY_BARB] =
     {
-
+        .onTargetAfterHit = TRUE,
+        .orbs = TRUE,
     },
 
     [HOLD_EFFECT_IRON_BALL] =
@@ -374,7 +377,7 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_BLACK_SLUDGE] =
     {
-
+        .leftovers = TRUE,
     },
 
     [HOLD_EFFECT_DESTINY_KNOT] =
@@ -439,22 +442,22 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_JABOCA_BERRY] =
     {
-
+        .onTargetAfterHit = TRUE,
     },
 
     [HOLD_EFFECT_ROWAP_BERRY] =
     {
-
+        .onTargetAfterHit = TRUE,
     },
 
     [HOLD_EFFECT_KEE_BERRY] =
     {
-
+        .keeMarangaBerry = TRUE,
     },
 
     [HOLD_EFFECT_MARANGA_BERRY] =
     {
-
+        .keeMarangaBerry = TRUE,
     },
 
     [HOLD_EFFECT_PLATE] =
@@ -489,12 +492,14 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_ROCKY_HELMET] =
     {
-
+        .onTargetAfterHit = TRUE,
     },
 
     [HOLD_EFFECT_AIR_BALLOON] =
     {
-
+        .onTargetAfterHit = TRUE,
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
     },
 
     [HOLD_EFFECT_RED_CARD] =
@@ -519,12 +524,12 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_ABSORB_BULB] =
     {
-
+        .onTargetAfterHit = TRUE,
     },
 
     [HOLD_EFFECT_CELL_BATTERY] =
     {
-
+        .onTargetAfterHit = TRUE,
     },
 
     [HOLD_EFFECT_MEGA_STONE] =
@@ -539,17 +544,17 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_LUMINOUS_MOSS] =
     {
-
+        .onTargetAfterHit = TRUE,
     },
 
     [HOLD_EFFECT_SNOWBALL] =
     {
-
+        .onTargetAfterHit = TRUE,
     },
 
     [HOLD_EFFECT_WEAKNESS_POLICY] =
     {
-
+        .onTargetAfterHit = TRUE,
     },
 
     [HOLD_EFFECT_PRIMAL_ORB] =
@@ -567,9 +572,10 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     },
 
-    [HOLD_EFFECT_SEEDS] =
+    [HOLD_EFFECT_TERRAIN_SEED] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
     },
 
     [HOLD_EFFECT_ADRENALINE_ORB] =
@@ -599,12 +605,14 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_ROOM_SERVICE] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onEffect = TRUE,
     },
 
     [HOLD_EFFECT_BLUNDER_POLICY] =
     {
-
+        .kingsRock = TRUE,
     },
 
     [HOLD_EFFECT_HEAVY_DUTY_BOOTS] =
@@ -614,7 +622,7 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_THROAT_SPRAY] =
     {
-
+        .onAttackerAfterHit = TRUE,
     },
 
     [HOLD_EFFECT_ABILITY_SHIELD] =
@@ -629,7 +637,8 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_MIRROR_HERB] =
     {
-
+        .mirrorHerb = TRUE,
+        .mirrorHerbFirstTurn = TRUE,
     },
 
     [HOLD_EFFECT_PUNCHING_GLOVE] =
@@ -649,7 +658,9 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_BOOSTER_ENERGY] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onEffect = TRUE,
     },
 
     [HOLD_EFFECT_OGERPON_MASK] =
@@ -659,6 +670,7 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_BERSERK_GENE] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
     },
 };

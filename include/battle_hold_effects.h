@@ -21,9 +21,9 @@ struct HoldEffectInfo
     u32 berryRestoreHp:1;
     u32 magicRoomEnds:1;
     u32 bugBiteEats:1;
-    u32 KeeMaranga:1;
+    u32 keeMarangaBerry:1;
     u32 MentalHerb:1;
-    u32 onTargetHit:1;
+    u32 onTargetAfterHit:1;
     u32 onAttackerAfterHit:1;
     u32 afterMove:1;
     u32 kingsRock:1;
@@ -33,6 +33,7 @@ struct HoldEffectInfo
     u32 leftovers:1;
     u32 orbs:1;
     u32 normal:1;
+    u32 onEffect:1;
 
     // u32 padding:4;
 };
@@ -40,7 +41,8 @@ struct HoldEffectInfo
 extern const struct HoldEffectInfo gHoldEffectsInfo[];
 
 typedef bool32 (*ActivationTiming)(enum HoldEffect holdEffect);
-enum ItemEffect ItemBattleEffects(u32 battler, enum HoldEffect holdEffect, ActivationTiming getActivationTiming);
+enum ItemEffect ItemBattleEffects(u32 primaryBattler, u32 secondaryBattler, enum HoldEffect holdEffect, ActivationTiming timing);
+enum ItemEffect TryBoosterEnergy(u32 battler, enum Ability ability, ActivationTiming timing);
 
 bool32 IsOnSwitchInActivation(enum HoldEffect holdEffect);
 bool32 IsOnSwitchInFirstTurnActivation(enum HoldEffect holdEffect);
@@ -53,7 +55,7 @@ bool32 IsHealStatusActivation(enum HoldEffect holdEffect);
 bool32 IsBerryRestoreHpActivation(enum HoldEffect holdEffect);
 bool32 IsMagicRoomEndsActivation(enum HoldEffect holdEffect);
 bool32 IsBugBiteEatsActivation(enum HoldEffect holdEffect);
-bool32 IsKeeMarangaActivation(enum HoldEffect holdEffect);
+bool32 IsKeeMarangaBerryActivation(enum HoldEffect holdEffect);
 bool32 IsMentalHerbActivation(enum HoldEffect holdEffect);
 bool32 IsOnTargetHitActivation(enum HoldEffect holdEffect);
 bool32 IsOnAttackerAfterHitActivation(enum HoldEffect holdEffect);
@@ -65,5 +67,7 @@ bool32 IsConsumeBerryActivation(enum HoldEffect holdEffect);
 bool32 IsLeftoversActivation(enum HoldEffect holdEffect);
 bool32 IsOrbsActivation(enum HoldEffect holdEffect);
 bool32 IsNormalActivation(enum HoldEffect holdEffect);
+bool32 IsOnEffectActivation(enum HoldEffect holdEffect);
+bool32 IsActivationForceTriggered(enum HoldEffect holdEffect);
 
 #endif // GUARD_BATTLE_HOLD_EFFECTS

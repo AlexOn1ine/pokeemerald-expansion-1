@@ -67,20 +67,11 @@ enum ItemCaseId
     ITEMEFFECT_NONE,
     ITEMEFFECT_ON_SWITCH_IN,
     ITEMEFFECT_ON_SWITCH_IN_FIRST_TURN,
-    ITEMEFFECT_LEFTOVERS, // Leftovers, Black Sludge
     ITEMEFFECT_NORMAL,
     ITEMEFFECT_TRY_HEALING,
     ITEMEFFECT_MOVE_END,
-    ITEMEFFECT_KINGSROCK,
     ITEMEFFECT_TARGET,
-    ITEMEFFECT_ORBS,
-    ITEMEFFECT_LIFEORB_SHELLBELL,
     ITEMEFFECT_USE_LAST_ITEM, // move end effects for just the battler, not whole field
-    ITEMEFFECT_WHITE_HERB,
-    ITEMEFFECT_WHITE_HERB_ENDTURN,
-    ITEMEFFECT_WHITE_HERB_FIRST_TURN,
-    ITEMEFFECT_MIRROR_HERB,
-    ITEMEFFECT_MIRROR_HERB_FIRST_TURN,
 };
 
 enum ItemEffect
@@ -217,9 +208,17 @@ enum SkyDropState
 #define SKY_DROP_NO_TARGET 0xFF
 #define SKY_DROP_RELEASED_TARGET 0xFE
 
+enum EjectPackTiming
+{
+    FIRST_TURN,
+    END_TURN,
+    OTHER,
+};
+
 void HandleAction_ThrowBall(void);
 u32 GetCurrentBattleWeather(void);
 bool32 EndOrContinueWeather(void);
+bool32 IsUnnerveBlocked(u32 battler, u32 itemId);
 bool32 IsAffectedByFollowMe(u32 battlerAtk, u32 defSide, u32 move);
 bool32 HandleMoveTargetRedirection(void);
 void HandleAction_UseMove(void);
@@ -351,7 +350,6 @@ enum ItemEffect TryHandleSeed(u32 battler, u32 terrainFlag, u32 statId, u32 item
 bool32 IsBattlerAffectedByHazards(u32 battler, bool32 toxicSpikes);
 void SortBattlersBySpeed(u8 *battlers, bool32 slowToFast);
 bool32 CompareStat(u32 battler, u8 statId, u8 cmpTo, u8 cmpKind);
-bool32 TryRoomService(u32 battler);
 bool32 BlocksPrankster(u16 move, u32 battlerPrankster, u32 battlerDef, bool32 checkTarget);
 u16 GetUsedHeldItem(u32 battler);
 bool32 PickupHasValidTarget(u32 battler);
@@ -412,12 +410,12 @@ void ClearPursuitValues(void);
 bool32 HasWeatherEffect(void);
 bool32 IsFutureSightAttackerInParty(u32 battlerAtk, u32 battlerDef, u32 move);
 bool32 HadMoreThanHalfHpNowDoesnt(u32 battler);
+void ChooseStatBoostAnimation(u32 battler);
 void UpdateStallMons(void);
 bool32 TryRestoreHPBerries(u32 battler, enum ItemCaseId caseId);
-bool32 TrySwitchInEjectPack(enum ItemCaseId caseID);
+bool32 TrySwitchInEjectPack(enum EjectPackTiming timing);
 u32 GetBattlerVolatile(u32 battler, enum Volatile _volatile);
 void SetMonVolatile(u32 battler, enum Volatile _volatile, u32 newValue);
-u32 TryBoosterEnergy(u32 battler, enum Ability ability, enum ItemCaseId caseID);
 bool32 ItemHealMonVolatile(u32 battler, u16 itemId);
 void PushHazardTypeToQueue(u32 side, enum Hazards hazardType);
 bool32 IsHazardOnSide(u32 side, enum Hazards hazardType);
@@ -433,5 +431,6 @@ u32 GetNaturePowerMove(u32 battler);
 u32 GetNaturePowerMove(u32 battler);
 void RemoveAbilityFlags(u32 battler);
 bool32 IsDazzlingAbility(enum Ability ability);
+bool32 IsAnyTargetTurnDamaged(u32 battlerAtk);
 
 #endif // GUARD_BATTLE_UTIL_H

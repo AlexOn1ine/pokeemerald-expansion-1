@@ -3880,7 +3880,7 @@ static void TryDoEventsBeforeFirstTurn(void)
         while (gBattleStruct->switchInBattlerCounter < gBattlersCount) // From fastest to slowest
         {
             u32 battler = gBattlerByTurnOrder[gBattleStruct->switchInBattlerCounter++];
-            if (ItemBattleEffects(battler, GetBattlerHoldEffect(battler), IsOnSwitchInFirstTurnActivation))
+            if (ItemBattleEffects(battler, 0, GetBattlerHoldEffect(battler), IsOnSwitchInFirstTurnActivation))
                 return;
         }
         gBattleStruct->switchInBattlerCounter = 0;
@@ -3890,7 +3890,7 @@ static void TryDoEventsBeforeFirstTurn(void)
         while (gBattleStruct->switchInBattlerCounter < gBattlersCount) // From fastest to slowest
         {
             u32 battler = gBattlerByTurnOrder[gBattleStruct->switchInBattlerCounter++];
-            if (ItemBattleEffects(battler, GetBattlerHoldEffect(battler), IsWhiteHerbFirstTurnActivation))
+            if (ItemBattleEffects(battler, 0, GetBattlerHoldEffect(battler), IsWhiteHerbFirstTurnActivation))
                 return;
         }
         gBattleStruct->switchInBattlerCounter = 0;
@@ -3910,7 +3910,7 @@ static void TryDoEventsBeforeFirstTurn(void)
         while (gBattleStruct->switchInBattlerCounter < gBattlersCount) // From fastest to slowest
         {
             u32 battler = gBattlerByTurnOrder[gBattleStruct->switchInBattlerCounter++];
-            if (ItemBattleEffects(battler, GetBattlerHoldEffect(battler), IsMirrorHerbFirstTurnActivation))
+            if (ItemBattleEffects(battler, 0, GetBattlerHoldEffect(battler), IsMirrorHerbFirstTurnActivation))
                 return;
         }
         gBattleStruct->switchInBattlerCounter = 0;
@@ -3918,7 +3918,7 @@ static void TryDoEventsBeforeFirstTurn(void)
         break;
     case FIRST_TURN_EVENTS_EJECT_PACK:
         gBattleStruct->eventsBeforeFirstTurnState++;
-        if (TrySwitchInEjectPack(ITEMEFFECT_ON_SWITCH_IN_FIRST_TURN))
+        if (TrySwitchInEjectPack(FIRST_TURN))
             return;
         break;
     case FIRST_TURN_EVENTS_END:
