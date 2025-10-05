@@ -13,8 +13,9 @@
 	.byte 0x2
 	.endm
 
-	.macro unused0x3
+	.macro tryactivateitem battler:req
 	.byte 0x3
+	.byte \battler
 	.endm
 
 	.macro critcalc

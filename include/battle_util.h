@@ -67,11 +67,6 @@ enum ItemCaseId
     ITEMEFFECT_NONE,
     ITEMEFFECT_ON_SWITCH_IN,
     ITEMEFFECT_ON_SWITCH_IN_FIRST_TURN,
-    ITEMEFFECT_NORMAL,
-    ITEMEFFECT_TRY_HEALING,
-    ITEMEFFECT_MOVE_END,
-    ITEMEFFECT_TARGET,
-    ITEMEFFECT_USE_LAST_ITEM, // move end effects for just the battler, not whole field
 };
 
 enum ItemEffect
@@ -282,7 +277,6 @@ u32 GetProtectType(enum ProtectMethod method);
 bool32 CanBattlerEscape(u32 battler); // no ability check
 void BattleScriptExecute(const u8 *BS_ptr);
 void BattleScriptPushCursorAndCallback(const u8 *BS_ptr);
-u32 _ItemBattleEffects(enum ItemCaseId, u32 battler);
 void ClearVariousBattlerFlags(u32 battler);
 void HandleAction_RunBattleScript(void);
 u32 SetRandomTarget(u32 battler);
@@ -336,7 +330,7 @@ bool32 CanFling(u32 battler);
 bool32 IsTelekinesisBannedSpecies(u16 species);
 bool32 IsHealBlockPreventingMove(u32 battler, u32 move);
 bool32 IsBelchPreventingMove(u32 battler, u32 move);
-bool32 HasEnoughHpToEatBerry(u32 battler, u32 hpFraction, u32 itemId);
+bool32 HasEnoughHpToEatBerry(u32 battler, enum Ability ability, u32 hpFraction, u32 itemId);
 bool32 IsPartnerMonFromSameTrainer(u32 battler);
 enum DamageCategory GetCategoryBasedOnStats(u32 battler);
 void SetShellSideArmCategory(void);
@@ -412,7 +406,6 @@ bool32 IsFutureSightAttackerInParty(u32 battlerAtk, u32 battlerDef, u32 move);
 bool32 HadMoreThanHalfHpNowDoesnt(u32 battler);
 void ChooseStatBoostAnimation(u32 battler);
 void UpdateStallMons(void);
-bool32 TryRestoreHPBerries(u32 battler, enum ItemCaseId caseId);
 bool32 TrySwitchInEjectPack(enum EjectPackTiming timing);
 u32 GetBattlerVolatile(u32 battler, enum Volatile _volatile);
 void SetMonVolatile(u32 battler, enum Volatile _volatile, u32 newValue);

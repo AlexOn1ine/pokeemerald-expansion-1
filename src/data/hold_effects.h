@@ -7,112 +7,155 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_RESTORE_HP] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_CURE_PAR] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onStatusChange = TRUE,
     },
 
     [HOLD_EFFECT_CURE_SLP] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onStatusChange = TRUE,
     },
 
     [HOLD_EFFECT_CURE_PSN] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onStatusChange = TRUE,
     },
 
     [HOLD_EFFECT_CURE_BRN] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onStatusChange = TRUE,
     },
 
     [HOLD_EFFECT_CURE_FRZ] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onStatusChange = TRUE,
     },
 
     [HOLD_EFFECT_RESTORE_PP] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
     },
 
     [HOLD_EFFECT_CURE_CONFUSION] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onStatusChange = TRUE,
     },
 
     [HOLD_EFFECT_CURE_STATUS] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onStatusChange = TRUE,
     },
 
     [HOLD_EFFECT_CONFUSE_SPICY] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_CONFUSE_DRY] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_CONFUSE_SWEET] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_CONFUSE_BITTER] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_CONFUSE_SOUR] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_ATTACK_UP] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_DEFENSE_UP] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_SPEED_UP] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_SP_ATTACK_UP] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_SP_DEFENSE_UP] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_CRITICAL_UP] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_RANDOM_STAT_UP] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_EVASION_UP] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_WHITE_HERB] =
@@ -155,7 +198,7 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_FLINCH] =
     {
-        .kingsRock = TRUE,
+        .onAttackerAfterHit = TRUE,
     },
 
     [HOLD_EFFECT_DOUBLE_PRIZE] =
@@ -412,7 +455,7 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_ENIGMA_BERRY] =
     {
-
+        .onTargetAfterHit = TRUE,
     },
 
     [HOLD_EFFECT_RESIST_BERRY] =
@@ -427,12 +470,16 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_RESTORE_PCT_HP] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_MICLE_BERRY] =
     {
-
+        .onSwitchIn = TRUE,
+        .onSwitchInFirstTurn = TRUE,
+        .onHpThreshold = TRUE,
     },
 
     [HOLD_EFFECT_CUSTAP_BERRY] =
@@ -442,12 +489,12 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_JABOCA_BERRY] =
     {
-        .onTargetAfterHit = TRUE,
+        .onAttackerAfterHit = TRUE,
     },
 
     [HOLD_EFFECT_ROWAP_BERRY] =
     {
-        .onTargetAfterHit = TRUE,
+        .onAttackerAfterHit = TRUE,
     },
 
     [HOLD_EFFECT_KEE_BERRY] =
@@ -612,7 +659,7 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
 
     [HOLD_EFFECT_BLUNDER_POLICY] =
     {
-        .kingsRock = TRUE,
+        .onAttackerAfterHit = TRUE,
     },
 
     [HOLD_EFFECT_HEAVY_DUTY_BOOTS] =

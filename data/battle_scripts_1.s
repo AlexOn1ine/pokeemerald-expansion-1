@@ -709,6 +709,7 @@ BattleScript_EffectFling::
 	waitmessage B_WAIT_TIME_MED
 	jumpiflastuseditemberry BattleScript_EffectFlingConsumeBerry
 	jumpifability BS_TARGET, ABILITY_SHIELD_DUST, BattleScript_FlingBlockedByShieldDust
+	tryactivateitem BS_TARGET
 	jumpiflastuseditemholdeffect HOLD_EFFECT_FLAME_ORB, 0, BattleScript_FlingFlameOrb
 	jumpiflastuseditemholdeffect HOLD_EFFECT_FLINCH, 0, BattleScript_FlingFlinch
 	jumpiflastuseditemholdeffect HOLD_EFFECT_LIGHT_BALL, 0, BattleScript_FlingLightBall
@@ -722,10 +723,11 @@ BattleScript_EffectFlingConsumeBerry:
 	battleritemtolastuseditem
 	setbyte sBERRY_OVERRIDE, 1 @ override the requirements for eating berries
 	orword gHitMarker, HITMARKER_DISABLE_ANIMATION
-	consumeberry BS_TARGET, TRUE
+	consumeberry BS_TARGET, FALSE
 	bicword gHitMarker, HITMARKER_DISABLE_ANIMATION
 	setbyte sBERRY_OVERRIDE, 0
 	restorebattleritem
+
 BattleScript_FlingEnd:
 	tryfaintmon BS_TARGET
 	trysymbiosis BS_ATTACKER
@@ -1460,6 +1462,7 @@ BattleScript_EffectBestow::
 	waitanimation
 	printstring STRINGID_BESTOWITEMGIVING
 	waitmessage B_WAIT_TIME_LONG
+	tryactivateitem BS_TARGET
 	trysymbiosis BS_ATTACKER
 	goto BattleScript_MoveEnd
 
@@ -5574,7 +5577,8 @@ BattleScript_FutureAttackEnd::
 	moveendcase MOVEEND_RAGE
 	moveendcase MOVEEND_ABILITIES
 	moveendcase MOVEEND_COLOR_CHANGE
-	moveendfromto MOVEEND_ITEM_EFFECTS_ALL, MOVEEND_UPDATE_LAST_MOVES
+	moveendcase MOVEEND_ITEM_EFFECTS_TARGET
+	moveendfromto MOVEEND_SYMBIOSIS, MOVEEND_UPDATE_LAST_MOVES
 	setmoveresultflags 0
 	end2
 BattleScript_FutureAttackMiss::
@@ -7275,7 +7279,7 @@ BattleScript_StickyHoldActivates::
 	call BattleScript_AbilityPopUp
 	printstring STRINGID_PKMNSXMADEYINEFFECTIVE
 	waitmessage B_WAIT_TIME_LONG
-	goto BattleScript_MoveEnd
+	return
 
 BattleScript_ColorChangeActivates::
 	call BattleScript_AbilityPopUp
@@ -7689,73 +7693,13 @@ BattleScript_SubstituteFade::
 	printstring STRINGID_PKMNSUBSTITUTEFADED
 	return
 
-BattleScript_BerryCurePrlzEnd2::
-	call BattleScript_BerryCureParRet
+BattleScript_BerryCureStatusEnd2::
+	call BattleScript_BerryCureStatusRet
 	end2
 
-BattleScript_BerryCureParRet::
+BattleScript_BerryCureStatusRet::
 	playanimation BS_SCRIPTING, B_ANIM_HELD_ITEM_EFFECT
-	printstring STRINGID_PKMNSITEMCUREDPARALYSIS
-	waitmessage B_WAIT_TIME_LONG
-	updatestatusicon BS_SCRIPTING
-	removeitem BS_SCRIPTING
-	return
-
-BattleScript_BerryCurePsnEnd2::
-	call BattleScript_BerryCurePsnRet
-	end2
-
-BattleScript_BerryCurePsnRet::
-	playanimation BS_SCRIPTING, B_ANIM_HELD_ITEM_EFFECT
-	printstring STRINGID_PKMNSITEMCUREDPOISON
-	waitmessage B_WAIT_TIME_LONG
-	updatestatusicon BS_SCRIPTING
-	removeitem BS_SCRIPTING
-	return
-
-BattleScript_BerryCureBrnEnd2::
-	call BattleScript_BerryCureBrnRet
-	end2
-
-BattleScript_BerryCureBrnRet::
-	playanimation BS_SCRIPTING, B_ANIM_HELD_ITEM_EFFECT
-	printstring STRINGID_PKMNSITEMHEALEDBURN
-	waitmessage B_WAIT_TIME_LONG
-	updatestatusicon BS_SCRIPTING
-	removeitem BS_SCRIPTING
-	return
-
-BattleScript_BerryCureFrzEnd2::
-	call BattleScript_BerryCureFrzRet
-	end2
-
-BattleScript_BerryCureFrzRet::
-	playanimation BS_SCRIPTING, B_ANIM_HELD_ITEM_EFFECT
-	printstring STRINGID_PKMNSITEMDEFROSTEDIT
-	waitmessage B_WAIT_TIME_LONG
-	updatestatusicon BS_SCRIPTING
-	removeitem BS_SCRIPTING
-	return
-
-BattleScript_BerryCureFrbEnd2::
-	call BattleScript_BerryCureFrzRet
-	end2
-
-BattleScript_BerryCureFrbRet::
-	playanimation BS_SCRIPTING, B_ANIM_HELD_ITEM_EFFECT
-	printstring STRINGID_PKMNSITEMHEALEDFROSTBITE
-	waitmessage B_WAIT_TIME_LONG
-	updatestatusicon BS_SCRIPTING
-	removeitem BS_SCRIPTING
-	return
-
-BattleScript_BerryCureSlpEnd2::
-	call BattleScript_BerryCureSlpRet
-	end2
-
-BattleScript_BerryCureSlpRet::
-	playanimation BS_SCRIPTING, B_ANIM_HELD_ITEM_EFFECT
-	printstring STRINGID_PKMNSITEMWOKEIT
+	printfromtable CureStatusBerryEffectStringID
 	waitmessage B_WAIT_TIME_LONG
 	updatestatusicon BS_SCRIPTING
 	removeitem BS_SCRIPTING
@@ -7787,18 +7731,6 @@ BattleScript_BerryCureConfusionRet::
 	playanimation BS_SCRIPTING, B_ANIM_HELD_ITEM_EFFECT
 	printstring STRINGID_PKMNSITEMSNAPPEDOUT
 	waitmessage B_WAIT_TIME_LONG
-	removeitem BS_SCRIPTING
-	return
-
-BattleScript_BerryCureChosenStatusEnd2::
-	call BattleScript_BerryCureChosenStatusRet
-	end2
-
-BattleScript_BerryCureChosenStatusRet::
-	playanimation BS_SCRIPTING, B_ANIM_HELD_ITEM_EFFECT
-	printfromtable gBerryEffectStringIds
-	waitmessage B_WAIT_TIME_LONG
-	updatestatusicon BS_SCRIPTING
 	removeitem BS_SCRIPTING
 	return
 
@@ -7880,6 +7812,11 @@ BattleScript_AirBaloonMsgIn::
 	printstring STRINGID_AIRBALLOONFLOAT
 	waitmessage B_WAIT_TIME_LONG
 	end3
+
+BattleScript_AirBaloonMsgInRet::
+	printstring STRINGID_AIRBALLOONFLOAT
+	waitmessage B_WAIT_TIME_LONG
+	return
 
 BattleScript_AirBaloonMsgPop::
 	printstring STRINGID_AIRBALLOONPOP

@@ -280,8 +280,7 @@ static bool32 HandleEndTurnGenThreeBerryActivation(u32 battler)
         return effect;
     }
     gBattleStruct->turnEffectsBattlerId++;
-    effect = TryRestoreHPBerries(battler, ITEMEFFECT_NORMAL);
-    return effect;
+    return ItemBattleEffects(battler, 0, GetBattlerHoldEffect(battler), IsActivationForceTriggerItem);
 }
 
 static bool32 HandleEndTurnEmergencyExit(u32 battler)
