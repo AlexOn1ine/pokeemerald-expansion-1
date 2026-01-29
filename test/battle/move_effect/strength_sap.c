@@ -167,3 +167,37 @@ SINGLE_BATTLE_TEST("Strength Sap restores more HP if Big Root is held", s16 hp)
         EXPECT_GT(abs(results[1].hp), abs(results[0].hp));
     }
 }
+
+SINGLE_BATTLE_TEST("Strength Sap will not drain users hp due to Uiquid Ooze")
+{
+    GIVEN {
+        PLAYER(SPECIES_TENTACOOL) { Ability(ABILITY_LIQUID_OOZE); }
+        OPPONENT(SPECIES_CLEFAIRY) { HP(1); Ability(ABILITY_MAGIC_GUARD); }
+    } WHEN {
+        TURN { MOVE(opponent, MOVE_STRENGTH_SAP); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_STRENGTH_SAP, opponent);
+        ABILITY_POPUP(player, ABILITY_LIQUID_OOZE);
+        NOT HP_BAR(opponent);
+    }
+}
+
+SINGLE_BATTLE_TEST("Strength Sap doesn't fail if target has Contrary and is at +6 Atk")
+{
+    GIVEN {
+        KNOWN_FAILING; // According to Bulba even if target is at 6+ but has contrary the hp is still drained
+        PLAYER(SPECIES_SNIVY) { Ability(ABILITY_CONTRARY); }
+        OPPONENT(SPECIES_WYNAUT) { HP(1); }
+    } WHEN {
+        TURN { MOVE(opponent, MOVE_CHARM); }
+        TURN { MOVE(opponent, MOVE_CHARM); }
+        TURN { MOVE(opponent, MOVE_CHARM); }
+        TURN { MOVE(opponent, MOVE_STRENGTH_SAP); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_CHARM, opponent);
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_CHARM, opponent);
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_CHARM, opponent);
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_STRENGTH_SAP, opponent);
+        HP_BAR(opponent);
+    }
+}

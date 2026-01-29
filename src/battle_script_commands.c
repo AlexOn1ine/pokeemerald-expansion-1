@@ -7338,14 +7338,8 @@ static void Cmd_manipulatedamage(void)
 
     switch (cmd->mode)
     {
-    case DMG_CHANGE_SIGN:
-        gBattleStruct->passiveHpUpdate[gBattlerAttacker] *= -1;
-        break;
     case DMG_1_8_TARGET_HP:
         SetPassiveDamageAmount(gBattlerTarget, GetNonDynamaxMaxHP(gBattlerTarget) / 8);
-        break;
-    case DMG_BIG_ROOT:
-        gBattleStruct->passiveHpUpdate[gBattlerAttacker] = -1 * GetDrainedBigRootHp(gBattlerAttacker, gBattleStruct->passiveHpUpdate[gBattlerAttacker]);
         break;
     }
 
