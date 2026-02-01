@@ -228,11 +228,11 @@ enum BattleScriptOpcode
     B_SCR_OP_JUMPIFCAPTIVATEAFFECTED,
     B_SCR_OP_SETNONVOLATILESTATUS,
     B_SCR_OP_TRYOVERWRITEABILITY,
+    B_SCR_OP_JMUPIFFRONTIERBATTLE,
 
     // Expansion users, please don't use any of the unused commands.
     // They are reserved for expansion usage.
     // Use callnatives instead.
-    B_SCR_OP_UNUSED_1,
     B_SCR_OP_UNUSED_2,
     B_SCR_OP_UNUSED_3,
     B_SCR_OP_UNUSED_4,

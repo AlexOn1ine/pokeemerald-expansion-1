@@ -346,7 +346,7 @@ static void ChooseActionInBattlePalace(enum BattlerId battler)
 
 static void RecordedPlayerHandleChooseAction(enum BattlerId battler)
 {
-    if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+    if (IsFrontierBattle(FRONTIER_PALACE))
     {
         gBattlerControllerFuncs[battler] = ChooseActionInBattlePalace;
     }
@@ -359,7 +359,7 @@ static void RecordedPlayerHandleChooseAction(enum BattlerId battler)
 
 static void RecordedPlayerHandleChooseMove(enum BattlerId battler)
 {
-    if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+    if (IsFrontierBattle(FRONTIER_PALACE))
     {
         BtlController_EmitTwoReturnValues(battler, B_COMM_TO_ENGINE, B_ACTION_EXEC_SCRIPT, ChooseMoveAndTargetInBattlePalace(battler));
     }

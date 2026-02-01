@@ -101,7 +101,7 @@ void HandleIntroSlide(u8 environment)
     {
         taskId = CreateTask(BattleIntroSlideLink, 0);
     }
-    else if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
+    else if (IsFrontierBattle(FRONTIER_ANY))
     {
         taskId = CreateTask(BattleIntroSlide3, 0);
     }

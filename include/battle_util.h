@@ -427,5 +427,6 @@ void TryUpdateEvolutionTracker(enum EvolutionConditions evolutionCondition, u32 
 bool32 CanUseMoveConsecutively(enum BattlerId battler);
 void TryResetConsecutiveUseCounter(enum BattlerId battler);
 void SetOrClearRageVolatile(void);
+bool32 IsFrontierBattle(enum FrontierTypes frontier);
 
 #endif // GUARD_BATTLE_UTIL_H

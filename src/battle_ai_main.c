@@ -150,20 +150,25 @@ void BattleAI_SetupItems(void)
         data[i] = 0;
 
     // Items are allowed to use in ONLY trainer battles.
-    if ((gBattleTypeFlags & BATTLE_TYPE_TRAINER)
-        && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_SAFARI | BATTLE_TYPE_BATTLE_TOWER
-                               | BATTLE_TYPE_EREADER_TRAINER | BATTLE_TYPE_SECRET_BASE | BATTLE_TYPE_FRONTIER
-                               | BATTLE_TYPE_INGAME_PARTNER | BATTLE_TYPE_RECORDED_LINK)
-            )
-       )
+    if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+        return;
+
+    if (IsFrontierBattle(FRONTIER_ANY))
+        return;
+
+    if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_SAFARI
+                            | BATTLE_TYPE_EREADER_TRAINER | BATTLE_TYPE_SECRET_BASE
+                            | BATTLE_TYPE_INGAME_PARTNER | BATTLE_TYPE_RECORDED_LINK))
     {
-        for (u32 itemIndex = 0; itemIndex < MAX_TRAINER_ITEMS; itemIndex++)
+        return;
+    }
+
+    for (u32 itemIndex = 0; itemIndex < MAX_TRAINER_ITEMS; itemIndex++)
+    {
+        if (items[itemIndex] != ITEM_NONE)
         {
-            if (items[itemIndex] != ITEM_NONE)
-            {
-                gBattleHistory->trainerItems[gBattleHistory->itemsNo] = items[itemIndex];
-                gBattleHistory->itemsNo++;
-            }
+            gBattleHistory->trainerItems[gBattleHistory->itemsNo] = items[itemIndex];
+            gBattleHistory->itemsNo++;
         }
     }
 }
@@ -212,7 +217,9 @@ static u64 GetAiFlags(u16 trainerId, enum BattlerId battler)
             flags = AI_FLAG_FIRST_BATTLE;
         else if (gBattleTypeFlags & BATTLE_TYPE_FACTORY)
             flags = GetAiScriptsInBattleFactory();
-        else if (gBattleTypeFlags & (BATTLE_TYPE_FRONTIER | BATTLE_TYPE_EREADER_TRAINER | BATTLE_TYPE_TRAINER_HILL | BATTLE_TYPE_SECRET_BASE))
+        else if (IsFrontierBattle(FRONTIER_ANY))
+            flags = AI_FLAG_CHECK_BAD_MOVE | AI_FLAG_CHECK_VIABILITY | AI_FLAG_TRY_TO_FAINT;
+        else if (gBattleTypeFlags & (BATTLE_TYPE_EREADER_TRAINER | BATTLE_TYPE_TRAINER_HILL | BATTLE_TYPE_SECRET_BASE))
             flags = AI_FLAG_CHECK_BAD_MOVE | AI_FLAG_CHECK_VIABILITY | AI_FLAG_TRY_TO_FAINT;
         else
             flags = GetTrainerAIFlagsFromId(trainerId);
@@ -362,7 +369,7 @@ void SetupAIPredictionData(enum BattlerId battler, enum SwitchType switchType)
 
 void ComputeBattlerDecisions(enum BattlerId battler)
 {
-    bool32 isAiBattler = (gBattleTypeFlags & BATTLE_TYPE_HAS_AI || IsWildMonSmart()) && (BattlerHasAi(battler) && !(gBattleTypeFlags & BATTLE_TYPE_PALACE));
+    bool32 isAiBattler = (gBattleTypeFlags & BATTLE_TYPE_HAS_AI || IsWildMonSmart()) && (BattlerHasAi(battler) && !(IsFrontierBattle(FRONTIER_PALACE)));
     if (isAiBattler || CanAiPredictMove(battler))
     {
         // Risky AI switches aggressively even mid battle
@@ -884,7 +891,7 @@ static u32 ChooseMoveOrAction_Doubles(enum BattlerId battler)
         }
         else
         {
-            if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+            if (IsFrontierBattle(FRONTIER_PALACE))
                 BattleAI_SetupAIData(gBattleStruct->palaceFlags >> 4, battler);
             else
                 BattleAI_SetupAIData(0xF, battler);
@@ -5793,7 +5800,7 @@ static s32 AI_CalcMoveEffectScore(enum BattlerId battlerAtk, enum BattlerId batt
             if (B_TRAINERS_KNOCK_OFF_ITEMS == TRUE)
                 canSteal = TRUE;
 
-            if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER || IsOnPlayerSide(battlerAtk))
+            if (IsFrontierBattle(FRONTIER_ANY) || IsOnPlayerSide(battlerAtk))
                 canSteal = TRUE;
 
             if (canSteal && aiData->items[battlerAtk] == ITEM_NONE

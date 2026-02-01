@@ -363,7 +363,7 @@ static void DoStandardWildBattle(bool32 isDouble)
     if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE)
     {
         VarSet(VAR_TEMP_E, 0);
-        gBattleTypeFlags |= BATTLE_TYPE_PYRAMID;
+        gBattleStruct->frontier = FRONTIER_PYRAMID;
     }
     CreateBattleStartTask(GetWildBattleTransition(), 0);
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
@@ -382,7 +382,7 @@ void DoStandardWildBattle_Debug(void)
     if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE)
     {
         VarSet(VAR_TEMP_PLAYING_PYRAMID_MUSIC, 0);
-        gBattleTypeFlags |= BATTLE_TYPE_PYRAMID;
+        gBattleStruct->frontier = FRONTIER_PYRAMID;
     }
     CreateBattleStartTask_Debug(GetWildBattleTransition(), 0);
     //IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
@@ -434,7 +434,7 @@ static void DoBattlePikeWildBattle(void)
     FreezeObjectEvents();
     StopPlayerAvatar();
     gMain.savedCallback = CB2_EndWildBattle;
-    gBattleTypeFlags = BATTLE_TYPE_PIKE;
+    gBattleStruct->frontier = FRONTIER_PIKE;
     CreateBattleStartTask(GetWildBattleTransition(), 0);
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
     IncrementGameStat(GAME_STAT_WILD_BATTLES);
@@ -1324,7 +1324,7 @@ void BattleSetup_StartTrainerBattle(void)
     if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE)
     {
         VarSet(VAR_TEMP_PLAYING_PYRAMID_MUSIC, 0);
-        gBattleTypeFlags |= BATTLE_TYPE_PYRAMID;
+        gBattleStruct->frontier = FRONTIER_PYRAMID;
 
         if (gNoOfApproachingTrainers == 2)
         {

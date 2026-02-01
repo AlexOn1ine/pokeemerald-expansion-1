@@ -340,7 +340,7 @@ static u32 OpponentGetTrainerPicId(enum BattlerId battlerId)
             trainerPicId = GetTrainerHillTrainerFrontSpriteId(TRAINER_BATTLE_PARAM.opponentA);
         }
     }
-    else if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
+    else if (IsFrontierBattle(FRONTIER_ANY))
     {
         if (gBattleTypeFlags & (BATTLE_TYPE_TWO_OPPONENTS | BATTLE_TYPE_TOWER_LINK_MULTI))
         {
@@ -440,7 +440,7 @@ static void OpponentHandleChooseMove(enum BattlerId battler)
     if (gBattleTypeFlags & (BATTLE_TYPE_TRAINER | BATTLE_TYPE_FIRST_BATTLE | BATTLE_TYPE_SAFARI | BATTLE_TYPE_ROAMER)
      || IsWildMonSmart())
     {
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             BtlController_EmitTwoReturnValues(battler, B_COMM_TO_ENGINE, B_ACTION_EXEC_SCRIPT, ChooseMoveAndTargetInBattlePalace(battler));
         }

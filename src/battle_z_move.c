@@ -121,7 +121,7 @@ bool32 CanUseZMove(enum BattlerId battler)
         && !CheckBagHasItem(ITEM_Z_POWER_RING, 1))
         return FALSE;
 
-    // Add '| BATTLE_TYPE_FRONTIER' to below if issues occur
+    // Add IsBattleTypeFrontier if issues occur
     if (gBattleTypeFlags & (BATTLE_TYPE_SAFARI | BATTLE_TYPE_CATCH_TUTORIAL))
         return FALSE;
 

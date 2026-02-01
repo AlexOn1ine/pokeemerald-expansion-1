@@ -1334,7 +1334,7 @@ u8 CreatePartyStatusSummarySprites(enum BattlerId battler, struct HpAndStatus *p
                     // fainted mon
                     gSprites[ballIconSpritesIds[i]].oam.tileNum += 3;
                 }
-                else if (gBattleTypeFlags & BATTLE_TYPE_ARENA && gBattleStruct->arenaLostPlayerMons & (1u << j))
+                else if (IsFrontierBattle(FRONTIER_ARENA) && gBattleStruct->arenaLostPlayerMons & (1u << j))
                 {
                     // fainted arena mon
                     gSprites[ballIconSpritesIds[i]].oam.tileNum += 3;
@@ -1390,7 +1390,7 @@ u8 CreatePartyStatusSummarySprites(enum BattlerId battler, struct HpAndStatus *p
                      // fainted mon
                     gSprites[ballIconSpritesIds[PARTY_SIZE - 1 - var]].oam.tileNum += 3;
                 }
-                else if (gBattleTypeFlags & BATTLE_TYPE_ARENA && gBattleStruct->arenaLostOpponentMons & (1u << j))
+                else if (IsFrontierBattle(FRONTIER_ARENA) && gBattleStruct->arenaLostOpponentMons & (1u << j))
                 {
                      // fainted arena mon
                     gSprites[ballIconSpritesIds[PARTY_SIZE - 1 - var]].oam.tileNum += 3;
@@ -2825,7 +2825,9 @@ bool32 CanThrowLastUsedBall(void)
         return FALSE;
     if (!CanThrowBall())
         return FALSE;
-    if (gBattleTypeFlags & (BATTLE_TYPE_TRAINER | BATTLE_TYPE_FRONTIER))
+    if (IsFrontierBattle(FRONTIER_ANY))
+        return FALSE;
+    if (gBattleTypeFlags & BATTLE_TYPE_TRAINER)
         return FALSE;
     if (!CheckBagHasItem(gBallToDisplay, 1))
         return FALSE;

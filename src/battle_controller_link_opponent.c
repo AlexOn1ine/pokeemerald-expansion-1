@@ -287,7 +287,7 @@ static void LinkOpponentHandleDrawTrainerPic(enum BattlerId battler)
         else // first mon
             xPos = 200;
 
-        if (gBattleTypeFlags & BATTLE_TYPE_BATTLE_TOWER)
+        if (IsFrontierBattle(FRONTIER_TOWER))
         {
             if (position == B_POSITION_OPPONENT_LEFT)
                 trainerPicId = GetFrontierTrainerFrontSpriteId(TRAINER_BATTLE_PARAM.opponentA);

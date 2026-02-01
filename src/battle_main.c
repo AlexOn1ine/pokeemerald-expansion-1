@@ -585,7 +585,7 @@ static void CB2_InitBattleInternal(void)
     SetUpBattleVarsAndBirchZigzagoon();
 
     if ((IsMultibattleTest() && gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER)
-    || (gBattleTypeFlags & BATTLE_TYPE_MULTI && gBattleTypeFlags & BATTLE_TYPE_BATTLE_TOWER)
+    || (gBattleTypeFlags & BATTLE_TYPE_MULTI && IsFrontierBattle(FRONTIER_TOWER))
     || (gBattleTypeFlags & BATTLE_TYPE_MULTI && gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER))
         SetMainCallback2(CB2_HandleStartMultiPartnerBattle);
     else if (gBattleTypeFlags & BATTLE_TYPE_MULTI)
@@ -763,7 +763,7 @@ static void SetAllPlayersBerryData(void)
 
         if (gBattleTypeFlags & BATTLE_TYPE_MULTI)
         {
-            if (gBattleTypeFlags & BATTLE_TYPE_BATTLE_TOWER)
+            if (IsFrontierBattle(FRONTIER_TOWER))
                 numPlayers = 2;
             else
                 numPlayers = 4;
@@ -1357,7 +1357,7 @@ static void CB2_PreInitMultiBattle(void)
     u32 *savedBattleTypeFlags;
     void (**savedCallback)(void);
 
-    if (gBattleTypeFlags & BATTLE_TYPE_BATTLE_TOWER)
+    if (IsFrontierBattle(FRONTIER_TOWER))
     {
         numPlayers = 2;
         blockMask = 3;
@@ -1922,9 +1922,13 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
     u32 personalityValue;
     s32 i;
     u8 monsCount;
-    if (battleTypeFlags & BATTLE_TYPE_TRAINER && !(battleTypeFlags & (BATTLE_TYPE_FRONTIER
-                                                                        | BATTLE_TYPE_EREADER_TRAINER
-                                                                        | BATTLE_TYPE_TRAINER_HILL)))
+
+    if (IsFrontierBattle(FRONTIER_ANY))
+        return trainer->partySize;
+    if (battleTypeFlags & (BATTLE_TYPE_EREADER_TRAINER | BATTLE_TYPE_TRAINER_HILL))
+        return trainer->partySize;
+
+    if (battleTypeFlags & BATTLE_TYPE_TRAINER)
     {
         if (firstTrainer == TRUE)
             ZeroEnemyPartyMons();
@@ -2092,7 +2096,8 @@ void CreateTrainerPartyForPlayer(void)
 void VBlankCB_Battle(void)
 {
     // Change gRngSeed every vblank unless the battle could be recorded.
-    if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_FRONTIER | BATTLE_TYPE_RECORDED)))
+    if (IsFrontierBattle(FRONTIER_NONE)
+     && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
         AdvanceRandom();
 
     SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_X);
@@ -2191,7 +2196,7 @@ void CB2_InitEndLinkBattle(void)
     SetVBlankCallback(NULL);
     gBattleTypeFlags &= ~BATTLE_TYPE_LINK_IN_BATTLE;
 
-    if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
+    if (IsFrontierBattle(FRONTIER_ANY))
     {
         SetMainCallback2(gMain.savedCallback);
         FreeBattleResources();
@@ -3563,7 +3568,7 @@ static void DoBattleIntro(void)
                 break;
             }
 
-            if (gBattleTypeFlags & BATTLE_TYPE_ARENA)
+            if (IsFrontierBattle(FRONTIER_ARENA))
                 BattleArena_InitPoints();
         }
 
@@ -3920,7 +3925,7 @@ static void TryDoEventsBeforeFirstTurn(void)
         SetShellSideArmCategory();
         SetAiLogicDataForTurn(gAiLogicData); // get assumed abilities, hold effects, etc of all battlers
 
-        if (gBattleTypeFlags & BATTLE_TYPE_ARENA)
+        if (IsFrontierBattle(FRONTIER_ARENA))
         {
             StopCryAndClearCrySongs();
             BattleScriptExecute(BattleScript_ArenaTurnBeginning);
@@ -4016,9 +4021,9 @@ void BattleTurnPassed(void)
     SetAiLogicDataForTurn(gAiLogicData); // get assumed abilities, hold effects, etc of all battlers
     gBattleMainFunc = HandleTurnActionSelectionState;
 
-    if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+    if (IsFrontierBattle(FRONTIER_PALACE))
         BattleScriptExecute(BattleScript_PalacePrintFlavorText);
-    else if (gBattleTypeFlags & BATTLE_TYPE_ARENA && gBattleStruct->eventState.arenaTurn == 0)
+    else if (IsFrontierBattle(FRONTIER_ARENA) && gBattleStruct->eventState.arenaTurn == 0)
         BattleScriptExecute(BattleScript_ArenaTurnBeginning);
 }
 
@@ -4270,13 +4275,9 @@ static void HandleTurnActionSelectionState(void)
                         return;
                     }
 
-                    if (((gBattleTypeFlags & (BATTLE_TYPE_LINK
-                                            | BATTLE_TYPE_FRONTIER_NO_PYRAMID
-                                            | BATTLE_TYPE_EREADER_TRAINER
-                                            | BATTLE_TYPE_RECORDED_LINK))
-                                            && !gTestRunnerEnabled)
-                                            // Or if currently held by Sky Drop
-                                            || gBattleMons[battler].volatiles.semiInvulnerable == STATE_SKY_DROP)
+                    #define IS_LINK_TYPE (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_EREADER_TRAINER | BATTLE_TYPE_RECORDED_LINK))
+                    if ((IS_LINK_TYPE && IsFrontierBattle(FRONTIER_ANY) && !IsFrontierBattle(FRONTIER_PYRAMID) && !gTestRunnerEnabled)
+                     || gBattleMons[battler].volatiles.semiInvulnerable == STATE_SKY_DROP) // Or if currently held by Sky Drop
                     {
                         RecordedBattle_ClearBattlerAction(battler, 1);
                         gSelectionBattleScripts[battler] = BattleScript_ActionSelectionItemsCantBeUsed;
@@ -4290,10 +4291,11 @@ static void HandleTurnActionSelectionState(void)
                         BtlController_EmitChooseItem(battler, B_COMM_TO_CONTROLLER, gBattleStruct->battlerPartyOrders[battler]);
                         MarkBattlerForControllerExec(battler);
                     }
+                    #undef IS_LINK_TYPE
                     break;
                 case B_ACTION_SWITCH:
                     gBattleStruct->battlerPartyIndexes[battler] = gBattlerPartyIndexes[battler];
-                    if (gBattleTypeFlags & BATTLE_TYPE_ARENA
+                    if (IsFrontierBattle(FRONTIER_ARENA)
                         || (!CanBattlerEscape(battler) && GetBattlerHoldEffect(battler) != HOLD_EFFECT_SHED_SHELL))
                     {
                         BtlController_EmitChoosePokemon(battler, B_COMM_TO_CONTROLLER, PARTY_ACTION_CANT_SWITCH, PARTY_SIZE, ABILITY_NONE, 0, gBattleStruct->battlerPartyOrders[battler]);
@@ -4356,7 +4358,7 @@ static void HandleTurnActionSelectionState(void)
                     {
                         RecordedBattle_ClearBattlerAction(GetPartnerBattler(battler), 1);
                     }
-                    else if (gBattleTypeFlags & BATTLE_TYPE_PALACE
+                    else if (IsFrontierBattle(FRONTIER_PALACE)
                              && gChosenActionByBattler[GetPartnerBattler(battler)] == B_ACTION_USE_MOVE)
                     {
                         gRngValue = gBattlePalaceMoveSelectionRngValue;
@@ -4378,7 +4380,7 @@ static void HandleTurnActionSelectionState(void)
                 }
 
                 if (gBattleTypeFlags & BATTLE_TYPE_TRAINER
-                    && gBattleTypeFlags & (BATTLE_TYPE_FRONTIER | BATTLE_TYPE_TRAINER_HILL)
+                    && (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL || IsFrontierBattle(FRONTIER_ANY))
                     && gBattleResources->bufferB[battler][1] == B_ACTION_RUN)
                 {
                     gSelectionBattleScripts[battler] = BattleScript_AskIfWantsToForfeitMatch;
@@ -4457,7 +4459,7 @@ static void HandleTurnActionSelectionState(void)
                         }
                         else
                         {
-                            if (!(gBattleTypeFlags & BATTLE_TYPE_PALACE))
+                            if (!(IsFrontierBattle(FRONTIER_PALACE)))
                             {
                                 RecordedBattle_SetBattlerAction(battler, gBattleResources->bufferB[battler][2]);
                                 RecordedBattle_SetBattlerAction(battler, gBattleResources->bufferB[battler][3]);
@@ -4755,7 +4757,8 @@ u32 GetBattlerTotalSpeedStat(enum BattlerId battler, enum Ability ability, enum 
         speed *= 2;
 
     // player's badge boost
-    if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK | BATTLE_TYPE_FRONTIER))
+    if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK))
+        && !IsFrontierBattle(FRONTIER_ANY)
         && ShouldGetStatBadgeBoost(B_FLAG_BADGE_BOOST_SPEED, battler)
         && IsOnPlayerSide(battler))
     {
@@ -5391,8 +5394,7 @@ static void HandleEndTurn_BattleWon(void)
         gBattlescriptCurrInstr = BattleScript_LinkBattleWonOrLost;
         gBattleOutcome &= ~B_OUTCOME_LINK_BATTLE_RAN;
     }
-    else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER
-            && gBattleTypeFlags & (BATTLE_TYPE_FRONTIER | BATTLE_TYPE_TRAINER_HILL | BATTLE_TYPE_EREADER_TRAINER))
+    else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER && (gBattleTypeFlags & (BATTLE_TYPE_TRAINER_HILL | BATTLE_TYPE_EREADER_TRAINER) || IsFrontierBattle(FRONTIER_ANY)))
     {
         BattleStopLowHpSound();
         gBattlescriptCurrInstr = BattleScript_FrontierTrainerBattleWon;
@@ -5443,7 +5445,7 @@ static void HandleEndTurn_BattleLost(void)
 
     if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK))
     {
-        if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
+        if (IsFrontierBattle(FRONTIER_ANY))
         {
             if (gBattleOutcome & B_OUTCOME_LINK_BATTLE_RAN)
             {
@@ -5489,7 +5491,7 @@ static void HandleEndTurn_RanFromBattle(void)
 {
     gCurrentActionFuncId = 0;
 
-    if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER && gBattleTypeFlags & BATTLE_TYPE_TRAINER)
+    if (IsFrontierBattle(FRONTIER_ANY) && gBattleTypeFlags & BATTLE_TYPE_TRAINER)
     {
         gBattlescriptCurrInstr = BattleScript_PrintPlayerForfeited;
         gBattleOutcome = B_OUTCOME_FORFEITED;
@@ -5543,8 +5545,7 @@ static void HandleEndTurn_FinishBattle(void)
                                   | BATTLE_TYPE_FIRST_BATTLE
                                   | BATTLE_TYPE_SAFARI
                                   | BATTLE_TYPE_EREADER_TRAINER
-                                  | BATTLE_TYPE_CATCH_TUTORIAL
-                                  | BATTLE_TYPE_FRONTIER))
+                                  | BATTLE_TYPE_CATCH_TUTORIAL))
             && !(gBattleTypeFlags & BATTLE_TYPE_GHOST && IsGhostBattleWithoutScope()))
         {
             for (enum BattlerId battler = 0; battler < gBattlersCount; battler++)
@@ -5569,8 +5570,7 @@ static void HandleEndTurn_FinishBattle(void)
         if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK
                                   | BATTLE_TYPE_EREADER_TRAINER
                                   | BATTLE_TYPE_RECORDED_LINK
-                                  | BATTLE_TYPE_TRAINER_HILL
-                                  | BATTLE_TYPE_FRONTIER)))
+                                  | BATTLE_TYPE_TRAINER_HILL)))
         {
             for (enum BattleSide side = 0; side < NUM_BATTLE_SIDES; side++)
             {
@@ -5592,7 +5592,6 @@ static void HandleEndTurn_FinishBattle(void)
                                   | BATTLE_TYPE_TRAINER
                                   | BATTLE_TYPE_FIRST_BATTLE
                                   | BATTLE_TYPE_SAFARI
-                                  | BATTLE_TYPE_FRONTIER
                                   | BATTLE_TYPE_EREADER_TRAINER
                                   | BATTLE_TYPE_CATCH_TUTORIAL))
             && gBattleResults.shinyWildMon)
@@ -5661,7 +5660,6 @@ static void FreeResetData_ReturnToOvOrDoEvolutions(void)
                                   | BATTLE_TYPE_RECORDED_LINK
                                   | BATTLE_TYPE_FIRST_BATTLE
                                   | BATTLE_TYPE_SAFARI
-                                  | BATTLE_TYPE_FRONTIER
                                   | BATTLE_TYPE_EREADER_TRAINER
                                   | BATTLE_TYPE_CATCH_TUTORIAL))
             && (B_EVOLUTION_AFTER_WHITEOUT >= GEN_6
@@ -5682,7 +5680,7 @@ static void FreeResetData_ReturnToOvOrDoEvolutions(void)
     {
         // To account for Battle Factory and Slateport Battle Tent, enemy parties are zeroed out in the facilitites respective src/xxx.c files
         // The ZeroEnemyPartyMons() call happens in SaveXXXChallenge function (eg. SaveFactoryChallenge)
-        if (!(gBattleTypeFlags & (BATTLE_TYPE_FRONTIER | BATTLE_TYPE_ROAMER)))
+        if (!(gBattleTypeFlags & BATTLE_TYPE_ROAMER) && !IsFrontierBattle(FRONTIER_ANY))
         {
             ZeroEnemyPartyMons();
         }
@@ -6158,7 +6156,7 @@ bool32 CanPlayerForfeitNormalTrainerBattle(void)
     if (!B_RUN_TRAINER_BATTLE)
         return FALSE;
 
-    if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
+    if (IsFrontierBattle(FRONTIER_ANY))
         return FALSE;
 
     if (gBattleTypeFlags & BATTLE_TYPE_RECORDED_INVALID)

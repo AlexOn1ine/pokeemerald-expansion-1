@@ -578,6 +578,7 @@ static void Cmd_averagestats(void);
 static void Cmd_jumpifcaptivateaffected(void);
 static void Cmd_setnonvolatilestatus(void);
 static void Cmd_tryoverwriteability(void);
+static void Cmd_jumpiffrontierbattle(void);
 static void Cmd_dummy(void);
 static void Cmd_callnative(void);
 
@@ -808,7 +809,7 @@ void (*const gBattleScriptingCommandsTable[])(void) =
     [B_SCR_OP_JUMPIFCAPTIVATEAFFECTED]               = Cmd_jumpifcaptivateaffected,
     [B_SCR_OP_SETNONVOLATILESTATUS]                  = Cmd_setnonvolatilestatus,
     [B_SCR_OP_TRYOVERWRITEABILITY]                   = Cmd_tryoverwriteability,
-    [B_SCR_OP_UNUSED_1]                              = Cmd_dummy,
+    [B_SCR_OP_JMUPIFFRONTIERBATTLE]                  = Cmd_jumpiffrontierbattle,
     [B_SCR_OP_UNUSED_2]                              = Cmd_dummy,
     [B_SCR_OP_UNUSED_3]                              = Cmd_dummy,
     [B_SCR_OP_UNUSED_4]                              = Cmd_dummy,
@@ -2230,7 +2231,8 @@ void StealTargetItem(enum BattlerId battlerStealer, enum BattlerId itemBattler)
     gBattleMons[itemBattler].item = ITEM_NONE;
 
     if (GetConfig(CONFIG_STEAL_WILD_ITEMS) >= GEN_9
-     && !(gBattleTypeFlags & (BATTLE_TYPE_TRAINER | BATTLE_TYPE_PALACE))
+     && !(gBattleTypeFlags & BATTLE_TYPE_TRAINER)
+     && gBattleStruct->frontier != FRONTIER_PALACE
      && GetMoveEffect(gCurrentMove) == EFFECT_STEAL_ITEM
      && battlerStealer == gBattlerAttacker) // ensure that Pickpocket isn't activating this
     {
@@ -3822,7 +3824,7 @@ static void Cmd_cleareffectsonfaint(void)
     {
         enum BattlerId battler = GetBattlerForBattleScript(cmd->battler);
         const u8 *clearDataResult = NULL;
-        if (!(gBattleTypeFlags & BATTLE_TYPE_ARENA) || !IsBattlerAlive(battler))
+        if (!(IsFrontierBattle(FRONTIER_ARENA)) || !IsBattlerAlive(battler))
         {
             gBattleMons[battler].status1 = 0;
             BtlController_EmitSetMonData(battler, B_COMM_TO_CONTROLLER, REQUEST_STATUS_BATTLE, 0, sizeof(gBattleMons[battler].status1), &gBattleMons[battler].status1);
@@ -3990,13 +3992,13 @@ static bool32 BattleTypeAllowsExp(void)
 {
     if (RECORDED_WILD_BATTLE)
         return TRUE;
+    if (IsFrontierBattle(FRONTIER_ANY))
+        return FALSE;
     else if (gBattleTypeFlags &
               ( BATTLE_TYPE_LINK
               | BATTLE_TYPE_RECORDED_LINK
               | BATTLE_TYPE_TRAINER_HILL
-              | BATTLE_TYPE_FRONTIER
               | BATTLE_TYPE_SAFARI
-              | BATTLE_TYPE_BATTLE_TOWER
               | BATTLE_TYPE_EREADER_TRAINER))
         return FALSE;
     else
@@ -4374,7 +4376,7 @@ bool32 NoAliveMonsForPlayer(void)
     for (i = 0; i < maxI; i++)
     {
         if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) && !GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG)
-            && (!(gBattleTypeFlags & BATTLE_TYPE_ARENA) || !(gBattleStruct->arenaLostPlayerMons & (1u << i))))
+            && (!(IsFrontierBattle(FRONTIER_ARENA)) || !(gBattleStruct->arenaLostPlayerMons & (1u << i))))
         {
             HP_count += GetMonData(&gPlayerParty[i], MON_DATA_HP);
         }
@@ -4385,7 +4387,7 @@ bool32 NoAliveMonsForPlayer(void)
     }
 
     if (B_MULTI_BATTLE_WHITEOUT > GEN_3 && gBattleTypeFlags & (BATTLE_TYPE_MULTI | BATTLE_TYPE_INGAME_PARTNER)
-     && !(gBattleTypeFlags & BATTLE_TYPE_ARENA) && !(IsMultibattleTest())) // Multibattle tests appear to not save the player party data for the check below.
+     && !(IsFrontierBattle(FRONTIER_ARENA)) && !(IsMultibattleTest())) // Multibattle tests appear to not save the player party data for the check below.
     {
         for (i = 0; i < PARTY_SIZE; i++)
         {
@@ -4412,7 +4414,7 @@ static bool32 NoAliveMonsForOpponent(void)
     for (i = 0; i < PARTY_SIZE; i++)
     {
         if (GetMonData(&gEnemyParty[i], MON_DATA_SPECIES) && !GetMonData(&gEnemyParty[i], MON_DATA_IS_EGG)
-         && (!(gBattleTypeFlags & BATTLE_TYPE_ARENA) || !(gBattleStruct->arenaLostOpponentMons & (1u << i))))
+         && (!(IsFrontierBattle(FRONTIER_ARENA)) || !(gBattleStruct->arenaLostOpponentMons & (1u << i))))
         {
             HP_count += GetMonData(&gEnemyParty[i], MON_DATA_HP);
         }
@@ -4882,7 +4884,7 @@ static void Cmd_end(void)
     assertf(gSelectionBattleScripts[gBattlerAttacker] == NULL, "incorrect use of end in selection script, did you mean endselectionscript?");
     assertf(gBattleMainFunc != RunBattleScriptCommands, "incorrect use of end in battle script, did you mean end3?");
 
-    if (gBattleTypeFlags & BATTLE_TYPE_ARENA)
+    if (IsFrontierBattle(FRONTIER_ARENA))
         BattleArena_AddSkillPoints(gBattlerAttacker);
 
     gCurrentActionFuncId = B_ACTION_TRY_FINISH;
@@ -5209,7 +5211,7 @@ static void Cmd_switchindataupdate(void)
 
     SwitchInClearSetData(battler, &oldData.volatiles);
 
-    if (gBattleTypeFlags & BATTLE_TYPE_PALACE
+    if (IsFrontierBattle(FRONTIER_PALACE)
         && gBattleMons[battler].maxHP / 2 >= gBattleMons[battler].hp
         && IsBattlerAlive(battler)
         && !(gBattleMons[battler].status1 & STATUS1_SLEEP))
@@ -5244,7 +5246,7 @@ static void Cmd_switchinanim(void)
 
     gBattlescriptCurrInstr = cmd->nextInstr;
 
-    if (gBattleTypeFlags & BATTLE_TYPE_ARENA)
+    if (IsFrontierBattle(FRONTIER_ARENA))
         BattleArena_InitPoints();
 }
 
@@ -8077,8 +8079,8 @@ static void Cmd_forcerandomswitch(void)
             battler2PartyId = gBattlerPartyIndexes[gBattlerTarget];
             battler1PartyId = gBattlerPartyIndexes[BATTLE_PARTNER(gBattlerTarget)];
         }
-        else if ((gBattleTypeFlags & BATTLE_TYPE_BATTLE_TOWER && gBattleTypeFlags & BATTLE_TYPE_LINK)
-            || (gBattleTypeFlags & BATTLE_TYPE_BATTLE_TOWER && gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK)
+        else if ((IsFrontierBattle(FRONTIER_TOWER) && gBattleTypeFlags & BATTLE_TYPE_LINK)
+            || (IsFrontierBattle(FRONTIER_TOWER) && gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK)
             || (gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER))
         {
             if ((gBattlerTarget & BIT_FLANK) != B_FLANK_LEFT)
@@ -8173,9 +8175,9 @@ static void Cmd_forcerandomswitch(void)
             if (!IsMultiBattle())
                 SwitchPartyOrder(gBattlerTarget);
 
-            if ((gBattleTypeFlags & BATTLE_TYPE_LINK && gBattleTypeFlags & BATTLE_TYPE_BATTLE_TOWER)
+            if ((gBattleTypeFlags & BATTLE_TYPE_LINK && IsFrontierBattle(FRONTIER_TOWER))
                 || (gBattleTypeFlags & BATTLE_TYPE_LINK && gBattleTypeFlags & BATTLE_TYPE_MULTI)
-                || (gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK && gBattleTypeFlags & BATTLE_TYPE_BATTLE_TOWER)
+                || (gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK && IsFrontierBattle(FRONTIER_TOWER))
                 || (gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK && gBattleTypeFlags & BATTLE_TYPE_MULTI))
             {
                 SwitchPartyOrderLinkMulti(gBattlerTarget, gBattleStruct->monToSwitchIntoId[gBattlerTarget], 0);
@@ -9661,7 +9663,6 @@ static void Cmd_tryswapitems(void)
         || (!IsOnPlayerSide(gBattlerAttacker)
             && !(gBattleTypeFlags & (BATTLE_TYPE_LINK
                                   | BATTLE_TYPE_EREADER_TRAINER
-                                  | BATTLE_TYPE_FRONTIER
                                   | BATTLE_TYPE_SECRET_BASE
                                   | BATTLE_TYPE_RECORDED_LINK
                                   | (B_TRAINERS_KNOCK_OFF_ITEMS == TRUE ? BATTLE_TYPE_TRAINER : 0)
@@ -9674,7 +9675,6 @@ static void Cmd_tryswapitems(void)
         // You can't swap items if they were knocked off in regular battles
         if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK
                              | BATTLE_TYPE_EREADER_TRAINER
-                             | BATTLE_TYPE_FRONTIER
                              | BATTLE_TYPE_SECRET_BASE
                              | BATTLE_TYPE_RECORDED_LINK))
             && (GetBattlerPartyState(gBattlerAttacker)->isKnockedOff || GetBattlerPartyState(gBattlerTarget)->isKnockedOff))
@@ -11475,6 +11475,18 @@ static void Cmd_tryoverwriteability(void)
         gBattleMons[gBattlerTarget].ability = gBattleMons[gBattlerTarget].volatiles.overwrittenAbility = GetMoveOverwriteAbility(gCurrentMove);
         gBattlescriptCurrInstr = cmd->nextInstr;
     }
+}
+
+static void Cmd_jumpiffrontierbattle(void)
+{
+    CMD_ARGS(u8 frontierType, const u8 *jumpInstr);
+
+    if (cmd->frontierType == FRONTIER_ANY && gBattleStruct->frontier != FRONTIER_NONE)
+        gBattlescriptCurrInstr = cmd->jumpInstr;
+    if (gBattleStruct->frontier == cmd->frontierType)
+        gBattlescriptCurrInstr = cmd->jumpInstr;
+    else
+        gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
 static void Cmd_dummy(void)

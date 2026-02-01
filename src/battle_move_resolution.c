@@ -2552,7 +2552,8 @@ static enum MoveEndResult MoveEndMoveBlock(void)
             StealTargetItem(gBattlerAttacker, gBattlerTarget);  // Attacker steals target item
 
             if (!(GetConfig(CONFIG_STEAL_WILD_ITEMS) >= GEN_9
-             && !(gBattleTypeFlags & (BATTLE_TYPE_TRAINER | BATTLE_TYPE_PALACE))))
+              && !(gBattleTypeFlags & BATTLE_TYPE_TRAINER)
+              && gBattleStruct->frontier != FRONTIER_PALACE))
             {
                 gBattleMons[gBattlerAttacker].item = gLastUsedItem;
             }

@@ -137,7 +137,7 @@ static const u8* const *GetTrainerSlideArray(enum DifficultyLevel difficulty, u3
 #if TESTING
     return (FlagGet(TESTING_FLAG_TRAINER_SLIDES) ? sTestTrainerSlides[difficulty][trainerId] : NULL);
 #else
-    if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
+    if (IsFrontierBattle(FRONTIER_ANY))
         return sFrontierTrainerSlides[difficulty][trainerId];
     else
         return sTrainerSlides[difficulty][trainerId];

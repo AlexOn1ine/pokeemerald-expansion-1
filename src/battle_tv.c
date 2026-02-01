@@ -1260,7 +1260,11 @@ static void TrySetBattleSeminarShow(void)
         return;
     else if (gCurrentMove == MOVE_HIDDEN_POWER || gCurrentMove == MOVE_WEATHER_BALL)
         return;
-    else if (gBattleTypeFlags & (BATTLE_TYPE_PALACE | BATTLE_TYPE_PIKE | BATTLE_TYPE_PYRAMID))
+    else if (IsFrontierBattle(FRONTIER_PALACE))
+        return;
+    else if (IsFrontierBattle(FRONTIER_PIKE))
+        return;
+    else if (IsFrontierBattle(FRONTIER_PYRAMID))
         return;
     else if (IsBattleMoveStatus(gBattleMons[gBattlerAttacker].moves[gMoveSelectionCursor[gBattlerAttacker]]))
         return;

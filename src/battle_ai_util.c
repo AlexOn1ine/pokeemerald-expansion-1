@@ -3509,7 +3509,7 @@ enum AIPivot ShouldPivot(enum BattlerId battlerAtk, enum BattlerId battlerDef, e
     return CAN_TRY_PIVOT;
 }
 
-#define BATTLE_TYPE_CANT_KNOCK_OFF (BATTLE_TYPE_EREADER_TRAINER | BATTLE_TYPE_FRONTIER | BATTLE_TYPE_LINK \
+#define BATTLE_TYPE_CANT_KNOCK_OFF (BATTLE_TYPE_EREADER_TRAINER | BATTLE_TYPE_LINK \
                                   | BATTLE_TYPE_RECORDED_LINK | BATTLE_TYPE_SECRET_BASE \
                                   | (B_TRAINERS_KNOCK_OFF_ITEMS == TRUE ? BATTLE_TYPE_TRAINER : 0))
 bool32 CanKnockOffItem(enum BattlerId fromBattler, enum BattlerId battler, enum Item item)
@@ -3517,8 +3517,13 @@ bool32 CanKnockOffItem(enum BattlerId fromBattler, enum BattlerId battler, enum 
     if (item == ITEM_NONE)
         return FALSE;
 
-    if (!(gBattleTypeFlags & BATTLE_TYPE_CANT_KNOCK_OFF) && IsOnPlayerSide(fromBattler))
-        return FALSE;
+    if (IsOnPlayerSide(fromBattler))
+    {
+        if (IsFrontierBattle(FRONTIER_ANY))
+            return FALSE;
+        if (!(gBattleTypeFlags & BATTLE_TYPE_CANT_KNOCK_OFF))
+            return FALSE;
+    }
 
     if (gAiLogicData->abilities[fromBattler] == ABILITY_STICKY_HOLD)
         return FALSE;

@@ -622,7 +622,7 @@ void HandleAction_UseMove(void)
     DetermineTarget(moveTarget, TRUE);
 
 
-    if (gBattleTypeFlags & BATTLE_TYPE_PALACE && gProtectStructs[gBattlerAttacker].palaceUnableToUseMove)
+    if (IsFrontierBattle(FRONTIER_PALACE) && gProtectStructs[gBattlerAttacker].palaceUnableToUseMove)
     {
         // Battle Palace, select battle script for failure to use move
         if (!IsBattlerAlive(gBattlerAttacker))
@@ -655,7 +655,7 @@ void HandleAction_UseMove(void)
         gBattlescriptCurrInstr = GetMoveBattleScript(gCurrentMove);
     }
 
-    if (gBattleTypeFlags & BATTLE_TYPE_ARENA)
+    if (IsFrontierBattle(FRONTIER_ARENA))
         BattleArena_AddMindPoints(gBattlerAttacker);
 
     for (i = 0; i < MAX_BATTLERS_COUNT; i++)
@@ -765,7 +765,11 @@ bool32 TryRunFromBattle(enum BattlerId battler)
         if (GetBattlerSide(battler) == B_SIDE_PLAYER)
             effect++;
     }
-    else if (gBattleTypeFlags & (BATTLE_TYPE_FRONTIER | BATTLE_TYPE_TRAINER_HILL) && gBattleTypeFlags & BATTLE_TYPE_TRAINER)
+    else if (IsFrontierBattle(FRONTIER_ANY))
+    {
+        effect++;
+    }
+    else if (gBattleTypeFlags & (BATTLE_TYPE_TRAINER_HILL | BATTLE_TYPE_TRAINER))
     {
         effect++;
     }
@@ -1568,7 +1572,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
     {
         gBattleScripting.battler = battler;
         gCurrentMove = gBattleMons[battler].volatiles.encoredMove;
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gPalaceSelectionBattleScripts[battler] = BattleScript_EncoredMoveInPalace;
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
@@ -1585,7 +1589,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
     {
         gBattleScripting.battler = battler;
         gCurrentMove = move;
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gPalaceSelectionBattleScripts[battler] = BattleScript_SelectingDisabledMoveInPalace;
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
@@ -1600,7 +1604,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
     if (DYNAMAX_BYPASS_CHECK && GetActiveGimmick(battler) != GIMMICK_Z_MOVE && move == gLastMoves[battler] && move != MOVE_STRUGGLE && (gBattleMons[battler].volatiles.torment == TRUE))
     {
         CancelMultiTurnMoves(battler, SKY_DROP_IGNORE);
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gPalaceSelectionBattleScripts[battler] = BattleScript_SelectingTormentedMoveInPalace;
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
@@ -1618,7 +1622,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
             gCurrentMove = MOVE_MAX_GUARD;
         else
             gCurrentMove = move;
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gPalaceSelectionBattleScripts[battler] = BattleScript_SelectingNotAllowedMoveTauntInPalace;
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
@@ -1633,7 +1637,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
     if (DYNAMAX_BYPASS_CHECK && GetActiveGimmick(battler) != GIMMICK_Z_MOVE && gBattleMons[battler].volatiles.throatChopTimer > 0 && IsSoundMove(move))
     {
         gCurrentMove = move;
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gPalaceSelectionBattleScripts[battler] = BattleScript_SelectingNotAllowedMoveThroatChopInPalace;
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
@@ -1648,7 +1652,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
     if (DYNAMAX_BYPASS_CHECK && GetActiveGimmick(battler) != GIMMICK_Z_MOVE && GetImprisonedMovesCount(battler, move))
     {
         gCurrentMove = move;
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gPalaceSelectionBattleScripts[battler] = BattleScript_SelectingImprisonedMoveInPalace;
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
@@ -1663,7 +1667,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
     if (DYNAMAX_BYPASS_CHECK && GetActiveGimmick(battler) != GIMMICK_Z_MOVE && IsGravityPreventingMove(move))
     {
         gCurrentMove = move;
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gPalaceSelectionBattleScripts[battler] = BattleScript_SelectingNotAllowedMoveGravityInPalace;
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
@@ -1678,7 +1682,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
     if (DYNAMAX_BYPASS_CHECK && GetActiveGimmick(battler) != GIMMICK_Z_MOVE && IsHealBlockPreventingMove(battler, move))
     {
         gCurrentMove = move;
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gPalaceSelectionBattleScripts[battler] = BattleScript_SelectingNotAllowedMoveHealBlockInPalace;
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
@@ -1693,7 +1697,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
     if (DYNAMAX_BYPASS_CHECK && GetActiveGimmick(battler) != GIMMICK_Z_MOVE && IsBelchPreventingMove(battler, move))
     {
         gCurrentMove = move;
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gPalaceSelectionBattleScripts[battler] = BattleScript_SelectingNotAllowedBelchInPalace;
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
@@ -1708,7 +1712,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
     if (DYNAMAX_BYPASS_CHECK && moveEffect == EFFECT_STUFF_CHEEKS && GetItemPocket(gBattleMons[battler].item) != POCKET_BERRIES)
     {
         gCurrentMove = move;
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gPalaceSelectionBattleScripts[battler] = BattleScript_SelectingNotAllowedStuffCheeksInPalace;
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
@@ -1724,7 +1728,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
     {
         gCurrentMove = move;
         PREPARE_MOVE_BUFFER(gBattleTextBuff1, gCurrentMove);
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gPalaceSelectionBattleScripts[battler] = BattleScript_SelectingNotAllowedCurrentMoveInPalace;
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
@@ -1741,7 +1745,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
     {
         gCurrentMove = *choicedMove;
         gLastUsedItem = gBattleMons[battler].item;
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gPalaceSelectionBattleScripts[battler] = BattleScript_SelectingNotAllowedMoveChoiceItemInPalace;
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
@@ -1759,7 +1763,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
         else
             gCurrentMove = move;
         gLastUsedItem = gBattleMons[battler].item;
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gPalaceSelectionBattleScripts[battler] = BattleScript_SelectingNotAllowedMoveAssaultVestInPalace;
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
@@ -1775,7 +1779,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
     {
         gCurrentMove = *choicedMove;
         gLastUsedItem = gBattleMons[battler].item;
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gPalaceSelectionBattleScripts[battler] = BattleScript_SelectingNotAllowedMoveGorillaTacticsInPalace;
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
@@ -1789,7 +1793,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
 
     if (gBattleMons[battler].pp[moveId] == 0)
     {
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
         }
@@ -1802,7 +1806,7 @@ u32 TrySetCantSelectMoveBattleScript(enum BattlerId battler)
 
     if (moveEffect == EFFECT_PLACEHOLDER)
     {
-        if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+        if (IsFrontierBattle(FRONTIER_PALACE))
         {
             gPalaceSelectionBattleScripts[battler] = BattleScript_SelectingNotAllowedPlaceholderInPalace;
             gProtectStructs[battler].palaceUnableToUseMove = TRUE;
@@ -1936,8 +1940,8 @@ u32 GetBattlerAffectionHearts(enum BattlerId battler)
     if (!IsOnPlayerSide(battler))
         return AFFECTION_NO_HEARTS;
     else if (gSpeciesInfo[species].isMegaEvolution
+          || IsFrontierBattle(FRONTIER_ANY)
           || (gBattleTypeFlags & (BATTLE_TYPE_EREADER_TRAINER
-                                | BATTLE_TYPE_FRONTIER
                                 | BATTLE_TYPE_LINK
                                 | BATTLE_TYPE_RECORDED_LINK
                                 | BATTLE_TYPE_SECRET_BASE)))
@@ -1971,7 +1975,7 @@ void TryToRevertMimicryAndFlags(void)
 
 bool32 BattleArenaTurnEnd(void)
 {
-    if ((gBattleTypeFlags & BATTLE_TYPE_ARENA)
+    if ((IsFrontierBattle(FRONTIER_ARENA))
      && gBattleStruct->eventState.arenaTurn == 2
      && IsBattlerAlive(GetBattlerAtPosition(B_POSITION_PLAYER_LEFT)) && IsBattlerAlive(GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT)))
     {
@@ -5845,7 +5849,7 @@ enum Obedience GetAttackerObedienceForAction(void)
 
     if (gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER && GetBattlerPosition(gBattlerAttacker) == B_POSITION_PLAYER_RIGHT)
         return OBEYS;
-    if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
+    if (IsFrontierBattle(FRONTIER_ANY))
         return OBEYS;
     if (gBattleTypeFlags & BATTLE_TYPE_RECORDED)
         return OBEYS;
@@ -6947,7 +6951,7 @@ static inline u32 CalcMoveBasePowerAfterModifiers(struct BattleContext *ctx)
     case HOLD_EFFECT_SOUL_DEW:
         if ((gBattleMons[battlerAtk].species == SPECIES_LATIAS || gBattleMons[battlerAtk].species == SPECIES_LATIOS)
             && ((B_SOUL_DEW_BOOST >= GEN_7 && (moveType == TYPE_PSYCHIC || moveType == TYPE_DRAGON))
-             || (B_SOUL_DEW_BOOST < GEN_7 && !(gBattleTypeFlags & BATTLE_TYPE_FRONTIER) && IsBattleMoveSpecial(move))))
+             || (B_SOUL_DEW_BOOST < GEN_7 && !(IsFrontierBattle(FRONTIER_ANY)) && IsBattleMoveSpecial(move))))
             modifier = uq4_12_multiply(modifier, holdEffectModifier);
         break;
     case HOLD_EFFECT_TYPE_POWER:
@@ -7481,7 +7485,7 @@ static inline u32 CalcDefenseStat(struct BattleContext *ctx)
     case HOLD_EFFECT_SOUL_DEW:
         if (B_SOUL_DEW_BOOST < GEN_7
          && (gBattleMons[battlerDef].species == SPECIES_LATIAS || gBattleMons[battlerDef].species == SPECIES_LATIOS)
-         && !(gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
+         && !(IsFrontierBattle(FRONTIER_ANY))
          && !usesDefStat)
             modifier = uq4_12_multiply_half_down(modifier, UQ_4_12(1.5));
         break;
@@ -9233,7 +9237,9 @@ bool32 ShouldGetStatBadgeBoost(u16 badgeFlag, enum BattlerId battler)
 {
     if (GetConfig(CONFIG_BADGE_BOOST) <= GEN_3 && badgeFlag != 0)
     {
-        if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_EREADER_TRAINER | BATTLE_TYPE_RECORDED_LINK | BATTLE_TYPE_FRONTIER))
+        if (IsFrontierBattle(FRONTIER_ANY))
+            return FALSE;
+        if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_EREADER_TRAINER | BATTLE_TYPE_RECORDED_LINK))
             return FALSE;
         else if (!IsOnPlayerSide(battler))
             return FALSE;
@@ -9446,9 +9452,9 @@ bool32 CanStealItem(enum BattlerId battlerStealing, enum BattlerId battlerItem, 
 
     // Check if the battler trying to steal should be able to
     if (stealerSide == B_SIDE_OPPONENT
+        && !IsFrontierBattle(FRONTIER_ANY)
         && !(gBattleTypeFlags &
              (BATTLE_TYPE_EREADER_TRAINER
-              | BATTLE_TYPE_FRONTIER
               | BATTLE_TYPE_LINK
               | BATTLE_TYPE_RECORDED_LINK
               | BATTLE_TYPE_SECRET_BASE
@@ -9459,10 +9465,10 @@ bool32 CanStealItem(enum BattlerId battlerStealing, enum BattlerId battlerItem, 
     }
     else if (!(gBattleTypeFlags &
           (BATTLE_TYPE_EREADER_TRAINER
-           | BATTLE_TYPE_FRONTIER
            | BATTLE_TYPE_LINK
            | BATTLE_TYPE_RECORDED_LINK
            | BATTLE_TYPE_SECRET_BASE))
+        && !IsFrontierBattle(FRONTIER_ANY)
         && GetBattlerPartyState(battlerStealing)->isKnockedOff)
     {
         return FALSE;
@@ -9488,7 +9494,7 @@ void TrySaveExchangedItem(enum BattlerId battler, enum Item stolenItem)
         return;
     // If regular trainer battle and mon's original item matches what is being stolen, save it to be restored at end of battle
     if (gBattleTypeFlags & BATTLE_TYPE_TRAINER
-      && !(gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
+      && !IsFrontierBattle(FRONTIER_ANY)
       && IsOnPlayerSide(battler)
       && stolenItem == gBattleStruct->itemLost[B_SIDE_PLAYER][gBattlerPartyIndexes[battler]].originalItem)
         gBattleStruct->itemLost[B_SIDE_PLAYER][gBattlerPartyIndexes[battler]].stolen = TRUE;
@@ -10251,7 +10257,7 @@ bool32 EmergencyExitCanBeTriggered(enum BattlerId battler)
     if (IsBattlerAlive(battler)
      && HadMoreThanHalfHpNowDoesnt(battler)
      && (CanBattlerSwitch(battler) || !(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
-     && !(gBattleTypeFlags & BATTLE_TYPE_ARENA)
+     && !IsFrontierBattle(FRONTIER_ARENA)
      && gBattleMons[battler].volatiles.semiInvulnerable != STATE_SKY_DROP)
         return TRUE;
 
@@ -10996,13 +11002,16 @@ void TryUpdateEvolutionTracker(enum EvolutionConditions evolutionCondition, u32 
 {
     u32 i, j;
 
-    if (IsOnPlayerSide(gBattlerAttacker)
-     && ((TESTING && IsDoubleBattle()) // To be removed when Wild Double Battles are added to tests
+    if (!IsOnPlayerSide(gBattlerAttacker))
+        return;
+    if (IsFrontierBattle(FRONTIER_ANY))
+        return;
+
+    if ((TESTING && IsDoubleBattle()) // To be removed when Wild Double Battles are added to tests
      || !(gBattleTypeFlags & (BATTLE_TYPE_LINK
                              | BATTLE_TYPE_EREADER_TRAINER
                              | BATTLE_TYPE_RECORDED_LINK
-                             | BATTLE_TYPE_TRAINER_HILL
-                             | BATTLE_TYPE_FRONTIER))))
+                             | BATTLE_TYPE_TRAINER_HILL)))
     {
         const struct Evolution *evolutions = GetSpeciesEvolutions(gBattleMons[gBattlerAttacker].species);
         if (evolutions == NULL)
@@ -11104,4 +11113,11 @@ void SetOrClearRageVolatile(void)
         gBattleMons[gBattlerAttacker].volatiles.rage = TRUE;
     else
         gBattleMons[gBattlerAttacker].volatiles.rage = FALSE;
+}
+
+bool32 IsFrontierBattle(enum FrontierTypes frontier)
+{
+    if (frontier == FRONTIER_ANY && gBattleStruct->frontier != FRONTIER_NONE)
+        return TRUE;
+    return gBattleStruct->frontier == frontier;
 }

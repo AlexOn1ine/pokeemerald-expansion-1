@@ -300,7 +300,7 @@ static void RecordedOpponentHandleDrawTrainerPic(enum BattlerId battler)
         else // first mon
             xPos = 200;
 
-        if (gBattleTypeFlags & BATTLE_TYPE_BATTLE_TOWER)
+        if (IsFrontierBattle(FRONTIER_TOWER))
         {
             if (position == B_POSITION_OPPONENT_LEFT)
                 trainerPicId = GetFrontierTrainerFrontSpriteId(TRAINER_BATTLE_PARAM.opponentA);
@@ -341,7 +341,7 @@ static void RecordedOpponentHandleChooseAction(enum BattlerId battler)
 
 static void RecordedOpponentHandleChooseMove(enum BattlerId battler)
 {
-    if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+    if (IsFrontierBattle(FRONTIER_PALACE))
     {
         BtlController_EmitTwoReturnValues(battler, B_COMM_TO_ENGINE, B_ACTION_EXEC_SCRIPT, ChooseMoveAndTargetInBattlePalace(battler));
     }

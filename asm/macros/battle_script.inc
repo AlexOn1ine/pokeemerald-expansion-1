@@ -1214,6 +1214,12 @@
 	.4byte \failInstr
 	.endm
 
+	.macro jumpiffrontierbattle frontierType:req, jumpInstr:req
+	.byte B_SCR_OP_JMUPIFFRONTIERBATTLE
+	.byte \frontierType
+	.4byte \jumpInstr
+	.endm
+
 	.macro callnative func:req
 	.byte B_SCR_OP_CALLNATIVE
 	.4byte \func

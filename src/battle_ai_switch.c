@@ -1213,7 +1213,7 @@ static bool32 CanBattlerConsiderSwitch(enum BattlerId battler)
         return FALSE;
     if (gBattleStruct->battlerState[battler].commanderSpecies)
         return FALSE;
-    if (gBattleTypeFlags & BATTLE_TYPE_ARENA)
+    if (IsFrontierBattle(FRONTIER_ARENA))
         return FALSE;
     return TRUE;
 }
@@ -2400,7 +2400,7 @@ u32 GetMostSuitableMonToSwitchInto(enum BattlerId battler, enum SwitchType switc
 
     if (gBattleStruct->monToSwitchIntoId[battler] != PARTY_SIZE)
         return gBattleStruct->monToSwitchIntoId[battler];
-    if (gBattleTypeFlags & BATTLE_TYPE_ARENA)
+    if (IsFrontierBattle(FRONTIER_ARENA))
         return gBattlerPartyIndexes[battler] + 1;
 
     opposingBattler = GetActiveBattlerIds(battler, &battlerIn1, &battlerIn2);
