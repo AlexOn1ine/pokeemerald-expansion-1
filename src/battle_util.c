@@ -11460,45 +11460,6 @@ void SetMonVolatile(u32 battler, enum Volatile _volatile, u32 newValue)
     }
 }
 
-bool32 AbilityPreventsSpecificStatDrop(u32 ability, u32 stat)
-{
-    switch (ability)
-    {
-        case ABILITY_ILLUMINATE:
-            if (B_ILLUMINATE_EFFECT < GEN_9)
-                return FALSE;
-        case ABILITY_KEEN_EYE:
-        case ABILITY_MINDS_EYE:
-            return stat == STAT_ACC;
-        case ABILITY_HYPER_CUTTER:
-            return stat == STAT_ATK;
-        case ABILITY_BIG_PECKS:
-            return stat == STAT_DEF;
-        default:
-            return FALSE;
-    }
-}
-
-static inline void QueueSingleStatBoost(u32 battler, union StatChanger statChanger, u32 stat)
-{
-    gQueuedStatBoosts[battler].stats |= (1 << (stat - 1));    // -1 to start at atk
-    gQueuedStatBoosts[battler].statChanges[stat - 1] += GetStatChangerStage(statChanger, stat);
-}
-
-void QueueStatBoostsForMirrorHerbOpportunist(u32 battler, union StatChanger statChanger)
-{
-    if (statChanger.backwardsCompatibleStatId)
-    {
-        QueueSingleStatBoost(battler, statChanger, statChanger.backwardsCompatibleStatId);
-    }
-    else
-    {
-        // Go through each stat and update queued stat boosts
-        for (u32 stat = STAT_ATK; stat < NUM_BATTLE_STATS; stat++)
-            QueueSingleStatBoost(battler, statChanger, stat);
-    }
-}
-
 bool32 ItemHealMonVolatile(u32 battler, u16 itemId)
 {
     bool32 statusChanged = FALSE;

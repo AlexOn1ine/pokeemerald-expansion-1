@@ -19,6 +19,8 @@ static bool32 MoveEffectBlockedByFlowerVeil(struct MoveEffectResult *result, con
 static bool32 MoveEffectBlockedByMirrorArmor(struct MoveEffectResult *result, const u8 *failPtr);
 static bool32 CheckStatChangerForAllStats(struct MoveEffectResult *result);
 static u16 ReverseStatChangeMoveEffect(u16 moveEffect);
+static void QueueStatBoostsForMirrorHerbOpportunist(u32 battler, union StatChanger statChanger);
+static bool32 AbilityPreventsSpecificStatDrop(u32 ability, u32 stat);
 
 bool32 ChangeStatBuffsStatChanger(u32 battler, union StatChanger statChanger, union StatChangeFlags flags, const u8 *failPtr)
 {
@@ -708,6 +710,45 @@ bool32 CanAbilityPreventStatLoss(u32 abilityDef)
         return TRUE;
     }
     return FALSE;
+}
+
+static bool32 AbilityPreventsSpecificStatDrop(u32 ability, u32 stat)
+{
+    switch (ability)
+    {
+        case ABILITY_ILLUMINATE:
+            if (B_ILLUMINATE_EFFECT < GEN_9)
+                return FALSE;
+        case ABILITY_KEEN_EYE:
+        case ABILITY_MINDS_EYE:
+            return stat == STAT_ACC;
+        case ABILITY_HYPER_CUTTER:
+            return stat == STAT_ATK;
+        case ABILITY_BIG_PECKS:
+            return stat == STAT_DEF;
+        default:
+            return FALSE;
+    }
+}
+
+static inline void QueueSingleStatBoost(u32 battler, union StatChanger statChanger, u32 stat)
+{
+    gQueuedStatBoosts[battler].stats |= (1 << (stat - 1));    // -1 to start at atk
+    gQueuedStatBoosts[battler].statChanges[stat - 1] += GetStatChangerStage(statChanger, stat);
+}
+
+static void QueueStatBoostsForMirrorHerbOpportunist(u32 battler, union StatChanger statChanger)
+{
+    if (statChanger.backwardsCompatibleStatId)
+    {
+        QueueSingleStatBoost(battler, statChanger, statChanger.backwardsCompatibleStatId);
+    }
+    else
+    {
+        // Go through each stat and update queued stat boosts
+        for (u32 stat = STAT_ATK; stat < NUM_BATTLE_STATS; stat++)
+            QueueSingleStatBoost(battler, statChanger, stat);
+    }
 }
 
 
