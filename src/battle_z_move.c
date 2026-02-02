@@ -9,6 +9,7 @@
 #include "battle_message.h"
 #include "battle_z_move.h"
 #include "battle_scripts.h"
+#include "battle_stat_change.h"
 #include "graphics.h"
 #include "sprite.h"
 #include "window.h"

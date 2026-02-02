@@ -791,93 +791,6 @@ struct AiBattleData
     u8 choiceWatch:1;
     u8 padding:6;
 };
-union PACKED StatAnimArg
-{
-    u8 value;
-    u16 value_u16; // So that we can cast from a u16
-    struct PACKED {
-        u8 isNegative:1;
-        u8 harshly:1;
-        u8 stat:6;
-    };
-};
-
-union TRANSPARENT StatFlags
-{
-    int raw;
-    u8 allStats;
-    u32 value;
-    struct {
-        u32 unused:1; // HP
-        u32 attack:1;
-        u32 defense:1;
-        u32 speed:1;
-        u32 spAttack:1;
-        u32 spDefense:1;
-        u32 accuracy:1;
-        u32 evasion:1;
-        u32 padding:24;
-    };
-};
-
-union PACKED StatChangerKey
-{
-    u8 value;
-    struct PACKED {
-        u8 skipFailStrings:1; // Skips "couldn't go any lower/higher!" strings
-        u8 attack:1;
-        u8 defense:1;
-        u8 speed:1;
-        u8 spAttack:1;
-        u8 spDefense:1;
-        u8 accuracy:1;
-        u8 evasion:1;
-    };
-    struct PACKED {
-        u8 backupSaveBit:1; // Marks a savedStatChanger even if allStats = 0
-        u8 allStats:7;
-    };
-};
-
-struct MoveEffectResult
-{
-    // Should be populated at initialisation
-    const u8 *pushInstr; // Instruction that will be pushed if battlescriptPush is set
-    const u16 move; // gCurrentMove
-    const u16 heldItem; // gEffectBattler held item
-    u16 ability; // gEffectBattler ability
-    enum MoveEffects moveEffect:8; // Current move effect
-    enum ItemHoldEffect holdEffect:8; // gEffectBattler's item hold effect
-    union StatChanger statChanger;
-    u32 battlerAtk:3; // gBattlerAttacker
-    u32 battlerDef:3; // gBattlerTarget
-    u32 effectBattler:3; // The "effect" battler is the target to which the move effect is applied (not necessarily gBattlerTarget)
-    u32 certain:1;
-    u32 padding:16; // Future flags coming soon...
-    u32 padding:10; // Future flags coming soon...
-
-    // statChanger flags that must also be set on init
-    u32 notProtectAffected:1; // Bypasses Protect (e.g. Intimidate Attack drop)
-    u32 statDropPrevention:1;
-    u32 mirrorArmored:1;
-
-    // Flags and values - all calculated along the way
-    u32 scriptingBattler:3; // gBattleScripting.battler
-    u16 lastUsedAbility; // Sets gLastUsedAbility
-    u16 lastUsedItem; // Sets gLastUsedItem (e.g. for Knock Off)
-    union StatChangerKey statChangerKey; // Keeps the list of stats that need to have a string displayed
-    u8 multistring:4; // Sets gBattleCommunication[MULTISTRING_CHOOSER]
-    u8 blockedByAbility:3; // Has to correspond to battler (to account for ally abilities like Flower Veil)
-    u8 blockedByItem:1; // If blocked by an item (e.g. Clear Amulet, Covert Cloak)
-    u16 battlescriptPush:1; // Whether or not to push pushInstr before going to nextInstr
-    u16 recordBattlerAbility:1; // Records the target's ability (not the same as lastUsedAbility, which could be an ally's ability e.g. Flower Veil)
-    u16 statLowered:1; // Set to prevent Mist activating multiple times in a single turn
-    u16 padding2:12;
-
-    // "Result": whether or not the move effect fails and/or where to go next
-    u16 failed:1;
-    const u8 *nextInstr; // Where to set gBattlescriptCurrInstr when calculated
-};
 
 // The palaceFlags member of struct BattleStruct contains 1 flag per move to indicate which moves the AI should consider,
 // and 1 flag per battler to indicate whether the battler is awake and at <= 50% HP (which affects move choice).
@@ -942,6 +855,25 @@ static inline bool32 IsBattleMoveStatus(u32 move)
 }
 
 #define DO_ACCURACY_CHECK 2 // Don't skip the accuracy check before the move might be absorbed
+
+union PACKED StatChangerKey
+{
+    u8 value;
+    struct PACKED {
+        u8 skipFailStrings:1; // Skips "couldn't go any lower/higher!" strings
+        u8 attack:1;
+        u8 defense:1;
+        u8 speed:1;
+        u8 spAttack:1;
+        u8 spDefense:1;
+        u8 accuracy:1;
+        u8 evasion:1;
+    };
+    struct PACKED {
+        u8 backupSaveBit:1; // Marks a savedStatChanger even if allStats = 0
+        u8 allStats:7;
+    };
+};
 
 // NOTE: The members of this struct have hard-coded offsets
 //       in include/constants/battle_script_commands.h
@@ -1319,191 +1251,6 @@ static inline bool32 IsBattlerInvalidForSpreadMove(u32 battlerAtk, u32 battlerDe
     return battlerDef == battlerAtk
         || !IsBattlerAlive(battlerDef)
         || (battlerDef == BATTLE_PARTNER(battlerAtk) && (moveTarget == MOVE_TARGET_BOTH));
-}
-
-static inline u32 MaxRaiseOrLowerStatAmount(u32 battler, u32 stat, bool32 lowering)
-{
-    if (lowering)
-        return gBattleMons[battler].statStages[stat] - MIN_STAT_STAGE;
-    else
-        return MAX_STAT_STAGE - gBattleMons[battler].statStages[stat];
-}
-
-static inline union StatChanger PrepareStatChangerAny(union StatFlags stats, s32 stage, u32 backwardsCompatibleStat)
-{
-    union StatChanger statChanger = (union StatChanger) {
-        .isNegative = (stage < 0),
-        .backwardsCompatibleStatId = backwardsCompatibleStat,
-        .attack = stats.attack, // All 1 or 0 depending on if the stat is selected in 'stats'
-        .defense = stats.defense,
-        .speed = stats.speed,
-        .spAttack = stats.spAttack,
-        .spDefense = stats.spDefense,
-        .accuracy = stats.accuracy,
-        .evasion = stats.evasion,
-    };
-
-    // Apply stat stage and return
-    statChanger.allStats *= min(MAX_STAT_STAGE, abs(stage));
-
-    return statChanger;
-}
-
-// setBackwardsCompatibleStatId need ONLY be set with older scripts using `setstatchanger` or `statbuffchange`
-static inline union StatChanger CalcStatChangerValue(u32 statId, s32 stage, bool32 setBackwardsCompatibleStatId)
-{
-    return PrepareStatChangerAny(TO_BIT(statId), stage, setBackwardsCompatibleStatId ? statId : 0);
-}
-
-static inline void SetStatChanger(u32 statId, s32 stage)
-{
-    gBattleScripting.statChanger = CalcStatChangerValue(statId, stage, TRUE); // True for backwards compatibility with Mirror Herb/Opportunist
-}
-
-static inline void SetSavedStatChanger(u32 statId, s32 stage)
-{
-    gBattleScripting.savedStatChanger = CalcStatChangerValue(statId, stage, TRUE); // True for backwards compatibility with Mirror Herb/Opportunist
-}
-
-// Used to create stat changer combined with the `stats` arg of setstatbuffchange
-// This arg is used in current (by the time you read this, older?) scripts as input into the resulting stat change animation
-// while we actually only raise one stat a time - which must already have been set to gBattleScripting.statChanger
-// The solution is to set `backwardsCompatibleStatId` so that we know which stat we're "actually" raising, but set the other bits just for the animation
-static inline union StatChanger StatChangerWithStatBitsForAnim(union StatChanger statChanger, union StatFlags stats)
-{
-    if (statChanger.backwardsCompatibleStatId && stats.allStats != 0) // If backwardsCompatibleStatId is not set, we must not set the other bits
-    {
-        statChanger.attack = statChanger.attack ? statChanger.attack : stats.attack;
-        statChanger.defense = statChanger.defense ? statChanger.defense : stats.defense;
-        statChanger.speed = statChanger.speed ? statChanger.speed : stats.speed;
-        statChanger.spAttack = statChanger.spAttack ? statChanger.spAttack : stats.spAttack;
-        statChanger.spDefense = statChanger.spDefense ? statChanger.spDefense : stats.spDefense;
-        statChanger.accuracy = statChanger.accuracy ? statChanger.accuracy : stats.accuracy;
-        statChanger.evasion = statChanger.evasion ? statChanger.evasion : stats.evasion;
-    }
-    return statChanger;
-}
-
-static inline u32 GetStatChangerStage(union StatChanger statChanger, u32 statId)
-{
-    switch (statId)
-    {
-    case STAT_ATK:
-        return statChanger.attack;
-    case STAT_DEF:
-        return statChanger.defense;
-    case STAT_SPEED:
-        return statChanger.speed;
-    case STAT_SPATK:
-        return statChanger.spAttack;
-    case STAT_SPDEF:
-        return statChanger.spDefense;
-    case STAT_ACC:
-        return statChanger.accuracy;
-    case STAT_EVASION:
-        return statChanger.evasion;
-    default:
-        return 0;
-    }
-}
-
-static inline s32 GetStatChangerStatValue(union StatChanger statChanger, u32 statId)
-{
-    return GetStatChangerStage(statChanger, statId) * (statChanger.isNegative ? -1 : 1);
-}
-
-static inline void SetStatChangerStatValue(union StatChanger *statChanger, u32 statId, u32 value)
-{
-    switch (statId)
-    {
-    case STAT_ATK:
-        statChanger->attack = value;
-        return;
-    case STAT_DEF:
-        statChanger->defense = value;
-        return;
-    case STAT_SPEED:
-        statChanger->speed = value;
-        return;
-    case STAT_SPATK:
-        statChanger->spAttack = value;
-        return;
-    case STAT_SPDEF:
-        statChanger->spDefense = value;
-        return;
-    case STAT_ACC:
-        statChanger->accuracy = value;
-        return;
-    case STAT_EVASION:
-        statChanger->evasion = value;
-        return;
-    default:
-        return;
-    }
-}
-
-static inline u32 CountStatChangerStats(union StatChanger statChanger)
-{
-    return !!statChanger.attack
-        + !!statChanger.defense
-        + !!statChanger.speed
-        + !!statChanger.spAttack
-        + !!statChanger.spDefense
-        + !!statChanger.accuracy
-        + !!statChanger.evasion;
-}
-
-static inline bool32 AnyStatChangerStatIsSharpOrHarsh(union StatChanger statChanger)
-{
-    return statChanger.attack > 1
-        || statChanger.defense > 1
-        || statChanger.speed > 1
-        || statChanger.spAttack > 1
-        || statChanger.spDefense > 1
-        || statChanger.accuracy > 1
-        || statChanger.evasion > 1;
-}
-
-static inline u8 GetStatChangerStat(union StatChanger statChanger, bool32 backwardsCompatible)
-{
-    if (backwardsCompatible && statChanger.backwardsCompatibleStatId)
-        return statChanger.backwardsCompatibleStatId;
-    else if (CountStatChangerStats(statChanger) > 1)
-        return STAT_MULTIPLE;
-    else if (statChanger.attack)
-        return STAT_ATK;
-    else if (statChanger.defense)
-        return STAT_DEF;
-    else if (statChanger.speed)
-        return STAT_SPEED;
-    else if (statChanger.spAttack)
-        return STAT_SPATK;
-    else if (statChanger.spDefense)
-        return STAT_SPDEF;
-    else if (statChanger.accuracy)
-        return STAT_ACC;
-    else if (statChanger.evasion)
-        return STAT_EVASION;
-    else
-        return 0; // Fail state
-}
-
-static inline u8 GetStatAnimArgFromStatChanger(union StatChanger statChanger, u32 singleStatOnly)
-{
-    return ((union StatAnimArg) {
-        .isNegative = statChanger.isNegative,
-        .harshly = AnyStatChangerStatIsSharpOrHarsh(statChanger),
-        .stat = singleStatOnly ? singleStatOnly : GetStatChangerStat(statChanger, FALSE),
-    }).value;
-}
-
-static inline u8 GetStatAnimArg(u32 stat, s32 amount)
-{
-    return ((union StatAnimArg) {
-        .isNegative = (amount < 0),
-        .harshly = (abs(amount) > 1),
-        .stat = min(stat, STAT_MULTIPLE),
-    }).value;
 }
 
 #endif // GUARD_BATTLE_H

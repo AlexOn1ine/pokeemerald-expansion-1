@@ -170,8 +170,8 @@ struct DamageContext
     uq4_12_t typeEffectivenessModifier;
     u32 abilityAtk:16;
     u32 abilityDef:16;
-    enum ItemHoldEffect holdEffectAtk:16;
-    enum ItemHoldEffect holdEffectDef:16;
+    u32 holdEffectAtk:16; // TODO
+    u32 holdEffectDef:16; // TODO
 };
 
 enum SleepClauseBlock

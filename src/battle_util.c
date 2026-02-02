@@ -9,6 +9,7 @@
 #include "battle_setup.h"
 #include "battle_z_move.h"
 #include "battle_gimmick.h"
+#include "battle_stat_change.h"
 #include "generational_changes.h"
 #include "party_menu.h"
 #include "pokemon.h"
@@ -4245,8 +4246,8 @@ u32 AbilityBattleEffects(u32 caseID, u32 battler, u32 ability, u32 special, u32 
                     if (validToLower) // Find stat to lower
                     {
                         // MoodyCantLowerStat already checks that both stats are different
-                        i = RandomUniformExcept(RNG_MOODY_DECREASE, STAT_ATK, statsNum - 1, MoodyCantLowerStat);
-                        SetSavedStatChanger(i, -1);
+                        u32 stat = RandomUniformExcept(RNG_MOODY_DECREASE, STAT_ATK, statsNum - 1, MoodyCantLowerStat);
+                        gBattleScripting.savedStatChanger = CalcStatChangerValue(stat, -1, TRUE); // True for backwards compatibility with Mirror Herb/Opportunist
                     }
                     BattleScriptPushCursorAndCallback(BattleScript_MoodyActivates);
                     effect++;
@@ -11489,7 +11490,7 @@ void QueueStatBoostsForMirrorHerbOpportunist(u32 battler, union StatChanger stat
     if (statChanger.backwardsCompatibleStatId)
     {
         QueueSingleStatBoost(battler, statChanger, statChanger.backwardsCompatibleStatId);
-    }        
+    }
     else
     {
         // Go through each stat and update queued stat boosts

@@ -529,13 +529,13 @@ static void AnimTask_FrozenIceCube_Step4(u8 taskId)
 
 void AnimTask_StatsChange(u8 taskId)
 {
-    union StatAnimArg animArg = (union StatAnimArg) gBattleSpritesDataPtr->animationData->animArg;
+    u8 animArg = gBattleSpritesDataPtr->animationData->animArg;
 
-    gBattleAnimArgs[0] = animArg.isNegative;
-    gBattleAnimArgs[1] = animArg.stat;
+    gBattleAnimArgs[0] = animArg & 1; // isNegative
+    gBattleAnimArgs[1] = animArg >> 2; // stat
     gBattleAnimArgs[2] = FALSE; // Whether it's the target, rather than attacker
     gBattleAnimArgs[3] = FALSE; // Whether it hits multiple battlers
-    gBattleAnimArgs[4] = animArg.harshly;
+    gBattleAnimArgs[4] = (animArg >> 1) & 1; // harschly
     gTasks[taskId].func = InitStatsChangeAnimation;
     gTasks[taskId].func(taskId);
 }
