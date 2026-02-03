@@ -2150,6 +2150,26 @@ const struct ItemInfo gItemsInfo[] =
         .iconPalette = gItemIconPalette_ExpCandies,
     },
 
+    // Note: This only works with Level Caps
+    [ITEM_SUPER_CANDY] =
+    {
+        .name = ITEM_NAME("Super Candy"),
+        .pluralName = ITEM_PLURAL_NAME("Super Candies"),
+        .price = 0,
+        .holdEffectParam = LEVEL_CAP,
+        .description = COMPOUND_STRING(
+            "Raises level to\n"
+            "the level cap."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_PARTY_MENU,
+        .fieldUseFunc = ItemUseOutOfBattle_RareCandy,
+        .effect = gItemEffect_RareCandy,
+        .flingPower = 30,
+        .iconPic = gItemIcon_ExpCandyXL,
+        .iconPalette = gItemIconPalette_ExpCandies,
+    },
+
     [ITEM_DYNAMAX_CANDY] =
     {
         .name = ITEM_NAME("Dynamax Candy"),
