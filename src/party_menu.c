@@ -5730,6 +5730,7 @@ void ItemUseCB_RareCandy(u8 taskId, TaskFunc task)
 
     sInitialLevel = GetMonData(mon, MON_DATA_LEVEL);
 
+    // This prevents the super candy from working at level cap if B_RARE_CANDY_CAP is false
     if (gSpecialVar_ItemId == ITEM_SUPER_CANDY && sInitialLevel == GetCurrentLevelCap())
     {
         cannotUseEffect = TRUE;

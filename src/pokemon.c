@@ -3980,7 +3980,7 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                 {
                     dataUnsigned = gExperienceTables[gSpeciesInfo[GetMonData(mon, MON_DATA_SPECIES)].growthRate][GetMonData(mon, MON_DATA_LEVEL) + 1];
                 }
-                else if (param == LEVEL_CAP)
+                else if (param == LEVEL_CAP) // Super Candy
                 {
                     u32 levelUpThreshold = GetCurrentLevelCap();
                     u32 blockLevelUp = FALSE;
@@ -3996,8 +3996,9 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                             continue;
 
                         u32 evoLevelUp = evolutions[evo].param;
+                        bool32 isEvoLevel = evolutions[evo].param == EVO_LEVEL;
 
-                        if (evoLevelUp <= monLevel && evoLevelUp != 0)
+                        if (evoLevelUp <= monLevel && evoLevelUp != 0  && isEvoLevel)
                         {
                             dataUnsigned = gExperienceTables[gSpeciesInfo[GetMonData(mon, MON_DATA_SPECIES, NULL)].growthRate][GetMonData(mon, MON_DATA_LEVEL, NULL) + 1];
                             blockLevelUp = TRUE;
@@ -4009,7 +4010,7 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                         if (evolutions[evo].targetSpecies == SPECIES_NONE)
                             break;
 
-                        if (evoLevelUp < levelUpThreshold && monLevel < levelUpThreshold)
+                        if (evoLevelUp < levelUpThreshold && monLevel < levelUpThreshold && isEvoLevel)
                             levelUpThreshold = evoLevelUp;
                     }
 
