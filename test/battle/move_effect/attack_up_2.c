@@ -46,7 +46,7 @@ SINGLE_BATTLE_TEST("Swords Dance test")
     }
 }
 
-DOUBLE_BATTLE_TEST("Growl test 1")
+DOUBLE_BATTLE_TEST("Stat Change test 1")
 {
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -58,7 +58,7 @@ DOUBLE_BATTLE_TEST("Growl test 1")
     }
 }
 
-DOUBLE_BATTLE_TEST("Growl test 2")
+DOUBLE_BATTLE_TEST("Stat Change test 2")
 {
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -69,3 +69,47 @@ DOUBLE_BATTLE_TEST("Growl test 2")
         TURN { MOVE(playerLeft, MOVE_GROWL); }
     }
 }
+
+SINGLE_BATTLE_TEST("Stat Change test 3")
+{
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET);
+    } WHEN {
+        TURN { MOVE(player, MOVE_FLAME_CHARGE); }
+    }
+}
+
+SINGLE_BATTLE_TEST("Stat Change test 4")
+{
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET);
+    } WHEN {
+        TURN { MOVE(player, MOVE_ICY_WIND); }
+    }
+}
+
+DOUBLE_BATTLE_TEST("Stat Change test 5")
+{
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET);
+    } WHEN {
+        TURN { MOVE(playerLeft, MOVE_G_MAX_FOAM_BURST, target: opponentRight); }
+    }
+}
+
+SINGLE_BATTLE_TEST("Stat Change test 6")
+{
+    GIVEN {
+        PLAYER(SPECIES_TERAPAGOS_TERASTAL);
+        OPPONENT(SPECIES_WOBBUFFET);
+    } WHEN {
+        TURN { MOVE(player, MOVE_TERA_BLAST, gimmick: GIMMICK_TERA); }
+    }
+}
+
+// Tests for On side changes if battler is not alive

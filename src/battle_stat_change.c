@@ -24,7 +24,29 @@ static bool32 GetNegativeStatStage(u32 effect);
 static u32 GetNumPositiveStats(enum BattlerId battler);
 static u32 GetNumNegativeStats(enum BattlerId battler);
 
+// Single stat check
+bool32 CanStatChange(struct BattleCalcValues *cv, struct StatChange *st)
+{
+    AdjustStatStage(cv, st);
 
+    if (st->stage < 0)
+    {
+        if (CompareStat(cv->effectBattler, st->stat, MIN_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
+            return FALSE;
+    }
+    else
+    {
+        if (CompareStat(cv->effectBattler, st->stat, MAX_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
+            return FALSE;
+    }
+
+    if (st->stage < 0 && CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
+        return FALSE;
+
+    return TRUE;
+}
+
+// Multi stat checks
 bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 {
     u32 numAdditionalEffects = GetMoveAdditionalEffectCount(cv->move);
@@ -143,13 +165,14 @@ enum StatChangeResult TryNonMoveStatChange(struct BattleCalcValues *cv, struct S
             if (DecreaseStat(cv, st) == STAT_CHANGE_WORKED)
             {
                 st->battleScript = BattleScript_DecreaseStatChangeMessage;
+                gSpecialStatuses[cv->effectBattler].statStages[st->stat] = 0;
                 return STAT_CHANGE_WORKED;
             }
         }
         gBattleStruct->statChangeProcess = PROCESS_POSITIVE_STATS;
         gBattleStruct->currStatToChange = STAT_ATK;
         gBattleScripting.statAnimPlayed = FALSE;
-        break;
+        // fallthrough
     case PROCESS_POSITIVE_STATS:
         while (gBattleStruct->currStatToChange < NUM_STATS)
         {
@@ -163,14 +186,16 @@ enum StatChangeResult TryNonMoveStatChange(struct BattleCalcValues *cv, struct S
 
             if (IncreaseStat(cv, st) == STAT_CHANGE_WORKED)
             {
+                // If it's the last stat to change, it will enter this function again to increase the state
                 st->battleScript = BattleScript_IncreaseStatChangeMessage;
+                gSpecialStatuses[cv->effectBattler].statStages[st->stat] = 0;
                 return STAT_CHANGE_WORKED;
             }
         }
         gBattleStruct->statChangeProcess = PROCESS_STATS_DONE;
         gBattleStruct->currStatToChange = STAT_ATK;
         gBattleScripting.statAnimPlayed = FALSE;
-        break;
+        // fallthrough
     case PROCESS_STATS_DONE:
         break;
     }
@@ -256,12 +281,9 @@ static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct
         if (GetMoveEffect(cv->move) == EFFECT_PARTING_SHOT)
             gBattleScripting.animTargetsHit = 1;
 
-        // TODO
-        // SET_STATCHANGER(statId, GET_STAT_BUFF_VALUE(statValue) | STAT_BUFF_NEGATIVE, TRUE);
-
-        // TODO
-        if (!st->onlyChecking)
+        if (!st->onlyChecking || st->allowMirrorArmor)
         {
+            gSpecialStatuses[cv->battlerAtk].statStages[st->stat] = st->stage;
             st->battleScript = BattleScript_MirrorArmorReflect;
             gBattlerAbility = cv->effectBattler;
             RecordAbilityBattle(cv->effectBattler, abilityEff);

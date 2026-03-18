@@ -34,7 +34,8 @@ struct AdditionalEffect
     u8 onChargeTurnOnly:1;
     u8 sheerForceOverride:1; // Handles edge cases for Sheer Force - if TRUE, boosts when it shouldn't, or doesn't boost when it should
     u8 preAttackEffect:1;
-    u8 padding:3;
+    u8 onSide:1; // works only for stat changes
+    u8 padding:2;
 
     union PACKED {
         enum WrappedStringID wrapped;

@@ -549,16 +549,6 @@ enum __attribute__((packed)) MoveEffect
     // For example stealth rock from G-Max Stonesurge is set up before abilities but from Stone Axe after.
     // Stone Axe can also fail to set up rocks if user faints where as Stonesurge will always go up.
     // This means we need to be careful if we want to re-use those effects for (new) vanilla moves
-    MOVE_EFFECT_RAISE_TEAM_ATTACK,
-    MOVE_EFFECT_RAISE_TEAM_DEFENSE,
-    MOVE_EFFECT_RAISE_TEAM_SPEED,
-    MOVE_EFFECT_RAISE_TEAM_SP_ATK,
-    MOVE_EFFECT_RAISE_TEAM_SP_DEF,
-    MOVE_EFFECT_LOWER_ATTACK_SIDE,
-    MOVE_EFFECT_LOWER_DEFENSE_SIDE,
-    MOVE_EFFECT_LOWER_SPEED_SIDE,
-    MOVE_EFFECT_LOWER_SP_ATK_SIDE,
-    MOVE_EFFECT_LOWER_SP_DEF_SIDE,
     MOVE_EFFECT_SUN,
     MOVE_EFFECT_RAIN,
     MOVE_EFFECT_SANDSTORM,

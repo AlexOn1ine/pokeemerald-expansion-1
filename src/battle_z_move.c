@@ -474,6 +474,12 @@ void SetZEffect(void)
         }
         if (canBoost)
         {
+            gSpecialStatuses[gBattlerAttacker].statStages[STAT_ATK] = 1;
+            gSpecialStatuses[gBattlerAttacker].statStages[STAT_DEF] = 1;
+            gSpecialStatuses[gBattlerAttacker].statStages[STAT_SPATK] = 1;
+            gSpecialStatuses[gBattlerAttacker].statStages[STAT_SPDEF] = 1;
+            gSpecialStatuses[gBattlerAttacker].statStages[STAT_SPEED] = 1;
+
             gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_Z_ALL_STATS_UP;
             BattleScriptPush(gBattlescriptCurrInstr + Z_EFFECT_BS_LENGTH);
             gBattlescriptCurrInstr = BattleScript_AllStatsUpZMove;

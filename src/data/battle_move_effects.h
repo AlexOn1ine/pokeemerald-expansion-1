@@ -694,7 +694,7 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
 
     [EFFECT_FLATTER] =
     {
-        .battleScript = BattleScript_EffectFlatter,
+        .battleScript = BattleScript_EffectSwagger,
         .battleTvScore = 7,
         .battleFactoryStyle = FACTORY_STYLE_SLOW_STEADY,
     },

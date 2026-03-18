@@ -16,6 +16,7 @@ struct StatChange
     u32 printStatCantChangeMsg:1;
     u32 passiveStatChange:1;
     u32 mirrorArmored:1;
+    u32 allowMirrorArmor:1;
     u32 onlyChecking:1;
     u32 notProtectAffected:1;
     u32 updateAdditionalEffectStats:1;
@@ -24,11 +25,13 @@ struct StatChange
     u32 numFailedTargets:2;
     u32 nonMoveStatChange:1;
     u32 nextBattler:1;
+    u32 numPossibleTargets:3;
     // Some padding
 };
 
 u32 ChangeStatBuffs(enum BattlerId battler, s8 statValue, enum Stat statId, union StatChangeFlags flags, u32 stats, const u8 *BS_ptr);
 bool32 CompareStat(enum BattlerId battler, enum Stat statId, u32 cmpTo, u32 cmpKind, enum Ability ability);
+bool32 CanStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 void TryStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 enum StatChangeResult TryNonMoveStatChange(struct BattleCalcValues *cv, struct StatChange *st);

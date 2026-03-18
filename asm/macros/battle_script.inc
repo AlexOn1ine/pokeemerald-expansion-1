@@ -1197,7 +1197,7 @@
 	.byte B_SCR_OP_TRY_CONFUSION_AFTER_SKY_DROP
     .byte \battler
 	.endm
-	
+
 	.macro tryanystatchange jumpInstr:req
 	.byte B_SCR_OP_TRYANYSTATCHANGE
 	.4byte \jumpInstr
@@ -1207,8 +1207,9 @@
 	.byte B_SCR_OP_TRYSTATCHANGE
 	.endm
 
-	.macro trynonmovestatchange
+	.macro trynonmovestatchange numAffectedBattlers:req
 	.byte B_SCR_OP_TRYNONMOVESTATCHANGE
+    .byte \numAffectedBattlers
 	.endm
 
 	.macro callnative func:req
