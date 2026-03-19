@@ -99,6 +99,12 @@ struct ProtectStruct
     u8 padding3:1;
 };
 
+struct StatStages
+{
+    u8 stat;
+    s8 stage;
+};
+
 // Cleared at the start of HandleAction_ActionFinished
 struct SpecialStatus
 {
@@ -126,8 +132,8 @@ struct SpecialStatus
     u8 teraShellAbilityDone:1;
     u8 backUpTarget:3;
     // End of byte
-    u8 statsToChange[NUM_STATS];
-    s8 statStages[NUM_STATS];
+    struct StatStages statStageQueue[NUM_STATS];
+    u8 statStageCounter;
     // End of byte
 };
 

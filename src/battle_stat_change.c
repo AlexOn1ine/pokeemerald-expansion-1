@@ -85,7 +85,7 @@ bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
             if (st->stage < 0 && CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
                 continue;
 
-            gSpecialStatuses[cv->effectBattler].statStages[st->stat] = st->stage;
+            SetStatChange(cv->effectBattler, st->stat, st->stage);
             canAnyStatChange = TRUE;
         }
 
@@ -147,57 +147,30 @@ void TryStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 
 enum StatChangeResult TryNonMoveStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 {
-    // Contrary will not work correctly here
-    switch (gBattleStruct->statChangeProcess)
+    while (gBattleStruct->currStatToChange < gSpecialStatuses[cv->effectBattler].statStageCounter)
     {
-    case PROCESS_ADJUST_STATS:
-        gBattleStruct->currStatToChange = PROCESS_NEGATIVE_STATS;
-        // fallthrough
-    case PROCESS_NEGATIVE_STATS:
-        while (gBattleStruct->currStatToChange < NUM_STATS)
-        {
-            st->stat = gBattleStruct->currStatToChange++;
-            st->stage = gSpecialStatuses[cv->effectBattler].statStages[st->stat];
+        u32 count = gBattleStruct->currStatToChange++;
+        st->stat = gSpecialStatuses[cv->effectBattler].statStageQueue[count].stat;
+        st->stage = gSpecialStatuses[cv->effectBattler].statStageQueue[count].stage;
 
-            if (st->stage >= 0)
+        AdjustStatStage(cv, st);
+
+        if (st->stage < 0)
+        {
+            if (CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
                 continue;
 
             if (DecreaseStat(cv, st) == STAT_CHANGE_WORKED)
             {
                 st->battleScript = BattleScript_DecreaseStatChangeMessage;
-                gSpecialStatuses[cv->effectBattler].statStages[st->stat] = 0;
                 return STAT_CHANGE_WORKED;
             }
         }
-        gBattleStruct->statChangeProcess = PROCESS_POSITIVE_STATS;
-        gBattleStruct->currStatToChange = STAT_ATK;
-        gBattleScripting.statAnimPlayed = FALSE;
-        // fallthrough
-    case PROCESS_POSITIVE_STATS:
-        while (gBattleStruct->currStatToChange < NUM_STATS)
+        else if (IncreaseStat(cv, st) == STAT_CHANGE_WORKED)
         {
-            st->stat = gBattleStruct->currStatToChange++;
-            st->stage = gSpecialStatuses[cv->effectBattler].statStages[st->stat];
-
-            if (st->stage <= 0)
-                continue;
-
-            AdjustStatStage(cv, st);
-
-            if (IncreaseStat(cv, st) == STAT_CHANGE_WORKED)
-            {
-                // If it's the last stat to change, it will enter this function again to increase the state
-                st->battleScript = BattleScript_IncreaseStatChangeMessage;
-                gSpecialStatuses[cv->effectBattler].statStages[st->stat] = 0;
-                return STAT_CHANGE_WORKED;
-            }
+            st->battleScript = BattleScript_IncreaseStatChangeMessage;
+            return STAT_CHANGE_WORKED;
         }
-        gBattleStruct->statChangeProcess = PROCESS_STATS_DONE;
-        gBattleStruct->currStatToChange = STAT_ATK;
-        gBattleScripting.statAnimPlayed = FALSE;
-        // fallthrough
-    case PROCESS_STATS_DONE:
-        break;
     }
 
     return STAT_CHANGE_DIDNT_WORK;
@@ -218,7 +191,11 @@ static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct
     enum Ability abilityEff = cv->abilities[cv->effectBattler];
 
 
-    if (gSideTimers[GetBattlerSide(cv->effectBattler)].mistTimer
+    if (st->nonMoveStatChange && !isSelf && gBattleMons[cv->effectBattler].volatiles.substitute)
+    {
+        result = STAT_CHANGE_DIDNT_WORK;
+    }
+    else if (gSideTimers[GetBattlerSide(cv->effectBattler)].mistTimer
      && !st->certain
      && !isCurse
      && (isSelf || abilityAtk != ABILITY_INFILTRATOR))
@@ -283,7 +260,7 @@ static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct
 
         if (!st->onlyChecking || st->allowMirrorArmor)
         {
-            gSpecialStatuses[cv->battlerAtk].statStages[st->stat] = st->stage;
+            SetStatChange(cv->battlerAtk, st->stat, st->stage);
             st->battleScript = BattleScript_MirrorArmorReflect;
             gBattlerAbility = cv->effectBattler;
             RecordAbilityBattle(cv->effectBattler, abilityEff);
@@ -571,9 +548,9 @@ static bool32 GetNegativeStatStage(u32 effect)
 static u32 GetNumPositiveStats(enum BattlerId battler)
 {
     u32 num = 0;
-    for (enum Stat stat = STAT_ATK; stat < NUM_STATS; stat++)
+    for (u32 i = STAT_ATK; i < gSpecialStatuses[battler].statStageCounter; i++)
     {
-        if (gSpecialStatuses[battler].statStages[stat] > 0)
+        if (gSpecialStatuses[battler].statStageQueue[i].stage > 0)
             num++;
     }
     return num;
@@ -582,12 +559,19 @@ static u32 GetNumPositiveStats(enum BattlerId battler)
 static u32 GetNumNegativeStats(enum BattlerId battler)
 {
     u32 num = 0;
-    for (enum Stat stat = STAT_ATK; stat < NUM_STATS; stat++)
+    for (u32 i = STAT_ATK; i < gSpecialStatuses[battler].statStageCounter; i++)
     {
-        if (gSpecialStatuses[battler].statStages[stat] < 0)
+        if (gSpecialStatuses[battler].statStageQueue[i].stage < 0)
             num++;
     }
     return num;
+}
+
+void SetStatChange(enum BattlerId battler, enum Stat stat, s32 stage)
+{
+    gSpecialStatuses[battler].statStageQueue[gSpecialStatuses[battler].statStageCounter].stat = stat;
+    gSpecialStatuses[battler].statStageQueue[gSpecialStatuses[battler].statStageCounter].stage = stage;
+    gSpecialStatuses[battler].statStageCounter++;
 }
 
 bool32 CompareStat(enum BattlerId battler, enum Stat statId, u32 cmpTo, u32 cmpKind, enum Ability ability)
@@ -643,4 +627,5 @@ bool32 CompareStat(enum BattlerId battler, enum Stat statId, u32 cmpTo, u32 cmpK
 
 // OLD FUNCTIONS
 u32 ChangeStatBuffs(enum BattlerId battler, s8 statValue, enum Stat statId, union StatChangeFlags flags, u32 stats, const u8 *BS_ptr) { return STAT_CHANGE_WORKED; }
+
 

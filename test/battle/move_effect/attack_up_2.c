@@ -113,3 +113,16 @@ SINGLE_BATTLE_TEST("Stat Change test 6")
 }
 
 // Tests for On side changes if battler is not alive
+
+DOUBLE_BATTLE_TEST("Stat Change test 7")
+{
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET) { Ability(ABILITY_INTIMIDATE); }
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET) { Ability(ABILITY_INTIMIDATE); }
+        OPPONENT(SPECIES_WOBBUFFET);
+    } WHEN {
+        TURN {}
+    }
+}
+

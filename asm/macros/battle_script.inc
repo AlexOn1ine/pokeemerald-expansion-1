@@ -1233,8 +1233,9 @@
 	callnative BS_RestoreAttacker
 	.endm
 
-	.macro jumpifintimidateabilityprevented
-	callnative BS_JumpIfIntimidateAbilityPrevented
+	.macro intimidatetypeabilityactivates flag:req
+	callnative BS_IntimidateTypeAbilityActivates
+    .byte \flag
 	.endm
 
 	.macro allyswitchswapbattlers

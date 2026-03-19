@@ -5326,6 +5326,12 @@ BattleScript_TryIntimidateHoldEffectsRet:
 	return
 
 BattleScript_IntimidateActivates::
+	call BattleScript_AbilityPopUp
+	intimidatetypeabilityactivates TRUE
+	destroyabilitypopup
+	return
+
+BattleScript_IntimidateActivates_Old::
 	savetarget
 	call BattleScript_AbilityPopUp
 	setbyte gBattlerTarget, 0
@@ -5333,7 +5339,7 @@ BattleScript_IntimidateLoop:
 	jumpiftargetally BattleScript_IntimidateLoopIncrement
 	jumpifabsent BS_TARGET, BattleScript_IntimidateLoopIncrement
 	jumpifvolatile BS_TARGET, VOLATILE_SUBSTITUTE, BattleScript_IntimidateLoopIncrement
-	jumpifintimidateabilityprevented
+	intimidatetypeabilityactivates TRUE
 BattleScript_IntimidateEffect:
 	copybyte sBATTLER, gBattlerAttacker
 	setstatchanger STAT_ATK, 1, TRUE

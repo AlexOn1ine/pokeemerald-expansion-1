@@ -35,6 +35,7 @@ bool32 CanStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 void TryStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 enum StatChangeResult TryNonMoveStatChange(struct BattleCalcValues *cv, struct StatChange *st);
+void SetStatChange(enum BattlerId battler, enum Stat stat, s32 stage);
 
 bool32 IsStatSet(u32 stat, const struct AdditionalEffect *additionalEffect);
 bool32 IsStatDecreaseEffect(u32 effect);

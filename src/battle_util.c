@@ -1169,7 +1169,7 @@ void PrepareStringBattle(enum StringID stringId, enum BattlerId battler)
          && CompareStat(gBattlerTarget, STAT_SPEED, MAX_STAT_STAGE, CMP_LESS_THAN, targetAbility))
         {
             gBattlerAbility = gBattlerTarget;
-            gSpecialStatuses[gBattlerTarget].statStages[STAT_SPEED] = 1;
+            SetStatChange(gBattlerTarget, STAT_SPEED, 1);
             BattleScriptCall(BattleScript_AbilityStatChange);
         }
         else if (targetAbility == ABILITY_CONTRARY)
@@ -1190,9 +1190,9 @@ void PrepareStringBattle(enum StringID stringId, enum BattlerId battler)
     {
         gEffectBattler = gBattlerAbility = gBattlerTarget;
         if (targetAbility == ABILITY_DEFIANT)
-            gSpecialStatuses[gBattlerTarget].statStages[STAT_ATK] = 2;
+            SetStatChange(gBattlerTarget, STAT_ATK, 2);
         else
-            gSpecialStatuses[gBattlerTarget].statStages[STAT_SPATK] = 2;
+            SetStatChange(gBattlerTarget, STAT_SPATK, 2);
         BattleScriptCall(BattleScript_AbilityStatChange);
     }
 
@@ -3269,7 +3269,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
                 if (CompareStat(battler, statId, MAX_STAT_STAGE, CMP_LESS_THAN, gLastUsedAbility))
                 {
                     gEffectBattler = gBattlerAbility = battler;
-                    gSpecialStatuses[battler].statStages[statId] = 1;
+                    SetStatChange(battler, statId, 1);
                     BattleScriptCall(BattleScript_AbilityStatChange);
                     effect++;
                 }
@@ -3423,9 +3423,13 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
         case ABILITY_INTIMIDATE:
             if (shouldAbilityTrigger && !IsOpposingSideEmpty(battler))
             {
-                SaveBattlerAttacker(gBattlerAttacker);
-                gBattlerAttacker = battler;
-                SET_STATCHANGER(STAT_ATK, 1, TRUE);
+                gBattlerAbility = battler;
+                for (enum BattlerId i = 0; i < gBattlersCount; i++)
+                {
+                    if (IsBattlerAlly(battler, i))
+                        continue;
+                    SetStatChange(i, STAT_ATK, -1);
+                }
                 BattleScriptCall(BattleScript_IntimidateActivates);
                 effect++;
             }
@@ -3466,7 +3470,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
                 if (CompareStat(battler, STAT_ATK, MAX_STAT_STAGE, CMP_LESS_THAN, gLastUsedAbility))
                 {
                     gEffectBattler = gBattlerAbility = battler;
-                    gSpecialStatuses[battler].statStages[STAT_ATK] = 1;
+                    SetStatChange(battler, STAT_ATK, 1);
                     BattleScriptCall(BattleScript_AbilityStatChange);
                     effect++;
                 }
@@ -3481,7 +3485,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
                 if (CompareStat(battler, STAT_DEF, MAX_STAT_STAGE, CMP_LESS_THAN, gLastUsedAbility))
                 {
                     gEffectBattler = gBattlerAbility = battler;
-                    gSpecialStatuses[battler].statStages[STAT_DEF] = 1;
+                    SetStatChange(battler, STAT_DEF, 1);
                     BattleScriptCall(BattleScript_AbilityStatChange);
                     effect++;
                 }
@@ -3493,7 +3497,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
              && gSideStatuses[GetBattlerSide(battler)] & SIDE_STATUS_TAILWIND)
             {
                 gEffectBattler = gBattlerAbility = battler;
-                gSpecialStatuses[battler].statStages[STAT_ATK] = 1;
+                SetStatChange(battler, STAT_ATK, 1);
                 BattleScriptCall(BattleScript_AbilityStatChange);
                 effect++;
             }
@@ -3602,7 +3606,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
                     break;
 
                 gEffectBattler = gBattlerAbility = battler;
-                gSpecialStatuses[battler].statStages[stat] = 1;
+                SetStatChange(battler, stat, 1);
                 BattleScriptCall(BattleScript_AbilityStatChange);
                 effect++;
             }
@@ -3714,7 +3718,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
                 if (CompareStat(battler, STAT_SPEED, MAX_STAT_STAGE, CMP_LESS_THAN, gLastUsedAbility) && gBattleStruct->battlerState[battler].isFirstTurn != 2)
                 {
                     gEffectBattler = gBattlerAbility = battler;
-                    gSpecialStatuses[battler].statStages[STAT_SPEED] = 1;
+                    SetStatChange(battler, STAT_SPEED, 1);
                     BattleScriptCall(BattleScript_AbilityStatChange);
 
                     gBattleScripting.battler = battler;
@@ -3846,7 +3850,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
              && CompareStat(battler, STAT_SPATK, MAX_STAT_STAGE, CMP_LESS_THAN, gLastUsedAbility))
             {
                 gEffectBattler = gBattlerAbility = battler;
-                gSpecialStatuses[battler].statStages[STAT_SPATK] = 1;
+                SetStatChange(battler, STAT_SPATK, 1);
                 BattleScriptCall(BattleScript_AbilityStatChange);
                 effect++;
             }
@@ -3858,34 +3862,30 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
             {
                 if (CompareStat(battler, STAT_ATK, MAX_STAT_STAGE, CMP_LESS_THAN, ABILITY_NONE))
                 {
-                    gSpecialStatuses[battler].statStages[STAT_ATK] = 1;
+                    SetStatChange(battler, STAT_ATK, 1);
                 }
 
                 if (CompareStat(battler, STAT_SPATK, MAX_STAT_STAGE, CMP_LESS_THAN, ABILITY_NONE))
                 {
-                    gSpecialStatuses[battler].statStages[STAT_SPATK] = 1;
+                    SetStatChange(battler, STAT_SPATK, 1);
                 }
 
                 if (CompareStat(battler, STAT_SPEED, MAX_STAT_STAGE, CMP_LESS_THAN, ABILITY_NONE))
                 {
-                    gSpecialStatuses[battler].statStages[STAT_SPEED] = 1;
+                    SetStatChange(battler, STAT_SPEED, 1);
                 }
 
                 if (CompareStat(battler, STAT_DEF, MIN_STAT_STAGE, CMP_GREATER_THAN, ABILITY_NONE))
                 {
-                    gSpecialStatuses[battler].statStages[STAT_DEF] = -1;
+                    SetStatChange(battler, STAT_ATK, -1);
                 }
 
                 if (CompareStat(battler, STAT_SPDEF, MIN_STAT_STAGE, CMP_GREATER_THAN, ABILITY_NONE))
                 {
-                    gSpecialStatuses[battler].statStages[STAT_SPDEF] = -1;
+                    SetStatChange(battler, STAT_SPDEF, -1);
                 }
 
-                if (gSpecialStatuses[battler].statStages[STAT_ATK] != 0
-                 || gSpecialStatuses[battler].statStages[STAT_SPATK] != 0
-                 || gSpecialStatuses[battler].statStages[STAT_SPEED] != 0
-                 || gSpecialStatuses[battler].statStages[STAT_DEF] != 0
-                 || gSpecialStatuses[battler].statStages[STAT_SPDEF] != 0)
+                if (gSpecialStatuses[battler].statStageCounter > 0)
                 {
                     gBattleStruct->currStatToChange = STAT_ATK;
                     gEffectBattler = gBattlerAbility = battler;
@@ -3912,7 +3912,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
              && CompareStat(battler, STAT_ATK, MAX_STAT_STAGE, CMP_LESS_THAN, gLastUsedAbility))
             {
                 gEffectBattler = gBattlerAbility = battler;
-                gSpecialStatuses[battler].statStages[STAT_ATK] = 1;
+                SetStatChange(battler, STAT_ATK, 1);
                 BattleScriptCall(BattleScript_AbilityStatChange);
                 effect++;
             }
@@ -3924,7 +3924,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
              && CompareStat(battler, STAT_SPEED, MAX_STAT_STAGE, CMP_LESS_THAN, gLastUsedAbility))
             {
                 gEffectBattler = gBattlerAbility = battler;
-                gSpecialStatuses[battler].statStages[STAT_SPEED] = 1;
+                SetStatChange(battler, STAT_SPEED, 1);
                 BattleScriptCall(BattleScript_AbilityStatChange);
                 effect++;
             }
@@ -3936,7 +3936,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
              && CompareStat(battler, STAT_DEF, MAX_STAT_STAGE, CMP_LESS_THAN, gLastUsedAbility))
             {
                 gEffectBattler = gBattlerAbility = battler;
-                gSpecialStatuses[battler].statStages[STAT_DEF] = 2;
+                SetStatChange(battler, STAT_DEF, 2);
                 BattleScriptCall(BattleScript_AbilityStatChange);
                 effect++;
             }
@@ -3948,7 +3948,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
              && CompareStat(battler, STAT_DEF, MAX_STAT_STAGE, CMP_LESS_THAN, gLastUsedAbility))
             {
                 gEffectBattler = gBattlerAbility = battler;
-                gSpecialStatuses[battler].statStages[STAT_DEF] = 1;
+                SetStatChange(battler, STAT_DEF, 1);
                 BattleScriptCall(BattleScript_AbilityStatChange);
                 effect++;
             }
@@ -4040,7 +4040,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
              && CompareStat(battler, STAT_ATK, MAX_STAT_STAGE, CMP_LESS_THAN, gLastUsedAbility))
             {
                 gEffectBattler = gBattlerAbility = battler;
-                gSpecialStatuses[battler].statStages[STAT_ATK] = MAX_STAT_STAGE - gBattleMons[battler].statStages[STAT_ATK];
+                SetStatChange(battler, STAT_ATK, MAX_STAT_STAGE - gBattleMons[battler].statStages[STAT_ATK]);
                 BattleScriptCall(BattleScript_AbilityStatChange);
                 effect++;
             }
@@ -4054,7 +4054,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
              && !CanBattlerAvoidContactEffects(gBattlerAttacker, gBattlerTarget, GetBattlerAbility(gBattlerAttacker), GetBattlerHoldEffect(gBattlerAttacker), move))
             {
                 gEffectBattler = gBattlerAttacker;
-                gSpecialStatuses[gBattlerAttacker].statStages[STAT_SPEED] = -1;
+                SetStatChange(gBattlerAttacker, STAT_SPEED, -1);
                 PREPARE_ABILITY_BUFFER(gBattleTextBuff1, gLastUsedAbility);
                 BattleScriptCall(BattleScript_GooeyActivates);
                 effect++;
@@ -4260,7 +4260,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
              && (moveType == TYPE_FIRE || moveType == TYPE_WATER))
             {
                 gEffectBattler = gBattlerAbility = battler;
-                gSpecialStatuses[battler].statStages[STAT_SPEED] = 6;
+                SetStatChange(battler, STAT_SPEED, 6);
                 BattleScriptCall(BattleScript_AbilityStatChange);
                 effect++;
             }
@@ -4318,7 +4318,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
              && moveType == TYPE_FIRE)
             {
                 gEffectBattler = gBattlerAbility = gBattlerTarget;
-                gSpecialStatuses[gBattlerTarget].statStages[STAT_ATK] = 1;
+                SetStatChange(gBattlerTarget, STAT_ATK, 1);
                 BattleScriptCall(BattleScript_AbilityStatChange);
                 effect++;
             }
@@ -4543,7 +4543,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
                         gBattleScripting.abilityPopupOverwrite = gLastUsedAbility = ABILITY_GRIM_NEIGH;
 
                     gEffectBattler = gBattlerAbility = battler;
-                    gSpecialStatuses[battler].statStages[stat] = numMonsFainted;
+                    SetStatChange(battler, stat, numMonsFainted);
                     BattleScriptCall(BattleScript_AbilityStatChange);
                     effect = TRUE;
                 }

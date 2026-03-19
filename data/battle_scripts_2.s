@@ -173,7 +173,7 @@ BattleScript_ItemRestorePP::
 BattleScript_ItemIncreaseAllStats::
 	call BattleScript_UseItemMessage
 	itemincreasestat
-	call BattleScript_AllStatsUp
+	@call BattleScript_AllStatsUp @ TODO
 	end
 
 BattleScript_BallThrow::

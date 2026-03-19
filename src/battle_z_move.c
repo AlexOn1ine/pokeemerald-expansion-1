@@ -8,6 +8,7 @@
 #include "battle_message.h"
 #include "battle_z_move.h"
 #include "battle_scripts.h"
+#include "battle_stat_change.h"
 #include "graphics.h"
 #include "sprite.h"
 #include "window.h"
@@ -474,11 +475,11 @@ void SetZEffect(void)
         }
         if (canBoost)
         {
-            gSpecialStatuses[gBattlerAttacker].statStages[STAT_ATK] = 1;
-            gSpecialStatuses[gBattlerAttacker].statStages[STAT_DEF] = 1;
-            gSpecialStatuses[gBattlerAttacker].statStages[STAT_SPATK] = 1;
-            gSpecialStatuses[gBattlerAttacker].statStages[STAT_SPDEF] = 1;
-            gSpecialStatuses[gBattlerAttacker].statStages[STAT_SPEED] = 1;
+            SetStatChange(gBattlerAttacker, STAT_ATK, 1);
+            SetStatChange(gBattlerAttacker, STAT_DEF, 1);
+            SetStatChange(gBattlerAttacker, STAT_SPATK, 1);
+            SetStatChange(gBattlerAttacker, STAT_SPDEF, 1);
+            SetStatChange(gBattlerAttacker, STAT_SPEED, 1);
 
             gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_Z_ALL_STATS_UP;
             BattleScriptPush(gBattlescriptCurrInstr + Z_EFFECT_BS_LENGTH);

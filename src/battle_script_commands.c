@@ -2641,11 +2641,11 @@ void SetMoveEffect(enum BattlerId battlerAtk, enum BattlerId effectBattler, enum
     {
         u32 stat = moveEffect - MOVE_EFFECT_ATK_PLUS_1 + 1;
         gBattleStruct->statChangeUser = affectsUser;
-        gSpecialStatuses[effectBattler].statStages[stat] = 1;
+        SetStatChange(effectBattler, stat, 1);
         BattleScriptPush(battleScript);
         if (gBattleStruct->statChangeOnSide)
         {
-            gSpecialStatuses[BATTLE_PARTNER(effectBattler)].statStages[stat] = 1;
+            SetStatChange(BATTLE_PARTNER(effectBattler), stat, 1);
             gBattlescriptCurrInstr = BattleScript_MoveEffectStatChangeSide;
         }
         else
@@ -2664,11 +2664,11 @@ void SetMoveEffect(enum BattlerId battlerAtk, enum BattlerId effectBattler, enum
     {
         u32 stat = moveEffect - MOVE_EFFECT_ATK_MINUS_1 + 1;
         gBattleStruct->statChangeUser = affectsUser;
-        gSpecialStatuses[effectBattler].statStages[stat] = -1;
+        SetStatChange(effectBattler, stat, -1);
         BattleScriptPush(battleScript);
         if (gBattleStruct->statChangeOnSide)
         {
-            gSpecialStatuses[BATTLE_PARTNER(effectBattler)].statStages[stat] = -1;
+            SetStatChange(BATTLE_PARTNER(effectBattler), stat, -1);
             gBattlescriptCurrInstr = BattleScript_MoveEffectStatChangeSide;
         }
         else
@@ -2687,11 +2687,11 @@ void SetMoveEffect(enum BattlerId battlerAtk, enum BattlerId effectBattler, enum
     {
         u32 stat = moveEffect - MOVE_EFFECT_ATK_PLUS_2 + 1;
         gBattleStruct->statChangeUser = affectsUser;
-        gSpecialStatuses[effectBattler].statStages[stat] = 2;
+        SetStatChange(effectBattler, stat, 2);
         BattleScriptPush(battleScript);
         if (gBattleStruct->statChangeOnSide)
         {
-            gSpecialStatuses[BATTLE_PARTNER(effectBattler)].statStages[stat] = 2;
+            SetStatChange(BATTLE_PARTNER(effectBattler), stat, 2);
             gBattlescriptCurrInstr = BattleScript_MoveEffectStatChangeSide;
         }
         else
@@ -2710,11 +2710,11 @@ void SetMoveEffect(enum BattlerId battlerAtk, enum BattlerId effectBattler, enum
     {
         u32 stat = moveEffect - MOVE_EFFECT_ATK_MINUS_2 + 1;
         gBattleStruct->statChangeUser = affectsUser;
-        gSpecialStatuses[effectBattler].statStages[stat] = -2;
+        SetStatChange(effectBattler, stat, -2);
         BattleScriptPush(battleScript);
         if (gBattleStruct->statChangeOnSide)
         {
-            gSpecialStatuses[BATTLE_PARTNER(effectBattler)].statStages[stat] = -2;
+            SetStatChange(BATTLE_PARTNER(effectBattler), stat, -2);
             gBattlescriptCurrInstr = BattleScript_MoveEffectStatChangeSide;
         }
         else
@@ -2754,11 +2754,11 @@ void SetMoveEffect(enum BattlerId battlerAtk, enum BattlerId effectBattler, enum
     case MOVE_EFFECT_ALL_STATS_UP:
         if (!NoAliveMonsForEitherParty())
         {
-            gSpecialStatuses[effectBattler].statStages[STAT_ATK] = 1;
-            gSpecialStatuses[effectBattler].statStages[STAT_DEF] = 1;
-            gSpecialStatuses[effectBattler].statStages[STAT_SPATK] = 1;
-            gSpecialStatuses[effectBattler].statStages[STAT_SPDEF] = 1;
-            gSpecialStatuses[effectBattler].statStages[STAT_SPEED] = 1;
+            SetStatChange(effectBattler, STAT_ATK, 1);
+            SetStatChange(effectBattler, STAT_DEF, 1);
+            SetStatChange(effectBattler, STAT_SPATK, 1);
+            SetStatChange(effectBattler, STAT_SPDEF, 1);
+            SetStatChange(effectBattler, STAT_SPEED, 1);
             BattleScriptPush(battleScript);
             gBattlescriptCurrInstr = BattleScript_MoveEffectStatChange;
         }
@@ -2766,8 +2766,8 @@ void SetMoveEffect(enum BattlerId battlerAtk, enum BattlerId effectBattler, enum
     case MOVE_EFFECT_ATK_DEF_DOWN: // SuperPower
         if (!NoAliveMonsForEitherParty())
         {
-            gSpecialStatuses[effectBattler].statStages[STAT_ATK] = -1;
-            gSpecialStatuses[effectBattler].statStages[STAT_DEF] = -1;
+            SetStatChange(effectBattler, STAT_ATK, -1);
+            SetStatChange(effectBattler, STAT_DEF, -1);
             BattleScriptPush(battleScript);
             gBattlescriptCurrInstr = BattleScript_MoveEffectStatChange;
         }
@@ -2856,9 +2856,9 @@ void SetMoveEffect(enum BattlerId battlerAtk, enum BattlerId effectBattler, enum
     case MOVE_EFFECT_V_CREATE:
         if (!NoAliveMonsForEitherParty())
         {
-            gSpecialStatuses[effectBattler].statStages[STAT_DEF] = -1;
-            gSpecialStatuses[effectBattler].statStages[STAT_SPDEF] = -1;
-            gSpecialStatuses[effectBattler].statStages[STAT_SPEED] = -1;
+            SetStatChange(effectBattler, STAT_DEF, -1);
+            SetStatChange(effectBattler, STAT_SPDEF, -1);
+            SetStatChange(effectBattler, STAT_SPEED, -1);
             BattleScriptPush(battleScript);
             gBattlescriptCurrInstr = BattleScript_MoveEffectStatChange;
         }
@@ -3033,8 +3033,8 @@ void SetMoveEffect(enum BattlerId battlerAtk, enum BattlerId effectBattler, enum
          && GetBattlerTeraType(effectBattler) == TYPE_STELLAR
          && !NoAliveMonsForEitherParty())
         {
-            gSpecialStatuses[effectBattler].statStages[STAT_ATK] = -1;
-            gSpecialStatuses[effectBattler].statStages[STAT_SPATK] = -1;
+            SetStatChange(effectBattler, STAT_ATK, -1);
+            SetStatChange(effectBattler, STAT_SPATK, -1);
             BattleScriptPush(battleScript);
             gBattlescriptCurrInstr = BattleScript_MoveEffectStatChange;
         }
@@ -12950,44 +12950,91 @@ void BS_SetSteelsurge(void)
     }
 }
 
-void BS_JumpIfIntimidateAbilityPrevented(void)
+static const u8 *DoesBattlerPreventIntimidateTypeAbility(enum BattlerId battler, u8 flag, enum Ability ability)
 {
-    NATIVE_ARGS();
+    const u8 *script = NULL;
 
-    bool32 hasAbility = FALSE;
-    enum Ability ability = GetBattlerAbility(gBattlerTarget);
-
-    switch (ability)
+    if (flag)
     {
-    case ABILITY_INNER_FOCUS:
-    case ABILITY_SCRAPPY:
-    case ABILITY_OWN_TEMPO:
-    case ABILITY_OBLIVIOUS:
-        if (GetConfig(B_UPDATED_INTIMIDATE) >= GEN_8)
+        bool32 hasAbility = FALSE;
+
+        switch (ability)
         {
+        case ABILITY_INNER_FOCUS:
+        case ABILITY_SCRAPPY:
+        case ABILITY_OWN_TEMPO:
+        case ABILITY_OBLIVIOUS:
+            if (GetConfig(B_UPDATED_INTIMIDATE) >= GEN_8)
+            {
+                hasAbility = TRUE;
+                script = BattleScript_IntimidatePrevented;
+            }
+            break;
+        case ABILITY_GUARD_DOG:
             hasAbility = TRUE;
-            gBattlescriptCurrInstr = BattleScript_IntimidatePrevented;
+            script = BattleScript_IntimidateInReverse;
+            break;
+        default:
+            break;
         }
-        else
+
+        if (hasAbility)
         {
-            gBattlescriptCurrInstr = cmd->nextInstr;
+            gLastUsedAbility = ability;
+            gBattlerAbility = battler; // TODO: Do not overwrite!!!!!
+            RecordAbilityBattle(battler, gLastUsedAbility);
         }
-        break;
-    case ABILITY_GUARD_DOG:
-        hasAbility = TRUE;
-        gBattlescriptCurrInstr = BattleScript_IntimidateInReverse;
-        break;
-    default:
-        gBattlescriptCurrInstr = cmd->nextInstr;
-        break;
     }
 
-    if (hasAbility)
+    return script;
+}
+
+void BS_IntimidateTypeAbilityActivates(void)
+{
+    NATIVE_ARGS(u8 flag);
+
+    if (gBattleControllerExecFlags)
+        return;
+
+    struct BattleCalcValues cv = {
+        .battlerAtk = gBattlerAbility,
+        .move = MOVE_NONE,
+    };
+
+    struct StatChange st = {
+        .nonMoveStatChange = TRUE,
+    };
+
+    while (gBattleStruct->eventState.atkCancelerBattler < gBattlersCount)
     {
-        gLastUsedAbility = ability;
-        gBattlerAbility = gBattlerTarget;
-        RecordAbilityBattle(gBattlerTarget, gLastUsedAbility);
+        u32 slot = gBattleStruct->eventState.atkCancelerBattler++;
+        cv.effectBattler = GetTargetBySlot(gBattlerAbility, slot);
+
+        if (IsBattlerAlly(gBattlerAbility, cv.effectBattler))
+            continue;
+
+        cv.abilities[cv.effectBattler] = GetBattlerAbility(cv.effectBattler);
+        cv.holdEffects[cv.effectBattler] = GetBattlerHoldEffect(cv.effectBattler);
+        const u8 *script = DoesBattlerPreventIntimidateTypeAbility(cv.effectBattler, cmd->flag, cv.abilities[cv.effectBattler]);
+        if (script != NULL)
+        {
+            BattleScriptCall(script);
+            return;
+        }
+
+        SetStatChange(cv.effectBattler, STAT_ATK, -1);
+        if (TryNonMoveStatChange(&cv, &st) == STAT_CHANGE_WORKED)
+        {
+            BattleScriptCall(st.battleScript);
+            gBattleStruct->currStatToChange = STAT_ATK;
+            gBattleScripting.statAnimPlayed = FALSE;
+            return;
+        }
     }
+
+    gBattleStruct->eventState.atkCancelerBattler = 0;
+    gBattleStruct->currStatToChange = STAT_ATK;
+    gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
 void BS_JumpIfCanGigantamax(void)
