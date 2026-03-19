@@ -26,6 +26,7 @@ struct StatChange
     u32 nonMoveStatChange:1;
     u32 nextBattler:1;
     u32 numPossibleTargets:3;
+    u32 forceAnim:1;
     // Some padding
 };
 
@@ -36,6 +37,7 @@ bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 void TryStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 enum StatChangeResult TryNonMoveStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 void SetStatChange(enum BattlerId battler, enum Stat stat, s32 stage);
+enum StatChangeResult TrySingleStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 
 bool32 IsStatSet(u32 stat, const struct AdditionalEffect *additionalEffect);
 bool32 IsStatDecreaseEffect(u32 effect);

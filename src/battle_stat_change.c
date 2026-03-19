@@ -176,6 +176,30 @@ enum StatChangeResult TryNonMoveStatChange(struct BattleCalcValues *cv, struct S
     return STAT_CHANGE_DIDNT_WORK;
 }
 
+enum StatChangeResult TrySingleStatChange(struct BattleCalcValues *cv, struct StatChange *st)
+{
+    AdjustStatStage(cv, st);
+
+    if (st->stage < 0)
+    {
+        if (CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
+            return STAT_CHANGE_WORKED;
+
+        if (DecreaseStat(cv, st) == STAT_CHANGE_WORKED)
+        {
+            st->battleScript = BattleScript_DecreaseStatChangeMessage;
+            return STAT_CHANGE_WORKED;
+        }
+    }
+    else if (IncreaseStat(cv, st) == STAT_CHANGE_WORKED)
+    {
+        st->battleScript = BattleScript_IncreaseStatChangeMessage;
+        return STAT_CHANGE_WORKED;
+    }
+
+    return STAT_CHANGE_DIDNT_WORK;
+}
+
 static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct StatChange *st)
 {
     enum StatChangeResult result = STAT_CHANGE_WORKED;
@@ -419,13 +443,15 @@ static void TryPlayStatChangeAnimation(struct BattleCalcValues *cv, struct StatC
 {
     u32 statAnimId = st->stat;
 
-    if (gBattleScripting.statAnimPlayed)
+    if (gBattleScripting.statAnimPlayed && !st->forceAnim)
         return;
 
     if (st->stage <= -1) // goes down
     {
         u32 isStatChangeByTwo = abs(st->stage) > 1;
-        u32 numNegativeStats = GetNumNegativeStats(cv->effectBattler);
+        u32 numNegativeStats = 0;
+        if (!st->forceAnim)
+            numNegativeStats = GetNumNegativeStats(cv->effectBattler);
 
         statAnimId += isStatChangeByTwo ? STAT_ANIM_MINUS2 : STAT_ANIM_MINUS1;
 
@@ -438,7 +464,10 @@ static void TryPlayStatChangeAnimation(struct BattleCalcValues *cv, struct StatC
     else // goes up
     {
         u32 isStatChangeByTwo = st->stage > 1;
-        u32 numPositiveStats = GetNumPositiveStats(cv->effectBattler);
+        u32 numPositiveStats = 0;
+
+        if (!st->forceAnim)
+            numPositiveStats = GetNumPositiveStats(cv->effectBattler);
 
         statAnimId += isStatChangeByTwo ? STAT_ANIM_PLUS2 : STAT_ANIM_PLUS1;
 
@@ -451,7 +480,8 @@ static void TryPlayStatChangeAnimation(struct BattleCalcValues *cv, struct StatC
 
     BtlController_EmitBattleAnimation(cv->effectBattler, B_COMM_TO_CONTROLLER, B_ANIM_STATS_CHANGE, statAnimId);
     MarkBattlerForControllerExec(cv->effectBattler);
-    gBattleScripting.statAnimPlayed = TRUE;
+    if (!st->forceAnim)
+        gBattleScripting.statAnimPlayed = TRUE;
 }
 
 static void AdjustStatStage(struct BattleCalcValues *cv, struct StatChange *st)

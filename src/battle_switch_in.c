@@ -166,6 +166,8 @@ bool32 DoSwitchInEvents(void)
                 gBattleStruct->battlerState[battler].switchIn = FALSE;
             }
         }
+
+        gBattleStruct->intimidateActivated = FALSE;
         gBattleStruct->battlersSorted = FALSE;
         gBattleStruct->hazardsCounter = 0;
         gBattleStruct->eventState.switchIn++;

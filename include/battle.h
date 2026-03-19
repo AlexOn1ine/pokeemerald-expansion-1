@@ -565,9 +565,10 @@ struct BattleStruct
     u32 expShareExpValue;
     u32 expValue;
     u8 currStatToChange:4;
-    enum StatChangeProcess statChangeProcess:2;
     u8 statChangeOnSide:1;
     u8 statChangeUser:1;
+    u8 intimidateActivated:1;
+    u8 unused_x:1;
     u8 weatherDuration;
     u8 expGettersOrder[PARTY_SIZE]; // First battlers which were sent out, then via exp-share
     u8 expGetterMonId;

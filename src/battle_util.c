@@ -1132,7 +1132,6 @@ bool32 ShouldDefiantCompetitiveActivate(enum BattlerId battler, enum Ability abi
 void PrepareStringBattle(enum StringID stringId, enum BattlerId battler)
 {
     enum Ability battlerAbility = GetBattlerAbility(battler);
-    enum Ability targetAbility = GetBattlerAbility(gBattlerTarget);
 
     // Support for Contrary ability.
     // If a move attempted to raise stat - print "won't increase".
@@ -1155,27 +1154,15 @@ void PrepareStringBattle(enum StringID stringId, enum BattlerId battler)
         if (!(gBattleScripting.statChanger & STAT_BUFF_NEGATIVE))
             stringId = gStatUpStringIds[gBattleCommunication[MULTISTRING_CHOOSER]];
         break;
-    case STRINGID_STATSWONTINCREASE2:
+    case STRINGID_STATSWONTINCREASE2: // ????
         if (battlerAbility == ABILITY_CONTRARY)
             stringId = STRINGID_STATSWONTDECREASE2;
         break;
-    case STRINGID_STATSWONTDECREASE2:
+    case STRINGID_STATSWONTDECREASE2: // ????
         if (battlerAbility == ABILITY_CONTRARY)
             stringId = STRINGID_STATSWONTINCREASE2;
         break;
     case STRINGID_PKMNCUTSATTACKWITH:
-        if (GetConfig(B_UPDATED_INTIMIDATE) >= GEN_8
-         && targetAbility == ABILITY_RATTLED
-         && CompareStat(gBattlerTarget, STAT_SPEED, MAX_STAT_STAGE, CMP_LESS_THAN, targetAbility))
-        {
-            gBattlerAbility = gBattlerTarget;
-            SetStatChange(gBattlerTarget, STAT_SPEED, 1);
-            BattleScriptCall(BattleScript_AbilityStatChange);
-        }
-        else if (targetAbility == ABILITY_CONTRARY)
-        {
-            stringId = STRINGID_DEFENDERSSTATROSE;
-        }
         break;
     case STRINGID_ITDOESNTAFFECT:
     case STRINGID_PKMNUNAFFECTED:
@@ -1183,17 +1170,6 @@ void PrepareStringBattle(enum StringID stringId, enum BattlerId battler)
         break;
     default:
         break;
-    }
-
-    if ((stringId == STRINGID_PKMNCUTSATTACKWITH || stringId == STRINGID_DEFENDERSSTATFELL)
-     && ShouldDefiantCompetitiveActivate(gBattlerTarget, targetAbility))
-    {
-        gEffectBattler = gBattlerAbility = gBattlerTarget;
-        if (targetAbility == ABILITY_DEFIANT)
-            SetStatChange(gBattlerTarget, STAT_ATK, 2);
-        else
-            SetStatChange(gBattlerTarget, STAT_SPATK, 2);
-        BattleScriptCall(BattleScript_AbilityStatChange);
     }
 
     BtlController_EmitPrintString(battler, B_COMM_TO_CONTROLLER, stringId);
@@ -3424,12 +3400,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
             if (shouldAbilityTrigger && !IsOpposingSideEmpty(battler))
             {
                 gBattlerAbility = battler;
-                for (enum BattlerId i = 0; i < gBattlersCount; i++)
-                {
-                    if (IsBattlerAlly(battler, i))
-                        continue;
-                    SetStatChange(i, STAT_ATK, -1);
-                }
+                gBattleStruct->intimidateActivated = TRUE;
                 BattleScriptCall(BattleScript_IntimidateActivates);
                 effect++;
             }

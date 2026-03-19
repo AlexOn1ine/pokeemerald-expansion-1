@@ -99,6 +99,11 @@ BattleScript_IncreaseStatChangeMessage::
 BattleScript_DecreaseStatChangeMessage::
 	printfromtable gStatDownStringIds
 	waitmessage B_WAIT_TIME_LONG
+    trydefaintrattled
+    return
+
+BattleScript_DefiantRattledActivates::
+	printstring STRINGID_STATROSE
     return
 
 BattleScript_EffectTidyUp::
