@@ -1526,7 +1526,7 @@ static s32 AI_CheckBadMove(enum BattlerId battlerAtk, enum BattlerId battlerDef,
         if (DoesSubstituteBlockMove(battlerAtk, battlerDef, move) || AreBattlersStatsMaxed(battlerDef))
             ADJUST_SCORE(-10);
         break;
-    case EFFECT_VENOM_DRENCH:
+    case EFFECT_STAT_CHANGE_ON_STATUS:
         if (!(gBattleMons[battlerDef].status1 & STATUS1_PSN_ANY))
         {
             ADJUST_SCORE(-10);

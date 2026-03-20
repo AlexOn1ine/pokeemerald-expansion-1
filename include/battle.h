@@ -133,7 +133,7 @@ struct SpecialStatus
     u8 backUpTarget:3;
     // End of byte
     struct StatStages statStageQueue[NUM_STATS];
-    u8 statStageCounter;
+    u8 statStageAmount;
     // End of byte
 };
 
@@ -564,11 +564,7 @@ struct BattleStruct
     u16 moveTarget[MAX_BATTLERS_COUNT];
     u32 expShareExpValue;
     u32 expValue;
-    u8 currStatToChange:4;
-    u8 statChangeOnSide:1;
-    u8 statChangeUser:1;
-    u8 intimidateActivated:1;
-    u8 unused_x:1;
+
     u8 weatherDuration;
     u8 expGettersOrder[PARTY_SIZE]; // First battlers which were sent out, then via exp-share
     u8 expGetterMonId;
@@ -651,7 +647,6 @@ struct BattleStruct
     struct DynamaxData dynamax;
     struct BattleGimmickData gimmick;
     const u8 *trainerSlideMsg;
-    u8 stolenStats[NUM_BATTLE_STATS]; // hp byte is used for which stats to raise, other inform about by how many stages
     enum Ability tracedAbility[MAX_BATTLERS_COUNT];
     struct Illusion illusion[MAX_BATTLERS_COUNT];
     enum BattlerId soulheartBattlerId;
@@ -674,7 +669,13 @@ struct BattleStruct
     u8 beatUpSlot:3;
     u8 pledgeMove:1;
     u8 effectsBeforeUsingMoveDone:1; // Mega Evo and Focus Punch/Shell Trap effects.
-    u8 unused3:1;
+    u8 positiveAnimPlayed:1;
+    u8 negativeAnimPlayed:1;
+    u8 statChangeQueueCounter:4;
+    u8 statChangeOnSide:1;
+    u8 statChangeUser:1;
+    u8 intimidateActivated:1;
+
     u16 flingItem:14;
     enum FlungItem flungItem:2;
     u8 itemPartyIndex[MAX_BATTLERS_COUNT];
@@ -997,6 +998,7 @@ extern enum BattlerId gBattlerAttacker;
 extern enum BattlerId gBattlerTarget;
 extern enum BattlerId gBattlerFainted;
 extern enum BattlerId gEffectBattler;
+extern enum BattlerId gStatChangeBattler;
 extern enum BattlerId gPotentialItemEffectBattler;
 extern u8 gAbsentBattlerFlags;
 extern u8 gMultiHitCounter;

@@ -1300,9 +1300,9 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
         .battleTvScore = 0, // TODO: Assign points
     },
 
-    [EFFECT_VENOM_DRENCH] =
+    [EFFECT_STAT_CHANGE_ON_STATUS] =
     {
-        .battleScript = BattleScript_EffectVenomDrench,
+        .battleScript = BattleScript_EffectStatChangeTarget,
         .battleTvScore = 0, // TODO: Assign points
     },
 
@@ -1672,7 +1672,7 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
 
     [EFFECT_EXTREME_EVOBOOST] =
     {
-        .battleScript = BattleScript_EffectExtremeEvoboost,
+        .battleScript = BattleScript_EffectStatChangeUser,
         .battleTvScore = 0, // TODO: Assign points
     },
 

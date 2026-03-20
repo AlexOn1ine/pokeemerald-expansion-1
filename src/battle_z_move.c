@@ -366,7 +366,6 @@ bool32 MoveSelectionDisplayZMove(enum Move zmove, enum BattlerId battler)
         }
         else if (GetMoveEffect(zmove) == EFFECT_EXTREME_EVOBOOST)
         {
-            // Damaging move -> status z move
             StringCopy(gDisplayedStringBattle, sText_StatsPlus2);
             BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_MOVE_NAME_3);
             StringCopy(gDisplayedStringBattle, GetMoveName(zmove));

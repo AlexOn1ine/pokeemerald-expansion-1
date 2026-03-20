@@ -3109,10 +3109,9 @@ static enum MoveEndResult MoveEndMoveBlock(void)
          && !NoAliveMonsForEitherParty()
          && CompareStat(gBattlerAttacker, STAT_ATK, MAX_STAT_STAGE, CMP_LESS_THAN, GetBattlerAbility(gBattlerAttacker)))
         {
-            SET_STATCHANGER(STAT_ATK, GetConfig(B_FELL_STINGER_STAT_RAISE) >= GEN_7 ? 3 : 2, FALSE);
-            PREPARE_STAT_BUFFER(gBattleTextBuff1, STAT_ATK);
-            BattleScriptPushCursor();
-            gBattlescriptCurrInstr = BattleScript_FellStingerRaisesStat;
+            s32 stage = GetConfig(B_FELL_STINGER_STAT_RAISE) >= GEN_7 ? 3 : 2;
+            SetStatChange(gBattlerAttacker, STAT_ATK, stage);
+            BattleScriptCall(BattleScript_AbilityStatChange);
             result = MOVEEND_RESULT_RUN_SCRIPT;
         }
         break;
@@ -3122,8 +3121,7 @@ static enum MoveEndResult MoveEndMoveBlock(void)
          && IsBattlerAlive(gBattlerAttacker))
         {
             gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_POINTEDSTONESFLOAT;
-            BattleScriptPushCursor();
-            gBattlescriptCurrInstr = BattleScript_MoveEffectStealthRock;
+            BattleScriptCall(BattleScript_MoveEffectStealthRock);
             result = MOVEEND_RESULT_RUN_SCRIPT;
         }
         break;
@@ -3150,7 +3148,9 @@ static enum MoveEndResult MoveEndMoveBlock(void)
         if (IsBattlerAlive(gBattlerAttacker)
          && IsAnyTargetTurnDamaged(gBattlerAttacker, INCLUDING_SUBSTITUTES))
         {
-            BattleScriptCall(BattleScript_DefDownSpeedUp);
+            SetStatChange(gBattlerAttacker, STAT_DEF, -1);
+            SetStatChange(gBattlerAttacker, STAT_SPEED, 1);
+            BattleScriptCall(BattleScript_MoveEffectStatChange);
             result = MOVEEND_RESULT_RUN_SCRIPT;
         }
         break;

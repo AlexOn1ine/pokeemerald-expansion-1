@@ -1207,9 +1207,13 @@
 	.byte B_SCR_OP_TRYSTATCHANGE
 	.endm
 
-	.macro trynonmovestatchange numAffectedBattlers:req
+	.macro trynonmovestatchange
 	.byte B_SCR_OP_TRYNONMOVESTATCHANGE
-    .byte \numAffectedBattlers
+	.endm
+
+	.macro trybattlerstatchange battler:req
+	.byte B_SCR_OP_TRYBATTLERSTATCHANGE
+    .byte \battler
 	.endm
 
 	.macro callnative func:req
@@ -1562,10 +1566,6 @@
 
 	.macro removeterrain
 	callnative BS_RemoveTerrain
-	.endm
-
-	.macro spectralthiefprintstats
-	callnative BS_SpectralThiefPrintStats
 	.endm
 
 	.macro setmoveresultflags flags:req

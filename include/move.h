@@ -688,6 +688,13 @@ static inline u32 GetMoveEffectArg_Status(enum Move moveId)
     return gMovesInfo[moveId].argument.status;
 }
 
+static inline u32 GetMoveStatusOnStatChange(enum Move moveId)
+{
+    moveId = SanitizeMoveId(moveId);
+    assertf(gMovesInfo[moveId].effect == EFFECT_STAT_CHANGE_ON_STATUS, "not a stat change on status move: %S", gMovesInfo[moveId].name);
+    return gMovesInfo[moveId].argument.status;
+}
+
 static inline u32 GetMoveEffectArg_MoveProperty(enum Move moveId)
 {
     moveId = SanitizeMoveId(moveId);

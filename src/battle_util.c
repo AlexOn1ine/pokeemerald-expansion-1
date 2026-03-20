@@ -1138,16 +1138,12 @@ void PrepareStringBattle(enum StringID stringId, enum BattlerId battler)
     // If a move attempted to lower stat - print "won't decrease".
     switch (stringId)
     {
-    case STRINGID_ATTACKERSSTATROSE:
-    case STRINGID_DEFENDERSSTATROSE:
     case STRINGID_STATROSE:
     case STRINGID_STATSWONTINCREASE:
     case STRINGID_USINGITEMSTATOFPKMNROSE:
         if (gBattleScripting.statChanger & STAT_BUFF_NEGATIVE)
             stringId = gStatDownStringIds[gBattleCommunication[MULTISTRING_CHOOSER]];
         break;
-    case STRINGID_ATTACKERSSTATFELL:
-    case STRINGID_DEFENDERSSTATFELL:
     case STRINGID_STATFELL:
     case STRINGID_STATSWONTDECREASE:
     case STRINGID_USINGITEMSTATOFPKMNFELL:
@@ -1161,8 +1157,6 @@ void PrepareStringBattle(enum StringID stringId, enum BattlerId battler)
     case STRINGID_STATSWONTDECREASE2: // ????
         if (battlerAbility == ABILITY_CONTRARY)
             stringId = STRINGID_STATSWONTINCREASE2;
-        break;
-    case STRINGID_PKMNCUTSATTACKWITH:
         break;
     case STRINGID_ITDOESNTAFFECT:
     case STRINGID_PKMNUNAFFECTED:
@@ -1697,7 +1691,8 @@ bool32 MoodyCantRaiseStat(u32 stat)
 // gBattlerAttacker is the battler that's trying to lower their stats and due to limitations of RandomUniformExcept, cannot be an argument
 bool32 MoodyCantLowerStat(u32 stat)
 {
-    return stat == GET_STAT_BUFF_ID(gBattleScripting.statChanger) || CompareStat(gBattlerAttacker, stat, MIN_STAT_STAGE, CMP_EQUAL, GetBattlerAbility(gBattlerAttacker));
+    return stat == gSpecialStatuses[gBattlerAttacker].statStageQueue[0].stat
+        || CompareStat(gBattlerAttacker, stat, MIN_STAT_STAGE, CMP_EQUAL, GetBattlerAbility(gBattlerAttacker));
 }
 
 void TryToRevertMimicryAndFlags(void)
@@ -3699,31 +3694,31 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
             case ABILITY_MOODY:
                 if (gBattleStruct->battlerState[battler].isFirstTurn != 2)
                 {
+                    enum Stat stat = STAT_ATK;
                     u32 validToRaise = 0, validToLower = 0;
                     u32 statsNum = GetConfig(B_MOODY_ACC_EVASION) >= GEN_8 ? NUM_STATS : NUM_BATTLE_STATS;
 
-                    for (i = STAT_ATK; i < statsNum; i++)
+                    for (stat = STAT_ATK; stat < statsNum; stat++)
                     {
-                        if (CompareStat(battler, i, MIN_STAT_STAGE, CMP_GREATER_THAN, gLastUsedAbility))
-                            validToLower |= 1u << i;
-                        if (CompareStat(battler, i, MAX_STAT_STAGE, CMP_LESS_THAN, gLastUsedAbility))
-                            validToRaise |= 1u << i;
+                        if (CompareStat(battler, stat, MIN_STAT_STAGE, CMP_GREATER_THAN, gLastUsedAbility))
+                            validToLower |= 1u << stat;
+                        if (CompareStat(battler, stat, MAX_STAT_STAGE, CMP_LESS_THAN, gLastUsedAbility))
+                            validToRaise |= 1u << stat;
                     }
 
-                    gBattleScripting.statChanger = gBattleScripting.savedStatChanger = 0; // for raising and lowering stat respectively
                     if (validToRaise) // Find stat to raise
                     {
-                        i = RandomUniformExcept(RNG_MOODY_INCREASE, STAT_ATK, statsNum - 1, MoodyCantRaiseStat);
-                        SET_STATCHANGER(i, 2, FALSE);
-                        validToLower &= ~(1u << i); // Can't lower the same stat as raising.
+                        stat = RandomUniformExcept(RNG_MOODY_INCREASE, STAT_ATK, statsNum - 1, MoodyCantRaiseStat);
+                        SetStatChange(battler, stat, 2);
+                        validToLower &= ~(1u << stat); // Can't lower the same stat as raising.
                     }
                     if (validToLower) // Find stat to lower
                     {
                         // MoodyCantLowerStat already checks that both stats are different
-                        i = RandomUniformExcept(RNG_MOODY_DECREASE, STAT_ATK, statsNum - 1, MoodyCantLowerStat);
-                        SET_STATCHANGER2(gBattleScripting.savedStatChanger, i, 1, TRUE);
+                        stat = RandomUniformExcept(RNG_MOODY_DECREASE, STAT_ATK, statsNum - 1, MoodyCantLowerStat);
+                        SetStatChange(battler, stat, -1);
                     }
-                    BattleScriptExecute(BattleScript_MoodyActivates);
+                    BattleScriptExecute(BattleScript_AbilityStatChangeEnd2);
                     effect++;
                 }
                 break;
@@ -3820,7 +3815,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
              && HadMoreThanHalfHpNowDoesnt(battler)
              && CompareStat(battler, STAT_SPATK, MAX_STAT_STAGE, CMP_LESS_THAN, gLastUsedAbility))
             {
-                gEffectBattler = gBattlerAbility = battler;
+                gBattlerAbility = battler;
                 SetStatChange(battler, STAT_SPATK, 1);
                 BattleScriptCall(BattleScript_AbilityStatChange);
                 effect++;
@@ -3831,34 +3826,25 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
              && IsBattlerAlive(battler)
              && HadMoreThanHalfHpNowDoesnt(battler))
             {
+                // TODO: don't need all the checks if the ability activates anyways
                 if (CompareStat(battler, STAT_ATK, MAX_STAT_STAGE, CMP_LESS_THAN, ABILITY_NONE))
-                {
                     SetStatChange(battler, STAT_ATK, 1);
-                }
 
                 if (CompareStat(battler, STAT_SPATK, MAX_STAT_STAGE, CMP_LESS_THAN, ABILITY_NONE))
-                {
                     SetStatChange(battler, STAT_SPATK, 1);
-                }
 
                 if (CompareStat(battler, STAT_SPEED, MAX_STAT_STAGE, CMP_LESS_THAN, ABILITY_NONE))
-                {
                     SetStatChange(battler, STAT_SPEED, 1);
-                }
 
                 if (CompareStat(battler, STAT_DEF, MIN_STAT_STAGE, CMP_GREATER_THAN, ABILITY_NONE))
-                {
                     SetStatChange(battler, STAT_ATK, -1);
-                }
 
                 if (CompareStat(battler, STAT_SPDEF, MIN_STAT_STAGE, CMP_GREATER_THAN, ABILITY_NONE))
-                {
                     SetStatChange(battler, STAT_SPDEF, -1);
-                }
 
-                if (gSpecialStatuses[battler].statStageCounter > 0)
+                if (gSpecialStatuses[battler].statStageAmount > 0)
                 {
-                    gBattleStruct->currStatToChange = STAT_ATK;
+                    gBattleStruct->statChangeQueueCounter= 0;
                     gEffectBattler = gBattlerAbility = battler;
                     BattleScriptCall(BattleScript_AbilityStatChange);
                 }
@@ -3934,7 +3920,9 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
                 if (GetMoveEffect(gCurrentMove) == EFFECT_HIT_ESCAPE && CanBattlerSwitch(gBattlerAttacker))
                     gProtectStructs[battler].disableEjectPack = TRUE;  // Set flag for target
 
-                BattleScriptCall(BattleScript_WeakArmorActivates);
+                SetStatChange(battler, STAT_DEF, -1);
+                SetStatChange(battler, STAT_SPEED, 1);
+                BattleScriptCall(BattleScript_AbilityStatChange);
                 effect++;
             }
             break;
@@ -4545,20 +4533,11 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
                 {
                     u32 numStatBuffs = 0;
                     if (CompareStat(battler, STAT_ATK, MAX_STAT_STAGE, CMP_LESS_THAN, ability))
-                    {
-                        gBattleScripting.animArg1 = GET_STAT_BUFF_ID(STAT_ATK) + STAT_ANIM_PLUS1;
                         numStatBuffs++;
-                    }
                     if (CompareStat(battler, STAT_SPATK, MAX_STAT_STAGE, CMP_LESS_THAN, ability))
-                    {
-                        gBattleScripting.animArg1 = GET_STAT_BUFF_ID(STAT_SPATK) + STAT_ANIM_PLUS1;
                         numStatBuffs++;
-                    }
                     if (CompareStat(battler, STAT_SPEED, MAX_STAT_STAGE, CMP_LESS_THAN, ability))
-                    {
-                        gBattleScripting.animArg1 = GET_STAT_BUFF_ID(STAT_SPEED) + STAT_ANIM_PLUS1;
                         numStatBuffs++;
-                    }
 
                     if (numStatBuffs > 0)
                     {
@@ -4567,8 +4546,12 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
 
                         gLastUsedAbility = ability;
                         gBattlerAbility = battler;
+
+                        SetStatChange(battler, STAT_ATK, numStatBuffs);
+                        SetStatChange(battler, STAT_SPATK, numStatBuffs);
+                        SetStatChange(battler, STAT_SPEED, numStatBuffs);
                         GetBattlerPartyState(battler)->battleBondBoost = TRUE;
-                        BattleScriptCall(BattleScript_EffectBattleBondStatIncrease);
+                        BattleScriptCall(BattleScript_AbilityStatChange);
                         effect = TRUE;
                     }
                 }
@@ -4662,8 +4645,6 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
              && (gChosenActionByBattler[partner] != B_ACTION_SWITCH || HasBattlerActedThisTurn(partner))
              && GET_BASE_SPECIES_ID(GetMonData(GetBattlerMon(battler), MON_DATA_SPECIES)) == SPECIES_TATSUGIRI)
             {
-                SaveBattlerAttacker(gBattlerAttacker);
-                gBattlerAttacker = partner;
                 gBattleStruct->battlerState[battler].commandingDondozo = TRUE;
                 gBattleStruct->battlerState[partner].commanderSpecies = gBattleMons[battler].species;
                 gBattleMons[battler].volatiles.semiInvulnerable = STATE_COMMANDER;
@@ -4671,6 +4652,11 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
                     gBattleMons[battler].volatiles.confusionTurns--;
                 BtlController_EmitSpriteInvisibility(battler, B_COMM_TO_CONTROLLER, TRUE);
                 MarkBattlerForControllerExec(battler);
+                SetStatChange(battler, STAT_ATK, 1);
+                SetStatChange(battler, STAT_DEF, 1);
+                SetStatChange(battler, STAT_SPATK, 1);
+                SetStatChange(battler, STAT_SPDEF, 1);
+                SetStatChange(battler, STAT_SPEED, 1);
                 BattleScriptCall(BattleScript_CommanderActivates);
                 effect++;
             }

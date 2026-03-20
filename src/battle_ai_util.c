@@ -4946,7 +4946,7 @@ void IncreasePoisonScore(enum BattlerId battlerAtk, enum BattlerId battlerDef, e
             ADJUST_SCORE_PTR(WEAK_EFFECT);    // stall tactic
 
         if (IsPowerBasedOnStatus(battlerAtk, EFFECT_DOUBLE_POWER_ON_ARG_STATUS, STATUS1_PSN_ANY)
-         || HasMoveWithEffect(battlerAtk, EFFECT_VENOM_DRENCH)
+         || HasMoveWithEffect(battlerAtk, EFFECT_STAT_CHANGE_ON_STATUS)
          || gAiLogicData->abilities[battlerAtk] == ABILITY_MERCILESS)
             ADJUST_SCORE_PTR(DECENT_EFFECT);
         else
@@ -6392,10 +6392,10 @@ s32 GetSelfStatChangeScore(u32 battlerAtk, u32 battlerDef, u32 move)
 
     while (additionalEffectsCounter < numAdditionalEffects)
     {
-        while (gBattleStruct->currStatToChange < NUM_STATS)
+        while (gBattleStruct->statChangeQueueCounter< NUM_STATS)
         {
             const struct AdditionalEffect *additionalEffect = GetMoveAdditionalEffectById(gCurrentMove, gBattleStruct->additionalEffectsCounter);
-            u32 stat = gBattleStruct->currStatToChange++;
+            u32 stat = gBattleStruct->statChangeQueueCounter++;
 
             if (!IsStatSet(stat, additionalEffect))
                 continue;
@@ -6435,10 +6435,10 @@ s32 GetAllyStatChangeScore(u32 battlerAtk, u32 battlerDef, u32 move)
 
     while (additionalEffectsCounter < numAdditionalEffects)
     {
-        while (gBattleStruct->currStatToChange < NUM_STATS)
+        while (gBattleStruct->statChangeQueueCounter< NUM_STATS)
         {
             const struct AdditionalEffect *additionalEffect = GetMoveAdditionalEffectById(gCurrentMove, gBattleStruct->additionalEffectsCounter);
-            u32 stat = gBattleStruct->currStatToChange++;
+            u32 stat = gBattleStruct->statChangeQueueCounter++;
 
             if (!IsStatSet(stat, additionalEffect))
                 continue;

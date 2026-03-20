@@ -248,7 +248,7 @@ static void WhenSingles(enum Move move, struct BattlePokemon *attacker, struct B
     { // defender needs to be asleep
         TURN { MOVE(defender, MOVE_REST); }
     }
-    else if (effect == EFFECT_VENOM_DRENCH
+    else if (effect == EFFECT_STAT_CHANGE_ON_STATUS
           || effect == EFFECT_PURIFY)
     { // defender needs to be poisoned
         TURN { MOVE(attacker, MOVE_POISON_POWDER); }
@@ -465,7 +465,7 @@ static void DoublesWhen(enum Move move, struct BattlePokemon *attacker, struct B
     { // Opponent needs to be asleep
         TURN { MOVE(target, MOVE_REST); }
     }
-    else if (effect == EFFECT_VENOM_DRENCH
+    else if (effect == EFFECT_STAT_CHANGE_ON_STATUS
           || effect == EFFECT_PURIFY)
     { // Opponent needs to be poisoned
         TURN { MOVE(attacker, MOVE_POISON_POWDER, target: target); }

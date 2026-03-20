@@ -3,23 +3,24 @@
 
 #include "constants/battle_stat_change.h"
 
+// Silent failure for Secondary Effects, unless mirror armor
+// Also no scripts at all for checking
+// Self already covered by certain
 struct StatChange
 {
-    const u8 *battleScript;
+    const u8 *script;
 
+    enum BattlerId battler;
     enum Stat stat;
     s8 stage;
     u8 stats;
 
     // Flags
     u32 silentFailure:1;
-    u32 printStatCantChangeMsg:1;
     u32 passiveStatChange:1;
     u32 mirrorArmored:1;
     u32 allowMirrorArmor:1;
     u32 onlyChecking:1;
-    u32 notProtectAffected:1;
-    u32 updateAdditionalEffectStats:1;
     u32 certain:1;
     u32 setFailureFlags:1;
     u32 numFailedTargets:2;
@@ -27,6 +28,7 @@ struct StatChange
     u32 nextBattler:1;
     u32 numPossibleTargets:3;
     u32 forceAnim:1;
+    u32 effectStatChange:1;
     // Some padding
 };
 
