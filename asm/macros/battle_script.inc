@@ -1207,8 +1207,9 @@
 	.byte B_SCR_OP_TRYSTATCHANGE
 	.endm
 
-	.macro trynonmovestatchange
+	.macro trynonmovestatchange statChangeFlags:req
 	.byte B_SCR_OP_TRYNONMOVESTATCHANGE
+    .byte \statChangeFlags
 	.endm
 
 	.macro trybattlerstatchange battler:req
@@ -2200,7 +2201,7 @@
 	.if \animation == FALSE
 		setbyte sSTAT_ANIM_PLAYED, TRUE
 	.endif
-	statbuffchange BS_TARGET, STAT_CHANGE_ALLOW_PTR, \script
+	statbuffchange BS_TARGET, 0, \script
 	.ifnb \customString
 		printstring \customString
 	.else

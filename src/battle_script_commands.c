@@ -3066,7 +3066,7 @@ void SetMoveEffect(enum BattlerId battlerAtk, enum BattlerId effectBattler, enum
                     effectBattler,
                     SET_STAT_BUFF_VALUE(1),
                     stat,
-                    STAT_CHANGE_UPDATE_MOVE_EFFECT,
+                    0,
                     0,
                     0) == STAT_CHANGE_DIDNT_WORK)
             {
@@ -11209,6 +11209,8 @@ static void Cmd_trystatchange(void)
 
         if (st.script != NULL)
         {
+            if (st.statChangePrevented)
+                gBattleStruct->moveResultFlags[st.battler] |= MOVE_RESULT_DOESNT_AFFECT_FOE;
             BattleScriptCall(st.script);
             return;
         }
@@ -11218,9 +11220,10 @@ static void Cmd_trystatchange(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// do I want to check for self on ability
 static void Cmd_trynonmovestatchange(void)
 {
-    CMD_ARGS();
+    CMD_ARGS(u8 statChangeFlags);
 
     if (gBattleControllerExecFlags)
         return;
@@ -11234,6 +11237,8 @@ static void Cmd_trynonmovestatchange(void)
     struct StatChange st = {
         .certain = TRUE,
         .nonMoveStatChange = TRUE,
+        .allowMirrorArmor = TRUE,
+        .silentFailure = cmd->statChangeFlags & STAT_CHANGE_SILENT_FAILURE,
     };
 
     while (gBattleStruct->eventState.atkCancelerBattler < gBattlersCount)
@@ -11246,13 +11251,18 @@ static void Cmd_trynonmovestatchange(void)
             continue;
         }
 
+        if (!(cmd->statChangeFlags & STAT_CHANGE_IGNORE_SELF))
+            st.certain = gBattlerAttacker == st.battler;
+
         cv.abilities[st.battler] = GetBattlerAbility(st.battler);
         cv.holdEffects[st.battler] = GetBattlerHoldEffect(st.battler);
 
         bool32 goToNextInstr = FALSE; // Prevents an addtional stat change call
-        bool32 changeStat = FALSE;
-        if (TryNonMoveStatChange(&cv, &st) == STAT_CHANGE_WORKED)
-            changeStat = TRUE;
+        bool32 runScript = FALSE;
+        enum StatChangeResult result = TryNonMoveStatChange(&cv, &st);
+
+        if (result == STAT_CHANGE_WORKED || result == STAT_CHANGE_BLOCKED_BY_TARGET)
+            runScript = TRUE;
 
         if (gBattleStruct->statChangeQueueCounter >= gSpecialStatuses[st.battler].statStageAmount)
         {
@@ -11262,18 +11272,16 @@ static void Cmd_trynonmovestatchange(void)
                 goToNextInstr = TRUE;
         }
 
-        if (changeStat)
+        if (runScript && goToNextInstr)
         {
-            if (goToNextInstr)
-            {
-                ClearStatChangeValues();
-                BattleScriptPush(cmd->nextInstr);
-                gBattlescriptCurrInstr = st.script;
-            }
-            else
-            {
-                BattleScriptCall(st.script);
-            }
+            ClearStatChangeValues();
+            BattleScriptPush(cmd->nextInstr);
+            gBattlescriptCurrInstr = st.script;
+            return;
+        }
+        else if (runScript)
+        {
+            BattleScriptCall(st.script);
             return;
         }
     }

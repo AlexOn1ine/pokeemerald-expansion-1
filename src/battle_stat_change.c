@@ -153,7 +153,11 @@ enum StatChangeResult TryNonMoveStatChange(struct BattleCalcValues *cv, struct S
         if (st->stage < 0)
         {
             if (CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
-                continue;
+            {
+                if (st->silentFailure || st->onlyChecking)
+                    continue;
+                return STAT_CHANGE_BLOCKED_BY_TARGET;
+            }
 
             if (DecreaseStat(cv, st) == STAT_CHANGE_WORKED)
                 return STAT_CHANGE_WORKED;
@@ -192,22 +196,19 @@ static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct
     enum StatChangeResult result = STAT_CHANGE_WORKED;
 
     u32 flowerVeilBattler = 0;
-    bool32 isCurse =
-    bool32 isSelf = cv->battlerAtk == st->battler;
-    bool32 canBePrevented = (st->passiveStatChange || !isSelf || st->mirrorArmored);
 
-    if (GetMoveEffect(cv->move) == EFFECT_CURSE || cv->battlerAtk == st->battler)
-        st->certain = TRUE;
+    // if (GetMoveEffect(cv->move) == EFFECT_CURSE || cv->battlerAtk == st->battler)
+    //     st->certain = TRUE;
 
     enum Ability abilityAtk = cv->abilities[cv->battlerAtk];
-    enum Ability abilityEff = cv->abilities[st->battler];
+    enum Ability ability = cv->abilities[st->battler];
 
     if (GetMoveEffect(cv->move) == EFFECT_STAT_CHANGE_ON_STATUS && gBattleMons[st->battler].status1 & GetMoveStatusOnStatChange(cv->move))
     {
         // TODO
         result = STAT_CHANGE_DIDNT_WORK;
     }
-    if (st->nonMoveStatChange && !isSelf && gBattleMons[st->battler].volatiles.substitute)
+    if (st->nonMoveStatChange && !st->certain && gBattleMons[st->battler].volatiles.substitute)
     {
         // TODO
         result = STAT_CHANGE_DIDNT_WORK;
@@ -221,18 +222,18 @@ static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct
 
         result = STAT_CHANGE_DIDNT_WORK;
     }
-    else if (!st->certain && CanAbilityPreventStatLoss(abilityEff))
+    else if (!st->certain && CanAbilityPreventStatLoss(ability))
     {
         if (!st->onlyChecking)
         {
             st->script = BattleScript_AbilityNoStatLoss;
-            gLastUsedAbility = abilityEff;
-            RecordAbilityBattle(st->battler, abilityEff);
+            gLastUsedAbility = ability;
+            RecordAbilityBattle(st->battler, ability);
         }
 
         result = STAT_CHANGE_DIDNT_WORK;
     }
-    else if (canBePrevented && cv->holdEffects[st->battler] == HOLD_EFFECT_CLEAR_AMULET)
+    else if (!st->certain && cv->holdEffects[st->battler] == HOLD_EFFECT_CLEAR_AMULET)
     {
         if (!st->onlyChecking)
         {
@@ -255,19 +256,19 @@ static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct
 
         result = STAT_CHANGE_DIDNT_WORK;
     }
-    else if (!st->certain && AbilityPreventsSpecificStatDrop(abilityEff, st->stat))
+    else if (!st->certain && AbilityPreventsSpecificStatDrop(ability, st->stat))
     {
         if (!st->onlyChecking)
         {
             st->script = BattleScript_AbilityNoSpecificStatLoss;
             gBattlerAbility = st->battler;
-            gLastUsedAbility = abilityEff;
+            gLastUsedAbility = ability;
             RecordAbilityBattle(st->battler, gLastUsedAbility);
         }
 
         result = STAT_CHANGE_DIDNT_WORK;
     }
-    else if (abilityEff == ABILITY_MIRROR_ARMOR && !st->mirrorArmored && !isSelf)
+    else if (ability == ABILITY_MIRROR_ARMOR && cv->battlerAtk != st->battler && !st->mirrorArmored)
     {
         if (GetMoveEffect(cv->move) == EFFECT_PARTING_SHOT)
             gBattleScripting.animTargetsHit = 1;
@@ -276,17 +277,17 @@ static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct
         {
             SetStatChange(cv->battlerAtk, st->stat, st->stage);
             st->script = BattleScript_MirrorArmorReflect;
+            st->silentFailure = FALSE;
             gBattlerAbility = st->battler;
-            RecordAbilityBattle(st->battler, abilityEff);
+            RecordAbilityBattle(st->battler, ability);
         }
 
         result = STAT_CHANGE_DIDNT_WORK;
     }
 
-    if (!st->onlyChecking && result == STAT_CHANGE_DIDNT_WORK)
+    if (result == STAT_CHANGE_DIDNT_WORK && !st->onlyChecking && !st->silentFailure)
     {
-        if (st->effectStatChange)
-            gBattleStruct->moveResultFlags[st->battler] |= MOVE_RESULT_DOESNT_AFFECT_FOE;
+        st->statChangePrevented = TRUE;
         PREPARE_STAT_BUFFER(gBattleTextBuff1, st->stat);
         gBattleScripting.battler = st->battler;
     }
