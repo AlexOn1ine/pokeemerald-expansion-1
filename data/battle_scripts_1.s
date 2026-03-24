@@ -3584,53 +3584,10 @@ BattleScript_RoarSuccessRet_Ret:
 	switchoutabilities BS_TARGET
 	return
 
-BattleScript_WeaknessPolicy::
-	copybyte sBATTLER, gBattlerTarget
-	jumpifstat BS_TARGET, CMP_LESS_THAN, STAT_ATK, MAX_STAT_STAGE, BattleScript_WeaknessPolicyAtk
-	jumpifstat BS_TARGET, CMP_EQUAL, STAT_SPATK, MAX_STAT_STAGE, BattleScript_WeaknessPolicyEnd
-BattleScript_WeaknessPolicyAtk:
-	playanimation BS_TARGET, B_ANIM_HELD_ITEM_EFFECT
-	waitanimation
-	setstatchanger STAT_ATK, 2, FALSE
-	@statbuffchange BS_TARGET, STAT_CHANGE_ALLOW_PTR, BattleScript_WeaknessPolicySpAtk, BIT_SPATK
-	jumpifbyte CMP_EQUAL, cMULTISTRING_CHOOSER, B_MSG_STAT_WONT_CHANGE, BattleScript_WeaknessPolicySpAtk
-	printstring STRINGID_USINGITEMSTATOFPKMNROSE
-	waitmessage B_WAIT_TIME_LONG
-BattleScript_WeaknessPolicySpAtk:
-	setstatchanger STAT_SPATK, 2, FALSE
-	@statbuffchange BS_TARGET, STAT_CHANGE_ALLOW_PTR, BattleScript_WeaknessPolicyRemoveItem
-	jumpifbyte CMP_EQUAL, cMULTISTRING_CHOOSER, B_MSG_STAT_WONT_CHANGE, BattleScript_WeaknessPolicyRemoveItem
-	printstring STRINGID_USINGITEMSTATOFPKMNROSE
-	waitmessage B_WAIT_TIME_LONG
-BattleScript_WeaknessPolicyRemoveItem:
-	removeitem BS_TARGET
-BattleScript_WeaknessPolicyEnd:
-	return
-
-BattleScript_TargetItemStatRaise::
-	copybyte sBATTLER, gBattlerTarget
-	@statbuffchange BS_TARGET, STAT_CHANGE_ONLY_CHECKING, BattleScript_TargetItemStatRaiseRemoveItemRet
-	jumpifbyte CMP_EQUAL, cMULTISTRING_CHOOSER, B_MSG_STAT_WONT_CHANGE, BattleScript_TargetItemStatRaiseRemoveItemRet
-	playanimation BS_TARGET, B_ANIM_HELD_ITEM_EFFECT
-	waitanimation
-	@statbuffchange BS_TARGET, 0, BattleScript_TargetItemStatRaiseRemoveItemRet
-	printstring STRINGID_USINGITEMSTATOFPKMNROSE
-	waitmessage B_WAIT_TIME_LONG
-	removeitem BS_TARGET
-BattleScript_TargetItemStatRaiseRemoveItemRet:
-	return
-
-BattleScript_AttackerItemStatRaise::
-	copybyte sBATTLER, gBattlerAttacker
-	@statbuffchange BS_ATTACKER, STAT_CHANGE_ONLY_CHECKING, BattleScript_AttackerItemStatRaiseRet
-	jumpifbyte CMP_EQUAL, cMULTISTRING_CHOOSER, B_MSG_STAT_WONT_CHANGE, BattleScript_AttackerItemStatRaiseRet
-	playanimation BS_ATTACKER, B_ANIM_HELD_ITEM_EFFECT
-	waitanimation
-	@statbuffchange BS_ATTACKER, 0, BattleScript_AttackerItemStatRaiseRet
-	printstring STRINGID_USINGITEMSTATOFPKMNROSE
-	waitmessage B_WAIT_TIME_LONG
-	removeitem BS_ATTACKER
-BattleScript_AttackerItemStatRaiseRet:
+BattleScript_ItemStatChange::
+	playanimation BS_SCRIPTING, B_ANIM_HELD_ITEM_EFFECT
+	trybattlerstatchange BS_SCRIPTING, STAT_CHANGE_ITEM
+	removeitem BS_SCRIPTING
 	return
 
 BattleScript_MistProtected::
@@ -5867,13 +5824,6 @@ BattleScript_PrintPlayerForfeitedLinkBattle::
 	waitmessage B_WAIT_TIME_LONG
 	end2
 
-BattleScript_TotemFlaredToLife::
-	playanimation BS_ATTACKER, B_ANIM_TOTEM_FLARE, NULL
-	printstring STRINGID_AURAFLAREDTOLIFE
-	waitmessage B_WAIT_TIME_LONG
-	call BattleScript_ApplyTotemVarBoost
-	end2
-
 BattleScript_MirrorHerbCopyStatChangeEnd2::
 	call BattleScript_MirrorHerbCopyStatChange
 	end2
@@ -5883,42 +5833,19 @@ BattleScript_MirrorHerbCopyStatChange::
 	printstring STRINGID_MIRRORHERBCOPIED
 	waitmessage B_WAIT_TIME_LONG
 	removeitem BS_SCRIPTING
-BattleScript_MirrorHerbStartCopyStats:
-	copyfoesstatincrease BS_SCRIPTING, BattleScript_MirrorHerbStartReturn
-	@statbuffchange BS_SCRIPTING, STAT_CHANGE_ALLOW_PTR, BattleScript_MirrorHerbStartReturn
-	setbyte sSTAT_ANIM_PLAYED, TRUE @ play stat change animation only once
-	goto BattleScript_MirrorHerbStartCopyStats
-BattleScript_MirrorHerbStartReturn:
-	setbyte sSTAT_ANIM_PLAYED, FALSE
+	trybattlerstatchange BS_SCRIPTING, STAT_CHANGE_ITEM
 	return
 
 BattleScript_OpportunistCopyStatChange::
-	call BattleScript_AbilityPopUpScripting
-BattleScript_OpportunistStartCopyStats:
-	copyfoesstatincrease BS_SCRIPTING, BattleScript_OpportunistCopyStatChangeEnd
-	@statbuffchange BS_SCRIPTING, STAT_CHANGE_ALLOW_PTR, BattleScript_OpportunistCopyStatChangeEnd
-	printfromtable gStatUpStringIds
-	waitmessage B_WAIT_TIME_LONG
-	setbyte sSTAT_ANIM_PLAYED, TRUE @ play stat change animation only once
-	goto BattleScript_OpportunistStartCopyStats
-BattleScript_OpportunistCopyStatChangeEnd:
-	setbyte sSTAT_ANIM_PLAYED, FALSE
+	call BattleScript_AbilityPopUp
+	trybattlerstatchange BS_SCRIPTING, STAT_CHANGE_NO_FLAGS
 	return
 
-BattleScript_TotemVar::
-	call BattleScript_TotemVar_Ret
-	end2
-
-BattleScript_TotemVar_Ret::
-	gettotemboost BattleScript_ApplyTotemVarBoost
-BattleScript_TotemVarEnd:
-	return
-BattleScript_ApplyTotemVarBoost:
-	@statbuffchange BS_TARGET, STAT_CHANGE_ALLOW_PTR, BattleScript_TotemVarEnd
-	printfromtable gStatUpStringIds
+BattleScript_TotemBoost::
+	playanimation BS_ATTACKER, B_ANIM_TOTEM_FLARE, NULL
+	printstring STRINGID_AURAFLAREDTOLIFE
 	waitmessage B_WAIT_TIME_LONG
-	goto BattleScript_TotemVar_Ret  @loop until stats bitfield is empty
-
+    end3
 
 BattleScript_AnnounceAirLockCloudNine::
 	call BattleScript_AbilityPopUp
@@ -6556,12 +6483,8 @@ BattleScript_CouldntFullyProtect::
 	return
 
 BattleScript_BerserkGeneRet::
-	@statbuffchange BS_SCRIPTING, STAT_CHANGE_ALLOW_PTR | STAT_CHANGE_ONLY_CHECKING, BattleScript_BerserkGeneRet_TryConfuse
 	playanimation BS_SCRIPTING, B_ANIM_HELD_ITEM_EFFECT, sB_ANIM_ARG1
-	@statbuffchange BS_SCRIPTING, STAT_CHANGE_ALLOW_PTR, BattleScript_BerserkGeneRet_TryConfuse
-	setbyte cMULTISTRING_CHOOSER, B_MSG_STAT_CHANGED_ITEM
-	call BattleScript_StatUp
-BattleScript_BerserkGeneRet_TryConfuse:
+	trybattlerstatchange BS_SCRIPTING, STAT_CHANGE_ITEM
 	jumpifability BS_SCRIPTING, ABILITY_OWN_TEMPO, BattleScript_BerserkGeneRet_OwnTempoPrevents
 	jumpifsafeguard BattleScript_BerserkGeneRet_SafeguardProtected
 	seteffectprimary BS_SCRIPTING, BS_SCRIPTING, MOVE_EFFECT_CONFUSION

@@ -2045,11 +2045,6 @@
 	callnative BS_DestroyAbilityPopup
 	.endm
 
-	.macro gettotemboost jumpInstr:req
-	callnative BS_GetTotemBoost
-	.4byte \jumpInstr
-	.endm
-
 	.macro activateitemeffects
 	callnative BS_ActivateItemEffects
 	.endm

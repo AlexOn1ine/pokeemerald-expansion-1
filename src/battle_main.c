@@ -3814,12 +3814,29 @@ static void TryDoEventsBeforeFirstTurn(void)
     case FIRST_TURN_EVENTS_TOTEM_BOOST:
         for (enum BattlerId battler = 0; battler < gBattlersCount; battler++)
         {
-            if (gQueuedStatBoosts[battler].stats != 0 && !gProtectStructs[battler].eatMirrorHerb && gProtectStructs[battler].activateOpportunist == 0)
+            if (gQueuedStatBoosts[battler].stats == 0)
+                continue;
+
+            // This is vanilla and a regression from expansion behavior
+            // In vanilla, just one string and the anim are shown
+            // If needed the old behavior can be restored
+            for (enum Stat stat = STAT_ATK; stat < gBattlersCount; stat++)
             {
-                gBattlerAttacker = battler;
-                BattleScriptExecute(BattleScript_TotemVar);
-                return;
+                if (gQueuedStatBoosts[battler].stats & (1 << stat))
+                {
+                    s32 stage = gQueuedStatBoosts[battler].statChanges[stat];
+                    gBattleMons[battler].statStages[stat] += stage;
+                    if (gBattleMons[battler].statStages[stat] > MAX_STAT_STAGE)
+                        gBattleMons[battler].statStages[stat] = MAX_STAT_STAGE;
+                    else if (gBattleMons[battler].statStages[stat] < MIN_STAT_STAGE)
+                        gBattleMons[battler].statStages[stat] = MIN_STAT_STAGE;
+                }
             }
+
+            gBattlerAttacker = battler;
+            gQueuedStatBoosts[battler].stats = 0;
+            BattleScriptPushCursorAndCallback(BattleScript_TotemBoost);
+            return;
         }
         memset(gQueuedStatBoosts, 0, sizeof(gQueuedStatBoosts)); // erase all totem boosts for Mirror Herb and Opportunist
         gBattleStruct->eventState.beforeFirstTurn++;
@@ -6097,7 +6114,6 @@ void ScriptSetTotemBoost(struct ScriptContext *ctx)
         {
             gQueuedStatBoosts[battler].stats |= (1 << stat);
             gQueuedStatBoosts[battler].statChanges[stat] = stage;
-            gQueuedStatBoosts[battler].stats |= 0x80;  // used as a flag for the "totem flared to life" script
         }
     }
 }

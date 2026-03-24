@@ -451,7 +451,12 @@ static enum StatChangeResult DecreaseStat(struct BattleCalcValues *cv, struct St
         gBattleMons[st->battler].statStages[st->stat] += st->stage;
         if (gBattleMons[st->battler].statStages[st->stat] < MIN_STAT_STAGE)
             gBattleMons[st->battler].statStages[st->stat] = MIN_STAT_STAGE;
-        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_CHANGED;
+
+        if (st->itemMessage)
+            gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_CHANGED_ITEM;
+        else
+            gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_CHANGED;
+
         st->script = BattleScript_DecreaseStatChangeMessage;
         TryPlayStatChangeAnimation(cv, st);
     }
@@ -495,14 +500,13 @@ static enum StatChangeResult IncreaseStat(struct BattleCalcValues *cv, struct St
     }
     else if (!st->onlyChecking)
     {
-        u32 statIncrease = st->stat;
+        u32 stageIncrease = st->stage;
 
         if ((st->stage + gBattleMons[st->battler].statStages[st->stat]) > MAX_STAT_STAGE)
-            statIncrease = MAX_STAT_STAGE - gBattleMons[st->battler].statStages[st->stat];
+            stageIncrease  = MAX_STAT_STAGE - gBattleMons[st->battler].statStages[st->stat];
 
-        gProtectStructs[st->battler].statRaised = TRUE;
 
-        if (statIncrease)
+        if (stageIncrease > 0)
         {
             // Check Mirror Herb / Opportunist
             for (enum BattlerId battler = 0; battler < gBattlersCount; battler++)
@@ -523,7 +527,7 @@ static enum StatChangeResult IncreaseStat(struct BattleCalcValues *cv, struct St
                 if (gProtectStructs[battler].activateOpportunist == 2 || gProtectStructs[battler].eatMirrorHerb == 1)
                 {
                     gQueuedStatBoosts[battler].stats |= (1 << (st->stat - 1));    // -1 to start at atk
-                    gQueuedStatBoosts[battler].statChanges[st->stat - 1] += statIncrease;
+                    gQueuedStatBoosts[battler].statChanges[st->stat - 1] += stageIncrease;
                 }
             }
         }
@@ -533,9 +537,15 @@ static enum StatChangeResult IncreaseStat(struct BattleCalcValues *cv, struct St
     {
         gBattleScripting.battler = st->battler;
         gBattleMons[st->battler].statStages[st->stat] += st->stage;
+        gProtectStructs[st->battler].statRaised = TRUE;
         if (gBattleMons[st->battler].statStages[st->stat] > MAX_STAT_STAGE)
             gBattleMons[st->battler].statStages[st->stat] = MAX_STAT_STAGE;
-        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_CHANGED;
+
+        if (st->itemMessage)
+            gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_CHANGED_ITEM;
+        else
+            gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_CHANGED;
+
         st->script = BattleScript_IncreaseStatChangeMessage;
         TryPlayStatChangeAnimation(cv, st);
     }

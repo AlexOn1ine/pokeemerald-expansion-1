@@ -44,9 +44,11 @@ struct StatChange
     u32 mirrorArmored:1;
     u32 nextBattler:1;
     u32 forceAnim:1;
+    u32 ignoreAnim:1;
     u32 statChangePrevented:1;
     u32 intimidate:1;
 
+    u32 itemMessage:1;
     u32 checkAccuracy:1;
     u32 targetMissed:1;
 

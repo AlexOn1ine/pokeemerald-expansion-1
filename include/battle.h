@@ -101,9 +101,8 @@ struct ProtectStruct
 
 struct StatStages
 {
-    u8 stat:6;
+    u8 stat:7;
     u8 done:1;
-    u8 totem:1;
     s8 stage;
     u16 padding;
 };

@@ -11379,18 +11379,16 @@ static void Cmd_trybattlerstatchange(void)
         .move = MOVE_NONE,
     };
 
+    #define IS_FLAG(statChangeFlag) (flags & statChangeFlag) ? TRUE : FALSE
     struct StatChange st = {
         .battler = GetBattlerForBattleScript(cmd->battler),
         .nonMoveStatChange = TRUE,
-        .silentFailure = flags & STAT_CHANGE_SILENT_FAILURE,
-        .intimidate = flags & STAT_CHANGE_INTIMIDATE,
-        .mirrorArmored = (flags & STAT_CHANGE_MIRROR_ARMOR),
+        .silentFailure = IS_FLAG(STAT_CHANGE_SILENT_FAILURE),
+        .intimidate = IS_FLAG(STAT_CHANGE_INTIMIDATE),
+        .mirrorArmored = IS_FLAG(STAT_CHANGE_MIRROR_ARMOR),
+        .itemMessage = IS_FLAG(STAT_CHANGE_ITEM),
     };
-
-    if (flags & STAT_CHANGE_MIRROR_ARMOR)
-    {
-        st.mirrorArmored = TRUE; // The above does not work????
-    }
+    #undef SET_FLAG
 
     if (flags & STAT_CHANGE_SECOND_QUEUE)
     {
@@ -14189,44 +14187,6 @@ void BS_DestroyAbilityPopup(void)
     for (enum BattlerId battler = 0; battler < gBattlersCount; battler++)
         DestroyAbilityPopUp(battler);
     gBattlescriptCurrInstr = cmd->nextInstr;
-}
-
-void BS_GetTotemBoost(void)
-{
-    NATIVE_ARGS(const u8 *jumpInstr);
-    enum BattlerId battler = gBattlerAttacker;
-    if (gQueuedStatBoosts[battler].stats == 0)
-    {
-        gBattlescriptCurrInstr = cmd->nextInstr;    // stats done, exit
-    }
-    else
-    {
-        for (u32 i = 0; i < (NUM_BATTLE_STATS - 1); i++)
-        {
-            if (gQueuedStatBoosts[battler].stats & (1 << i))
-            {
-                if (gQueuedStatBoosts[battler].statChanges[i] <= -1)
-                    SET_STATCHANGER(i + 1, abs(gQueuedStatBoosts[battler].statChanges[i]), TRUE);
-                else
-                    SET_STATCHANGER(i + 1, gQueuedStatBoosts[battler].statChanges[i], FALSE);
-
-                gQueuedStatBoosts[battler].stats &= ~(1 << i);
-                gBattleScripting.battler = battler;
-                gBattlerTarget = battler;
-                if (gQueuedStatBoosts[battler].stats & 0x80)
-                {
-                    gQueuedStatBoosts[battler].stats &= ~0x80; // set 'aura flared to life' flag
-                    gBattlescriptCurrInstr = BattleScript_TotemFlaredToLife;
-                }
-                else
-                {
-                    gBattlescriptCurrInstr = cmd->jumpInstr;   // do boost
-                }
-                return;
-            }
-        }
-        gBattlescriptCurrInstr = cmd->nextInstr;    // exit if loop failed (failsafe)
-    }
 }
 
 void BS_ActivateItemEffects(void)
