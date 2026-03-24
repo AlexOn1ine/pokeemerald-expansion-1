@@ -56,7 +56,7 @@ SINGLE_BATTLE_TEST("Supersweet Syrup can not further lower opponents evasion if 
         TURN { MOVE(opponent, MOVE_SWEET_SCENT); }
         TURN { MOVE(opponent, MOVE_SWEET_SCENT); }
         TURN { MOVE(opponent, MOVE_SWEET_SCENT); }
-        if (GetMoveEffect(MOVE_SWEET_SCENT) == EFFECT_STAT_CHANGE_TARGET) {
+        if (GetMoveEffect(MOVE_SWEET_SCENT) == EFFECT_STAT_CHANGE) {
             TURN { MOVE(opponent, MOVE_SWEET_SCENT); }
             TURN { MOVE(opponent, MOVE_SWEET_SCENT); }
             TURN { MOVE(opponent, MOVE_SWEET_SCENT); }
@@ -66,7 +66,7 @@ SINGLE_BATTLE_TEST("Supersweet Syrup can not further lower opponents evasion if 
         ANIMATION(ANIM_TYPE_MOVE, MOVE_SWEET_SCENT, opponent);
         ANIMATION(ANIM_TYPE_MOVE, MOVE_SWEET_SCENT, opponent);
         ANIMATION(ANIM_TYPE_MOVE, MOVE_SWEET_SCENT, opponent);
-        if (GetMoveEffect(MOVE_SWEET_SCENT) == EFFECT_STAT_CHANGE_TARGET) {
+        if (GetMoveEffect(MOVE_SWEET_SCENT) == EFFECT_STAT_CHANGE) {
             ANIMATION(ANIM_TYPE_MOVE, MOVE_SWEET_SCENT, opponent);
             ANIMATION(ANIM_TYPE_MOVE, MOVE_SWEET_SCENT, opponent);
             ANIMATION(ANIM_TYPE_MOVE, MOVE_SWEET_SCENT, opponent);

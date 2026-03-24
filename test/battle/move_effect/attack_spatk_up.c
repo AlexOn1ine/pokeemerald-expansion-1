@@ -4,7 +4,7 @@
 
 ASSUMPTIONS
 {
-    ASSUME(GetMoveEffect(MOVE_WORK_UP) == EFFECT_STAT_CHANGE_USER);
+    ASSUME(GetMoveEffect(MOVE_WORK_UP) == EFFECT_STAT_CHANGE);
 }
 
 SINGLE_BATTLE_TEST("Work Up raises Attack and Sp. Attack by 1 stage each", s16 damage)

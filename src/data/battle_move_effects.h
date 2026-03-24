@@ -33,6 +33,14 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
         .encourageEncore = TRUE,
     },
 
+    [EFFECT_STAT_CHANGE] =
+    {
+        .battleScript = BattleScript_EffectStatChange,
+        .battleTvScore = 0, // TODO: Assign points
+        // .battleFactoryStyle = FACTORY_STYLE_PREPARATION,
+        .encourageEncore = TRUE,
+    },
+
     [EFFECT_NON_VOLATILE_STATUS] =
     {
         .battleScript = BattleScript_EffectNonVolatileStatus,
@@ -1384,13 +1392,7 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
 
     [EFFECT_ROTOTILLER] =
     {
-        .battleScript = BattleScript_EffectRototiller,
-        .battleTvScore = 0, // TODO: Assign points
-    },
-
-    [EFFECT_FLOWER_SHIELD] =
-    {
-        .battleScript = BattleScript_EffectFlowerShield,
+        .battleScript = BattleScript_EffectStatChange,
         .battleTvScore = 0, // TODO: Assign points
     },
 
@@ -1485,7 +1487,7 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
 
     [EFFECT_STRENGTH_SAP] =
     {
-        .battleScript = BattleScript_EffectStrengthSap,
+        .battleScript = BattleScript_EffectStatChange,
         .battleTvScore = 0, // TODO: Assign points
     },
 

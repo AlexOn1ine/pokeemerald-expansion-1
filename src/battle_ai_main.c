@@ -1419,7 +1419,7 @@ static s32 AI_CheckBadMove(enum BattlerId battlerAtk, enum BattlerId battlerDef,
     if (gBattleMons[battlerAtk].volatiles.throatChopTimer > 0 && IsSoundMove(move))
         return 0; // Can't even select move at all
     // heal block check
-    if (gBattleMons[battlerAtk].volatiles.healBlock && IsHealBlockPreventingMove(battlerAtk, move))
+    if (IsHealBlockPreventingMove(battlerAtk, move))
         return 0; // Can't even select heal blocked move
 
     if (IsExplosionMove(move))
@@ -2025,11 +2025,11 @@ static s32 AI_CheckBadMove(enum BattlerId battlerAtk, enum BattlerId battlerDef,
         else
             ADJUST_SCORE(-10);
         break;
-    case EFFECT_FLOWER_SHIELD:
-        if (!IS_BATTLER_OF_TYPE(battlerAtk, TYPE_GRASS)
-          && !(hasPartner && IS_BATTLER_OF_TYPE(BATTLE_PARTNER(battlerAtk), TYPE_GRASS)))
-            ADJUST_SCORE(-10);
-        break;
+    // case EFFECT_FLOWER_SHIELD:
+    //     if (!IS_BATTLER_OF_TYPE(battlerAtk, TYPE_GRASS)
+    //       && !(hasPartner && IS_BATTLER_OF_TYPE(BATTLE_PARTNER(battlerAtk), TYPE_GRASS)))
+    //         ADJUST_SCORE(-10);
+    //     break;
     case EFFECT_AROMATIC_MIST:
         if (!hasPartner || !BattlerStatCanRise(BATTLE_PARTNER(battlerAtk), aiData->abilities[BATTLE_PARTNER(battlerAtk)], STAT_SPDEF))
             ADJUST_SCORE(-10);
@@ -4324,30 +4324,30 @@ static s32 AI_CalcMoveEffectScore(enum BattlerId battlerAtk, enum BattlerId batt
                 ADJUST_SCORE(AWFUL_EFFECT);
         }
         break;
-    case EFFECT_FLOWER_SHIELD:
-        if (IS_BATTLER_OF_TYPE(battlerAtk, TYPE_GRASS))
-        {
-            ADJUST_SCORE(IncreaseStatUpScore(battlerAtk, battlerDef, STAT_DEF, 1));
-        }
-        if (hasPartner && IS_BATTLER_OF_TYPE(BATTLE_PARTNER(battlerAtk), TYPE_GRASS))
-        {
-            ADJUST_SCORE(IncreaseStatUpScore(BATTLE_PARTNER(battlerAtk), battlerDef, STAT_DEF, 1));
-        }
-        if (IS_BATTLER_OF_TYPE(LEFT_FOE(battlerAtk), TYPE_GRASS))
-        {
-            if (aiData->abilities[LEFT_FOE(battlerAtk)] == ABILITY_CONTRARY)
-                ADJUST_SCORE(WEAK_EFFECT);
-            else
-                ADJUST_SCORE(AWFUL_EFFECT);
-        }
-        if (IS_BATTLER_OF_TYPE(RIGHT_FOE(battlerAtk), TYPE_GRASS))
-        {
-            if (aiData->abilities[RIGHT_FOE(battlerAtk)] == ABILITY_CONTRARY)
-                ADJUST_SCORE(WEAK_EFFECT);
-            else
-                ADJUST_SCORE(AWFUL_EFFECT);
-        }
-        break;
+    // case EFFECT_FLOWER_SHIELD:
+    //     if (IS_BATTLER_OF_TYPE(battlerAtk, TYPE_GRASS))
+    //     {
+    //         ADJUST_SCORE(IncreaseStatUpScore(battlerAtk, battlerDef, STAT_DEF, 1));
+    //     }
+    //     if (hasPartner && IS_BATTLER_OF_TYPE(BATTLE_PARTNER(battlerAtk), TYPE_GRASS))
+    //     {
+    //         ADJUST_SCORE(IncreaseStatUpScore(BATTLE_PARTNER(battlerAtk), battlerDef, STAT_DEF, 1));
+    //     }
+    //     if (IS_BATTLER_OF_TYPE(LEFT_FOE(battlerAtk), TYPE_GRASS))
+    //     {
+    //         if (aiData->abilities[LEFT_FOE(battlerAtk)] == ABILITY_CONTRARY)
+    //             ADJUST_SCORE(WEAK_EFFECT);
+    //         else
+    //             ADJUST_SCORE(AWFUL_EFFECT);
+    //     }
+    //     if (IS_BATTLER_OF_TYPE(RIGHT_FOE(battlerAtk), TYPE_GRASS))
+    //     {
+    //         if (aiData->abilities[RIGHT_FOE(battlerAtk)] == ABILITY_CONTRARY)
+    //             ADJUST_SCORE(WEAK_EFFECT);
+    //         else
+    //             ADJUST_SCORE(AWFUL_EFFECT);
+    //     }
+    //     break;
     case EFFECT_HAZE:
         if (AnyStatIsRaised(BATTLE_PARTNER(battlerAtk))
           || DoesPartnerHaveSameMoveEffect(BATTLE_PARTNER(battlerAtk), battlerDef, move, aiData->partnerMove))

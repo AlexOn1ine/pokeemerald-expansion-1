@@ -101,8 +101,11 @@ struct ProtectStruct
 
 struct StatStages
 {
-    u8 stat;
+    u8 stat:6;
+    u8 done:1;
+    u8 totem:1;
     s8 stage;
+    u16 padding;
 };
 
 // Cleared at the start of HandleAction_ActionFinished
@@ -132,8 +135,10 @@ struct SpecialStatus
     u8 teraShellAbilityDone:1;
     u8 backUpTarget:3;
     // End of byte
-    struct StatStages statStageQueue[NUM_STATS];
-    u8 statStageAmount;
+    struct StatStages statStageQueue[NUM_BATTLE_STATS];
+    struct StatStages statStageQueue2[NUM_BATTLE_STATS]; // For Mirror Armor, Defiant, Competitive and Rattled (avoids overwriting the first queue)
+    u8 statStageAmount:4;
+    u8 statStageAmount2:4;
     // End of byte
 };
 
@@ -669,13 +674,7 @@ struct BattleStruct
     u8 beatUpSlot:3;
     u8 pledgeMove:1;
     u8 effectsBeforeUsingMoveDone:1; // Mega Evo and Focus Punch/Shell Trap effects.
-    u8 positiveAnimPlayed:1;
-    u8 negativeAnimPlayed:1;
-    u8 statChangeQueueCounter:4;
-    u8 statChangeOnSide:1;
-    u8 statChangeUser:1;
-    u8 intimidateActivated:1;
-
+    u8 unused:1;
     u16 flingItem:14;
     enum FlungItem flungItem:2;
     u8 itemPartyIndex[MAX_BATTLERS_COUNT];
@@ -723,7 +722,13 @@ struct BattleStruct
     u8 moveBouncer;
     u8 dancerSavedAttacker:3;
     u8 dancerSavedTarget:3;
-    u8 padding:2;
+    u8 unused3:2;
+    u8 positiveAnimPlayed:1;
+    u8 negativeAnimPlayed:1;
+    u8 statChangeBattler:3;
+    u8 statChangeOnSide:1;
+    u8 statChangeUser:1;
+    u8 intimidateActivated:1;
 };
 
 struct AiBattleData

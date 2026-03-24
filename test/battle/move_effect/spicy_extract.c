@@ -3,7 +3,7 @@
 
 ASSUMPTIONS
 {
-    ASSUME(GetMoveEffect(MOVE_SPICY_EXTRACT) == EFFECT_STAT_CHANGE_TARGET);
+    ASSUME(GetMoveEffect(MOVE_SPICY_EXTRACT) == EFFECT_STAT_CHANGE);
 }
 
 SINGLE_BATTLE_TEST("Spicy Extract raises target's Attack by 2 stages and lowers target's Defense by 2 stages")
@@ -33,7 +33,7 @@ SINGLE_BATTLE_TEST("Spicy Extract is prevented by target's ability if it's Attac
     PARAMETRIZE { ability = ABILITY_LIGHT_METAL; }
 
     GIVEN {
-        ASSUME(GetMoveEffect(MOVE_SWORDS_DANCE) == EFFECT_STAT_CHANGE_USER);
+        ASSUME(GetMoveEffect(MOVE_SWORDS_DANCE) == EFFECT_STAT_CHANGE);
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_BELDUM) { Ability(ability); }
     } WHEN {

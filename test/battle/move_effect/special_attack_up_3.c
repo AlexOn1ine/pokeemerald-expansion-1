@@ -3,7 +3,7 @@
 
 ASSUMPTIONS
 {
-    ASSUME(GetMoveEffect(MOVE_TAIL_GLOW) == EFFECT_STAT_CHANGE_USER);
+    ASSUME(GetMoveEffect(MOVE_TAIL_GLOW) == EFFECT_STAT_CHANGE);
 }
 
 SINGLE_BATTLE_TEST("Tail Glow drastically raises Special Attack", s16 damage)

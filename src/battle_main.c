@@ -6087,18 +6087,16 @@ void SetTypeBeforeUsingMove(enum Move move, enum BattlerId battler)
 void ScriptSetTotemBoost(struct ScriptContext *ctx)
 {
     enum BattlerId battler = VarGet(ScriptReadHalfword(ctx));
-    u32 stat;
-    u32 i;
 
     Script_RequestEffects(SCREFF_V1);
 
-    for (i = 0; i < (NUM_BATTLE_STATS - 1); i++)
+    for (enum Stat stat = 0; stat < NUM_BATTLE_STATS; stat++)
     {
-        stat = VarGet(ScriptReadHalfword(ctx));
-        if (stat)
+        u32 stage = VarGet(ScriptReadHalfword(ctx));
+        if (stage)
         {
-            gQueuedStatBoosts[battler].stats |= (1 << i);
-            gQueuedStatBoosts[battler].statChanges[i] = stat;
+            gQueuedStatBoosts[battler].stats |= (1 << stat);
+            gQueuedStatBoosts[battler].statChanges[stat] = stage;
             gQueuedStatBoosts[battler].stats |= 0x80;  // used as a flag for the "totem flared to life" script
         }
     }

@@ -3,7 +3,7 @@
 
 ASSUMPTIONS
 {
-    ASSUME(GetMoveEffect(MOVE_CALM_MIND) == EFFECT_STAT_CHANGE_USER);
+    ASSUME(GetMoveEffect(MOVE_CALM_MIND) == EFFECT_STAT_CHANGE);
 }
 
 SINGLE_BATTLE_TEST("Calm Mind increases the user's Sp. Attack and Sp. Defense by 1 stage each")

@@ -1209,12 +1209,13 @@
 
 	.macro trynonmovestatchange statChangeFlags:req
 	.byte B_SCR_OP_TRYNONMOVESTATCHANGE
-    .byte \statChangeFlags
+    .2byte \statChangeFlags
 	.endm
 
-	.macro trybattlerstatchange battler:req
+	.macro trybattlerstatchange battler:req statChangeFlags:req
 	.byte B_SCR_OP_TRYBATTLERSTATCHANGE
     .byte \battler
+    .2byte \statChangeFlags
 	.endm
 
 	.macro callnative func:req
@@ -1236,11 +1237,6 @@
 
 	.macro restoreattacker
 	callnative BS_RestoreAttacker
-	.endm
-
-	.macro intimidatetypeabilityactivates flag:req
-	callnative BS_IntimidateTypeAbilityActivates
-    .byte \flag
 	.endm
 
 	.macro allyswitchswapbattlers
@@ -1613,8 +1609,8 @@
 	callnative BS_RestoreSavedMove
 	.endm
 
-    .macro trydefaintrattled
-    callnative BS_TryDefaintRattled
+    .macro trydefiantrattled
+    callnative BS_TryDefiantRattled
     .endm
 
 @ helpful macros
@@ -1751,11 +1747,6 @@
 	.macro trysetfairylock failInstr:req
 	callnative BS_TrySetFairyLock
 	.4byte \failInstr
-	.endm
-
-	.macro getstatvalue stat:req
-	callnative BS_GetStatValue
-	.byte \stat
 	.endm
 
 	.macro jumpiffullhp battler:req, jumpInstr:req
@@ -2102,11 +2093,6 @@
 
 	.macro tryendneutralizinggas
 	callnative BS_TryEndNeutralizingGas
-	.endm
-
-	.macro getrototillertargets failInstr:req
-	callnative BS_GetRototillerTargets
-	.4byte \failInstr
 	.endm
 
 	.macro consumeberry battler:req, fromBattler:req

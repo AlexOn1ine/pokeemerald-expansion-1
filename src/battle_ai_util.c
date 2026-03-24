@@ -6385,6 +6385,7 @@ bool32 IsPartyMonPlannedToBeSwitchedInByPartner(u32 partyIndex, enum BattlerId b
 
 s32 GetSelfStatChangeScore(u32 battlerAtk, u32 battlerDef, u32 move)
 {
+    #if 0
     s32 score = 0;
     bool32 foundStatToIncrease = FALSE;
     u32 numAdditionalEffects = GetMoveAdditionalEffectCount(move);
@@ -6421,8 +6422,10 @@ s32 GetSelfStatChangeScore(u32 battlerAtk, u32 battlerDef, u32 move)
 
     if (score > BEST_EFFECT)
         score = BEST_EFFECT;
+    #endif
+    // return score;
+    return 0;
 
-    return score;
 }
 
 #if 0

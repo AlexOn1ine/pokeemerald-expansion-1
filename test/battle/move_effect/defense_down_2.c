@@ -3,7 +3,7 @@
 
 ASSUMPTIONS
 {
-    ASSUME(GetMoveEffect(MOVE_SCREECH) == EFFECT_STAT_CHANGE_TARGET);
+    ASSUME(GetMoveEffect(MOVE_SCREECH) == EFFECT_STAT_CHANGE);
 }
 
 SINGLE_BATTLE_TEST("Screech lowers Defense by 2 stages", s16 damage)

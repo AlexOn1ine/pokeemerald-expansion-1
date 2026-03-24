@@ -715,7 +715,12 @@ static inline u32 GetMoveArgType(enum Move moveId)
 {
     moveId = SanitizeMoveId(moveId);
     enum BattleMoveEffects effect = gMovesInfo[moveId].effect;
-    assertf(effect == EFFECT_SOAK || effect == EFFECT_TWO_TYPED_MOVE || effect == EFFECT_THIRD_TYPE || effect == EFFECT_SUPER_EFFECTIVE_ON_ARG || effect == EFFECT_FAIL_IF_NOT_ARG_TYPE, "not a move with a type: %S", gMovesInfo[moveId].name);
+    assertf(effect == EFFECT_SOAK
+         || effect == EFFECT_TWO_TYPED_MOVE
+         || effect == EFFECT_THIRD_TYPE
+         || effect == EFFECT_SUPER_EFFECTIVE_ON_ARG
+         || effect == EFFECT_FAIL_IF_NOT_ARG_TYPE
+         || effect == EFFECT_ROTOTILLER, "not a move with a type: %S", gMovesInfo[moveId].name);
     return gMovesInfo[moveId].argument.type;
 }
 

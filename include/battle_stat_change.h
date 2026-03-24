@@ -25,26 +25,31 @@
 struct StatChange
 {
     const u8 *script;
+    struct StatStages *statStageQueue;
 
     enum BattlerId battler;
     enum Stat stat;
     s8 stage;
-    u8 stats;
+    u8 statStageAmount;
 
     // Flags
-    u32 silentFailure:1;
     u32 passiveStatChange:1;
-    u32 mirrorArmored:1;
-    u32 allowMirrorArmor:1;
-    u32 onlyChecking:1;
     u32 certain:1;
     u32 setFailureFlags:1;
-    u32 numFailedTargets:2;
     u32 nonMoveStatChange:1;
-    u32 nextBattler:1;
 
+    u32 silentFailure:1;
+    u32 allowMirrorArmor:1;
+    u32 onlyChecking:1;
+    u32 mirrorArmored:1;
+    u32 nextBattler:1;
     u32 forceAnim:1;
     u32 statChangePrevented:1;
+    u32 intimidate:1;
+
+    u32 checkAccuracy:1;
+    u32 targetMissed:1;
+
     // Some padding
 };
 
@@ -52,9 +57,11 @@ u32 ChangeStatBuffs(enum BattlerId battler, s8 statValue, enum Stat statId, unio
 bool32 CompareStat(enum BattlerId battler, enum Stat statId, u32 cmpTo, u32 cmpKind, enum Ability ability);
 bool32 CanStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st);
-void TryStatChange(struct BattleCalcValues *cv, struct StatChange *st);
-enum StatChangeResult TryNonMoveStatChange(struct BattleCalcValues *cv, struct StatChange *st);
+enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 void SetStatChange(enum BattlerId battler, enum Stat stat, s32 stage);
+void SetStatChange2(enum BattlerId battler, enum Stat stat, s32 stage);
+void ClearStatChangeValues(void);
+void ClearOtherStatChangeValues(enum BattlerId battler);
 enum StatChangeResult TrySingleStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 
 bool32 IsStatSet(u32 stat, const struct AdditionalEffect *additionalEffect);

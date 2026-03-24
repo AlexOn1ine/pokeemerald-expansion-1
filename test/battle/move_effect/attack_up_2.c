@@ -3,7 +3,7 @@
 
 ASSUMPTIONS
 {
-    ASSUME(GetMoveEffect(MOVE_SWORDS_DANCE) == EFFECT_STAT_CHANGE_USER);
+    ASSUME(GetMoveEffect(MOVE_SWORDS_DANCE) == EFFECT_STAT_CHANGE);
 }
 
 SINGLE_BATTLE_TEST("Swords Dance raises Attack by 2 stages", s16 damage)
@@ -30,99 +30,3 @@ SINGLE_BATTLE_TEST("Swords Dance raises Attack by 2 stages", s16 damage)
         EXPECT_MUL_EQ(results[0].damage, Q_4_12(2.0), results[1].damage);
     }
 }
-
-SINGLE_BATTLE_TEST("Swords Dance test")
-{
-    GIVEN {
-        PLAYER(SPECIES_WOBBUFFET);
-        OPPONENT(SPECIES_WOBBUFFET);
-    } WHEN {
-        TURN { MOVE(player, MOVE_SWORDS_DANCE); }
-    } SCENE {
-        // ANIMATION(ANIM_TYPE_MOVE, MOVE_SWORDS_DANCE, player);
-        // ANIMATION(ANIM_TYPE_GENERAL, B_ANIM_STATS_CHANGE, player);
-    } THEN {
-        // EXPECT_EQ(player->statStages[STAT_ATK], 8);
-    }
-}
-
-DOUBLE_BATTLE_TEST("Stat Change test 1")
-{
-    GIVEN {
-        PLAYER(SPECIES_WOBBUFFET);
-        PLAYER(SPECIES_WOBBUFFET);
-        OPPONENT(SPECIES_MAWILE) { Ability(ABILITY_HYPER_CUTTER); }
-        OPPONENT(SPECIES_MAWILE) { Ability(ABILITY_HYPER_CUTTER); }
-    } WHEN {
-        TURN { MOVE(playerLeft, MOVE_GROWL); }
-    }
-}
-
-DOUBLE_BATTLE_TEST("Stat Change test 2")
-{
-    GIVEN {
-        PLAYER(SPECIES_WOBBUFFET);
-        PLAYER(SPECIES_WOBBUFFET);
-        OPPONENT(SPECIES_MAWILE) { Ability(ABILITY_HYPER_CUTTER); }
-        OPPONENT(SPECIES_VOLTORB) { Ability(ABILITY_SOUNDPROOF); }
-    } WHEN {
-        TURN { MOVE(playerLeft, MOVE_GROWL); }
-    }
-}
-
-SINGLE_BATTLE_TEST("Stat Change test 3")
-{
-    GIVEN {
-        PLAYER(SPECIES_WOBBUFFET);
-        OPPONENT(SPECIES_WOBBUFFET);
-    } WHEN {
-        TURN { MOVE(player, MOVE_FLAME_CHARGE); }
-    }
-}
-
-SINGLE_BATTLE_TEST("Stat Change test 4")
-{
-    GIVEN {
-        PLAYER(SPECIES_WOBBUFFET);
-        OPPONENT(SPECIES_WOBBUFFET);
-    } WHEN {
-        TURN { MOVE(player, MOVE_ICY_WIND); }
-    }
-}
-
-DOUBLE_BATTLE_TEST("Stat Change test 5")
-{
-    GIVEN {
-        PLAYER(SPECIES_WOBBUFFET);
-        PLAYER(SPECIES_WOBBUFFET);
-        OPPONENT(SPECIES_WOBBUFFET);
-        OPPONENT(SPECIES_WOBBUFFET);
-    } WHEN {
-        TURN { MOVE(playerLeft, MOVE_G_MAX_FOAM_BURST, target: opponentRight); }
-    }
-}
-
-SINGLE_BATTLE_TEST("Stat Change test 6")
-{
-    GIVEN {
-        PLAYER(SPECIES_TERAPAGOS_TERASTAL);
-        OPPONENT(SPECIES_WOBBUFFET);
-    } WHEN {
-        TURN { MOVE(player, MOVE_TERA_BLAST, gimmick: GIMMICK_TERA); }
-    }
-}
-
-// Tests for On side changes if battler is not alive
-
-DOUBLE_BATTLE_TEST("Stat Change test 7")
-{
-    GIVEN {
-        PLAYER(SPECIES_ARCANINE) { Ability(ABILITY_INTIMIDATE); }
-        PLAYER(SPECIES_WOBBUFFET);
-        OPPONENT(SPECIES_ARCANINE) { Ability(ABILITY_INTIMIDATE); }
-        OPPONENT(SPECIES_MANKEY) { Ability(ABILITY_DEFIANT); }
-    } WHEN {
-        TURN {}
-    }
-}
-
