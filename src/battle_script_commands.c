@@ -2639,15 +2639,9 @@ void SetMoveEffect(enum BattlerId battlerAtk, enum BattlerId effectBattler, enum
         gBattleStruct->statChangeUser = affectsUser;
         SetStatChange(effectBattler, stat, 1);
         BattleScriptPush(battleScript);
-        if (gBattleStruct->statChangeOnSide)
-        {
+        if (effectFlags & EFFECT_ON_SIDE)
             SetStatChange(BATTLE_PARTNER(effectBattler), stat, 1);
-            gBattlescriptCurrInstr = BattleScript_MoveEffectStatChangeSide;
-        }
-        else
-        {
-            gBattlescriptCurrInstr = BattleScript_MoveEffectStatChange;
-        }
+        gBattlescriptCurrInstr = BattleScript_MoveEffectStatChange;
         break;
     }
     case MOVE_EFFECT_ATK_MINUS_1:
@@ -2662,15 +2656,9 @@ void SetMoveEffect(enum BattlerId battlerAtk, enum BattlerId effectBattler, enum
         gBattleStruct->statChangeUser = affectsUser;
         SetStatChange(effectBattler, stat, -1);
         BattleScriptPush(battleScript);
-        if (gBattleStruct->statChangeOnSide)
-        {
+        if (effectFlags & EFFECT_ON_SIDE)
             SetStatChange(BATTLE_PARTNER(effectBattler), stat, -1);
-            gBattlescriptCurrInstr = BattleScript_MoveEffectStatChangeSide;
-        }
-        else
-        {
-            gBattlescriptCurrInstr = BattleScript_MoveEffectStatChange;
-        }
+        gBattlescriptCurrInstr = BattleScript_MoveEffectStatChange;
         break;
     }
     case MOVE_EFFECT_ATK_PLUS_2:
@@ -2685,15 +2673,9 @@ void SetMoveEffect(enum BattlerId battlerAtk, enum BattlerId effectBattler, enum
         gBattleStruct->statChangeUser = affectsUser;
         SetStatChange(effectBattler, stat, 2);
         BattleScriptPush(battleScript);
-        if (gBattleStruct->statChangeOnSide)
-        {
+        if (effectFlags & EFFECT_ON_SIDE)
             SetStatChange(BATTLE_PARTNER(effectBattler), stat, 2);
-            gBattlescriptCurrInstr = BattleScript_MoveEffectStatChangeSide;
-        }
-        else
-        {
-            gBattlescriptCurrInstr = BattleScript_MoveEffectStatChange;
-        }
+        gBattlescriptCurrInstr = BattleScript_MoveEffectStatChange;
         break;
     }
     case MOVE_EFFECT_ATK_MINUS_2:
@@ -2708,15 +2690,9 @@ void SetMoveEffect(enum BattlerId battlerAtk, enum BattlerId effectBattler, enum
         gBattleStruct->statChangeUser = affectsUser;
         SetStatChange(effectBattler, stat, -2);
         BattleScriptPush(battleScript);
-        if (gBattleStruct->statChangeOnSide)
-        {
+        if (effectFlags & EFFECT_ON_SIDE)
             SetStatChange(BATTLE_PARTNER(effectBattler), stat, -2);
-            gBattlescriptCurrInstr = BattleScript_MoveEffectStatChangeSide;
-        }
-        else
-        {
-            gBattlescriptCurrInstr = BattleScript_MoveEffectStatChange;
-        }
+        gBattlescriptCurrInstr = BattleScript_MoveEffectStatChange;
         break;
     }
     case MOVE_EFFECT_RECHARGE:
@@ -3718,9 +3694,9 @@ static void Cmd_setadditionaleffects(void)
                     gBattleCommunication[MULTISTRING_CHOOSER] = *((u8 *) &additionalEffect->multistring);
 
                     enum SetMoveEffectFlags flags = NO_FLAGS;
-                    if (percentChance == 0) flags |= EFFECT_PRIMARY;
-                    if (percentChance >= 100) flags |= EFFECT_CERTAIN;
-                    gBattleStruct->statChangeOnSide = additionalEffect->onSide;
+                    if (percentChance == 0)       flags |= EFFECT_PRIMARY;
+                    if (percentChance >= 100)     flags |= EFFECT_CERTAIN;
+                    if (additionalEffect->onSide) flags |= EFFECT_ON_SIDE;
 
                     SetMoveEffect(
                         gBattlerAttacker,
@@ -11379,14 +11355,15 @@ static void Cmd_trybattlerstatchange(void)
         .move = MOVE_NONE,
     };
 
-    #define IS_FLAG(statChangeFlag) (flags & statChangeFlag) ? TRUE : FALSE
+    #define SET_FLAG(statChangeFlag) (flags & statChangeFlag) ? TRUE : FALSE
     struct StatChange st = {
         .battler = GetBattlerForBattleScript(cmd->battler),
         .nonMoveStatChange = TRUE,
-        .silentFailure = IS_FLAG(STAT_CHANGE_SILENT_FAILURE),
-        .intimidate = IS_FLAG(STAT_CHANGE_INTIMIDATE),
-        .mirrorArmored = IS_FLAG(STAT_CHANGE_MIRROR_ARMOR),
-        .itemMessage = IS_FLAG(STAT_CHANGE_ITEM),
+        .certain = SET_FLAG(STAT_CHANGE_CERTAIN),
+        .silentFailure = SET_FLAG(STAT_CHANGE_SILENT_FAILURE),
+        .intimidate = SET_FLAG(STAT_CHANGE_INTIMIDATE),
+        .mirrorArmored = SET_FLAG(STAT_CHANGE_MIRROR_ARMOR),
+        .itemMessage = SET_FLAG(STAT_CHANGE_ITEM),
     };
     #undef SET_FLAG
 
@@ -11518,25 +11495,22 @@ void BS_JumpIfMoreThanHalfHP(void)
 
 void BS_DoStockpileStatChangesWearOff(void)
 {
-    NATIVE_ARGS(u8 battler, const u8 *statChangeInstr);
+    NATIVE_ARGS(u8 battler);
 
     enum BattlerId battler = GetBattlerForBattleScript(cmd->battler);
+
     if (gBattleMons[battler].volatiles.stockpileDef != 0)
     {
-        SET_STATCHANGER(STAT_DEF, abs(gBattleMons[battler].volatiles.stockpileDef), TRUE);
+        SetStatChange(battler, STAT_DEF, gBattleMons[battler].volatiles.stockpileDef);
         gBattleMons[battler].volatiles.stockpileDef = 0;
-        BattleScriptCall(cmd->statChangeInstr);
     }
-    else if (gBattleMons[battler].volatiles.stockpileSpDef)
+    if (gBattleMons[battler].volatiles.stockpileSpDef)
     {
-        SET_STATCHANGER(STAT_SPDEF, abs(gBattleMons[battler].volatiles.stockpileSpDef), TRUE);
+        SetStatChange(battler, STAT_SPDEF, gBattleMons[battler].volatiles.stockpileSpDef);
         gBattleMons[battler].volatiles.stockpileSpDef = 0;
-        BattleScriptCall(cmd->statChangeInstr);
     }
-    else
-    {
-        gBattlescriptCurrInstr = cmd->nextInstr;
-    }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
 static bool32 IsFinalStrikeEffect(enum MoveEffect moveEffect)
@@ -11635,7 +11609,8 @@ void BS_TrySymbiosis(void)
 
 void BS_SetZEffect(void)
 {
-    SetZEffect();   // Handles battle script jumping internally
+    NATIVE_ARGS();
+    SetZEffect(cmd->nextInstr); // Handles battle script jumping internally
 }
 
 static void TryUpdateRoundTurnOrder(void)
@@ -14600,3 +14575,13 @@ void BS_TryDefiantRattled(void)
 
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
+
+void BS_ForcePlayStatChangeAnim(void)
+{
+    NATIVE_ARGS(u8 battler);
+
+    enum BattlerId battler = GetBattlerForBattleScript(cmd->battler);
+    BtlController_EmitBattleAnimation(battler, B_COMM_TO_CONTROLLER, B_ANIM_STATS_CHANGE, STAT_ATK);
+    MarkBattlerForControllerExec(battler);
+}
+

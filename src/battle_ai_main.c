@@ -2030,10 +2030,10 @@ static s32 AI_CheckBadMove(enum BattlerId battlerAtk, enum BattlerId battlerDef,
     //       && !(hasPartner && IS_BATTLER_OF_TYPE(BATTLE_PARTNER(battlerAtk), TYPE_GRASS)))
     //         ADJUST_SCORE(-10);
     //     break;
-    case EFFECT_AROMATIC_MIST:
-        if (!hasPartner || !BattlerStatCanRise(BATTLE_PARTNER(battlerAtk), aiData->abilities[BATTLE_PARTNER(battlerAtk)], STAT_SPDEF))
-            ADJUST_SCORE(-10);
-        break;
+    // case EFFECT_AROMATIC_MIST:
+    //     if (!hasPartner || !BattlerStatCanRise(BATTLE_PARTNER(battlerAtk), aiData->abilities[BATTLE_PARTNER(battlerAtk)], STAT_SPDEF))
+    //         ADJUST_SCORE(-10);
+    //     break;
     case EFFECT_BIDE:
         if (!HasDamagingMove(battlerDef)
           || aiData->hpPercents[battlerAtk] < 30 //Close to death

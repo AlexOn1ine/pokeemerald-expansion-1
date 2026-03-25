@@ -725,7 +725,7 @@ struct BattleStruct
     u8 positiveAnimPlayed:1;
     u8 negativeAnimPlayed:1;
     u8 statChangeBattler:3;
-    u8 statChangeOnSide:1;
+    u8 unused4:1;
     u8 statChangeUser:1;
     u8 intimidateActivated:1;
 };

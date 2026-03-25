@@ -2279,7 +2279,8 @@ static enum MoveEndResult MoveEndRage(void)
         && !IsBattleMoveStatus(gCurrentMove)
         && CompareStat(gBattlerTarget, STAT_ATK, MAX_STAT_STAGE, CMP_LESS_THAN, GetBattlerAbility(gBattlerTarget)))
     {
-        SET_STATCHANGER(STAT_ATK, 1, FALSE);
+        // Does rage show any anim or does it just increase by one and print the rage message?
+        SetStatChange(gBattlerTarget, STAT_ATK, 1);
         BattleScriptCall(BattleScript_RageIsBuilding);
         result = MOVEEND_RESULT_RUN_SCRIPT;
     }

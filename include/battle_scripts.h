@@ -509,7 +509,6 @@ extern const u8 BattleScript_ZMoveActivateDamaging[];
 extern const u8 BattleScript_ZMoveActivateStatus[];
 extern const u8 BattleScript_ZEffectPrintString[];
 extern const u8 BattleScript_RecoverHPZMove[];
-extern const u8 BattleScript_StatUpZMove[];
 extern const u8 BattleScript_HealReplacementZMove[];
 
 // max moves
@@ -686,7 +685,6 @@ extern const u8 BattleScript_EffectSpeedSwap[];
 extern const u8 BattleScript_EffectAuroraVeil[];
 extern const u8 BattleScript_EffectThirdType[];
 extern const u8 BattleScript_EffectAcupressure[];
-extern const u8 BattleScript_EffectAromaticMist[];
 extern const u8 BattleScript_EffectPowder[];
 extern const u8 BattleScript_EffectPartingShot[];
 extern const u8 BattleScript_EffectInstruct[];

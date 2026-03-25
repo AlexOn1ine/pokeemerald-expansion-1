@@ -2373,7 +2373,7 @@ const u8 *AbsorbedByStatIncreaseAbility(enum BattlerId battlerDef, enum Ability 
     }
     else
     {
-        SET_STATCHANGER(statId, statAmount, FALSE);
+        SetStatChange(battlerDef, statId, statAmount);
         return BattleScript_MoveStatDrain;
     }
 }

@@ -403,7 +403,6 @@ static void SceneSingles(enum Move move, struct BattlePokemon *mon)
      || effect == EFFECT_HELPING_HAND
      || effect == EFFECT_AFTER_YOU
      || effect == EFFECT_ALLY_SWITCH
-     || effect == EFFECT_AROMATIC_MIST
      || effect == EFFECT_DRAGON_CHEER
      || GetMoveTarget(move) == TARGET_ALLY)
     {

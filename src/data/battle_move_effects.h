@@ -1427,13 +1427,6 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
         .battleTvScore = 0, // TODO: Assign points
     },
 
-    [EFFECT_AROMATIC_MIST] =
-    {
-        .battleScript = BattleScript_EffectAromaticMist,
-        .battleTvScore = 0, // TODO: Assign points
-        .encourageEncore = TRUE,
-    },
-
     [EFFECT_POWDER] =
     {
         .battleScript = BattleScript_EffectPowder,

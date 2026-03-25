@@ -24,7 +24,7 @@ enum StatChangeResult
 #define STAT_CHANGE_INTIMIDATE     (1 << 4)
 #define STAT_CHANGE_SECOND_QUEUE   (1 << 5)
 #define STAT_CHANGE_IGNORE_ANIM    (1 << 6)
-#define STAT_CHANGE_ONLY_CERTAIN   (1 << 7)
+#define STAT_CHANGE_CERTAIN   (1 << 7)
 #define STAT_CHANGE_ITEM           (1 << 8)
 
 // stat flags for TryPlayStatChangeAnimation

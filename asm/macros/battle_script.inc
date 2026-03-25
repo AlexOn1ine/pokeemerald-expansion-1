@@ -1248,10 +1248,9 @@
 	.4byte \jumpInstr
 	.endm
 
-	.macro dostockpilestatchangeswearoff, battler:req, statChangeInstr:req
+	.macro dostockpilestatchangeswearoff, battler:req
 	callnative BS_DoStockpileStatChangesWearOff
 	.byte \battler
-	.4byte \statChangeInstr
 	.endm
 
 	.macro jumpifmorethanhalfHP battler:req, jumpInstr:req
@@ -1611,6 +1610,11 @@
 
     .macro trydefiantrattled
     callnative BS_TryDefiantRattled
+    .endm
+
+    .macro forceplaystatchangeanim battler:req
+    callnative BS_ForcePlayStatChangeAnim
+    .byte \battler
     .endm
 
 @ helpful macros
