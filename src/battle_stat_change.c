@@ -19,8 +19,6 @@ static void TryPlayStatChangeAnimation(struct BattleCalcValues *cv, struct StatC
 
 static bool32 CanAbilityPreventStatLoss(enum Ability ability);
 static bool32 AbilityPreventsSpecificStatDrop(u32 ability, u32 stat);
-static bool32 GetPositiveStatStage(u32 effect);
-static bool32 GetNegativeStatStage(u32 effect);
 static u32 GetNumPositiveStats(enum BattlerId battler);
 static u32 GetNumNegativeStats(enum BattlerId battler);
 
@@ -109,31 +107,43 @@ static bool32 CanMoveMissTarget(struct BattleCalcValues *cv, struct StatChange *
     return TRUE;
 }
 
+u32 static const sAccurateStatOrder[NUM_BATTLE_STATS] =
+{
+    STAT_HP,
+    STAT_ATK,
+    STAT_DEF,
+    STAT_SPATK,
+    STAT_SPDEF,
+    STAT_SPEED,
+    STAT_ACC,
+    STAT_EVASION,
+};
+
 // Multi stat checks
 bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 {
     u32 numAdditionalEffects = GetMoveAdditionalEffectCount(cv->move);
-    u32 additionalEffectsCounter = 0;
+    u32 effectsCounter = 0;
     u32 canAnyStatChange = FALSE;
     enum Stat counter = STAT_ATK;
 
     if (IsBlockedBySpecificCondition(cv, st))
         return FALSE;
 
-    while (additionalEffectsCounter < numAdditionalEffects)
+    while (effectsCounter < numAdditionalEffects)
     {
+        const struct AdditionalEffect *additionalEffect = GetMoveAdditionalEffectById(cv->move, effectsCounter);
+
         while (counter < NUM_BATTLE_STATS)
         {
-            const struct AdditionalEffect *additionalEffect = GetMoveAdditionalEffectById(cv->move, additionalEffectsCounter );
-            st->stat = counter++;
+            st->stat = sAccurateStatOrder[counter++];
+            st->stage = GetStatStage(st->stat, additionalEffect);
 
-            if (!IsStatSet(st->stat, additionalEffect))
+            if (st->stage == 0)
                 continue;
 
-            if (IsStatDecreaseEffect(additionalEffect->moveEffect))
-                st->stage = GetNegativeStatStage(additionalEffect->moveEffect);
-            else
-                st->stage = GetPositiveStatStage(additionalEffect->moveEffect);
+            if (additionalEffect->moveEffect == STAT_CHANGE_EFFECT_MINUS)
+                st->stage = -1 * st->stage;
 
             SetStatChange(st->battler, st->stat, st->stage);
             AdjustStatStage(cv, st);
@@ -158,7 +168,7 @@ bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
         }
 
         counter = STAT_ATK;
-        additionalEffectsCounter++;
+        effectsCounter++;
     }
 
     // Ignore acc check for ai
@@ -660,7 +670,7 @@ static bool32 AbilityPreventsSpecificStatDrop(u32 ability, u32 stat)
 }
 
 // Union is not possible
-bool32 IsStatSet(u32 stat, const struct AdditionalEffect *additionalEffect)
+u32 GetStatStage(u32 stat, const struct AdditionalEffect *additionalEffect)
 {
     switch (stat)
     {
@@ -673,27 +683,7 @@ bool32 IsStatSet(u32 stat, const struct AdditionalEffect *additionalEffect)
     case STAT_EVASION: return additionalEffect->evasion;
     }
 
-    return FALSE;
-}
-
-bool32 IsStatDecreaseEffect(u32 effect)
-{
-    return effect >= STAT_CHANGE_EFFECT_MINUS_1 && effect <= STAT_CHANGE_EFFECT_MINUS_6;
-}
-
-bool32 UNUSED IsStatIncreaseEffect(u32 effect)
-{
-    return effect >= STAT_CHANGE_EFFECT_PLUS_1 && effect <= STAT_CHANGE_EFFECT_PLUS_6;
-}
-
-static bool32 GetPositiveStatStage(u32 effect)
-{
-    return effect - STAT_CHANGE_EFFECT_PLUS_1 + 1;
-}
-
-static bool32 GetNegativeStatStage(u32 effect)
-{
-    return -1 * (effect - STAT_CHANGE_EFFECT_MINUS_1 + 1);
+    return 0;
 }
 
 // TODO just the internatl queue

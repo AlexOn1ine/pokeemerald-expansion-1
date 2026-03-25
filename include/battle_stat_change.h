@@ -66,8 +66,6 @@ void ClearStatChangeValues(void);
 void ClearOtherStatChangeValues(enum BattlerId battler);
 enum StatChangeResult TrySingleStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 
-bool32 IsStatSet(u32 stat, const struct AdditionalEffect *additionalEffect);
-bool32 IsStatDecreaseEffect(u32 effect);
-bool32 IsStatIncreaseEffect(u32 effect);
+u32 GetStatStage(u32 stat, const struct AdditionalEffect *additionalEffect);
 
 #endif // GUARD_BATTLE_MOVE_STAT_CHANGE_H

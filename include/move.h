@@ -41,20 +41,17 @@ struct AdditionalEffect
         enum WrappedStringID wrapped;
     } multistring;
 
-    union PACKED {
-        u8 chance; // 0% = effect certain, primary effect
-        u8 stats;
-        struct PACKED {
-            u8 hp:1; // unused, to avoid shifting
-            u8 attack:1;
-            u8 defense:1;
-            u8 speed:1;
-            u8 spAtk:1;
-            u8 spDef:1;
-            u8 evasion:1;
-            u8 accuracy:1;
-        };
-    };
+    u8 chance; // 0% = effect certain, primary effect
+    u8 stats;
+
+    u32 attack:3;
+    u32 defense:3;
+    u32 spAtk:3;
+    u32 spDef:3;
+    u32 speed:3;
+    u32 accuracy:3;
+    u32 evasion:3;
+    u32 padding2:11;
 };
 
 enum ProtectType

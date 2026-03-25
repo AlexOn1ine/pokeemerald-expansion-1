@@ -3530,3 +3530,34 @@ void TestRunner_Battle_AIAdjustScore(const char *file, u32 line, enum BattlerId 
 {
     TestRunner_Battle_AILogScore(file, line, battlerId, moveIndex, score, FALSE);
 }
+
+void AssumeStatChange_(u32 sourceLine, u32 moveId, struct StatChangeAssumption asc)
+{
+    u32 numAdditionalEffects = GetMoveAdditionalEffectCount(moveId);
+    for (u32 i = 0; i < numAdditionalEffects; i++)
+    {
+        const struct AdditionalEffect *effect = GetMoveAdditionalEffectById(moveId, i);
+        if (effect->moveEffect == STAT_CHANGE_EFFECT_MINUS)
+        {
+            ASSUME(MoveHasAdditionalEffect(moveId, STAT_CHANGE_EFFECT_MINUS));
+            ASSUME(asc.attack == (-1 * effect->attack));
+            ASSUME(asc.defense == (-1 * effect->defense));
+            ASSUME(asc.spAtk == (-1 * effect->spAtk));
+            ASSUME(asc.spDef == (-1 * effect->spDef));
+            ASSUME(asc.speed == (-1 * effect->speed));
+            ASSUME(asc.accuracy == (-1 * effect->accuracy));
+            ASSUME(asc.evasion == (-1 * effect->evasion));
+        }
+        else
+        {
+            ASSUME(MoveHasAdditionalEffect(moveId, STAT_CHANGE_EFFECT_PLUS));
+            ASSUME(asc.attack == effect->attack);
+            ASSUME(asc.defense == effect->defense);
+            ASSUME(asc.spAtk == effect->spAtk);
+            ASSUME(asc.spDef == effect->spDef);
+            ASSUME(asc.speed == effect->speed);
+            ASSUME(asc.accuracy == effect->accuracy);
+            ASSUME(asc.evasion == effect->evasion);
+        }
+    }
+}
