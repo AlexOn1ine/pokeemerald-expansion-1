@@ -3,7 +3,7 @@
 
 ASSUMPTIONS
 {
-    ASSUME(GetMoveEffect(MOVE_MINIMIZE) == EFFECT_STAT_CHANGE);
+    ASSUME_STAT_CHANGE(MOVE_MINIMIZE, evasion: +1);
 }
 
 SINGLE_BATTLE_TEST("Minimize increases the user's Evasion by 2 stages (Gen5+) or 1 stage (Gen1-4)")

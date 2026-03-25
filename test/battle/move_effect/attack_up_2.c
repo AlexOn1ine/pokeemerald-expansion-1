@@ -3,7 +3,7 @@
 
 ASSUMPTIONS
 {
-    ASSUME(GetMoveEffect(MOVE_SWORDS_DANCE) == EFFECT_STAT_CHANGE);
+    ASSUME_STAT_CHANGE(MOVE_SWORDS_DANCE, attack: +2);
 }
 
 SINGLE_BATTLE_TEST("Swords Dance raises Attack by 2 stages", s16 damage)
@@ -12,6 +12,7 @@ SINGLE_BATTLE_TEST("Swords Dance raises Attack by 2 stages", s16 damage)
     PARAMETRIZE { raiseAttack = FALSE; }
     PARAMETRIZE { raiseAttack = TRUE; }
     GIVEN {
+        ASSUME_STAT_CHANGE(MOVE_SWORDS_DANCE, attack: +2);
         ASSUME(GetMoveCategory(MOVE_SCRATCH) == DAMAGE_CATEGORY_PHYSICAL);
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET);

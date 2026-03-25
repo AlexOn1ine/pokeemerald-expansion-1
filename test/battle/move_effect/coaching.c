@@ -3,7 +3,7 @@
 
 ASSUMPTIONS
 {
-    ASSUME(GetMoveEffect(MOVE_COACHING) == EFFECT_STAT_CHANGE);
+    ASSUME_STAT_CHANGE(MOVE_COACHING, attack: +1, defense: +1);
 }
 
 DOUBLE_BATTLE_TEST("Coaching raises Attack and Defense of ally by 1 stage each")
