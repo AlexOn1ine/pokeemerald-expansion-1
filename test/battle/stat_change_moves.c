@@ -194,13 +194,15 @@ SINGLE_BATTLE_TEST("Stat Change test 12")
     }
 }
 
-SINGLE_BATTLE_TEST("Stat Change test 13")
+DOUBLE_BATTLE_TEST("Stat Change test 13")
 {
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET);
     } WHEN {
-        TURN { MOVE(player, MOVE_SWORDS_DANCE); }
+        TURN { MOVE(opponentRight, MOVE_SUBSTITUTE); MOVE(playerLeft, MOVE_LEER); }
     } SCENE {
         // ANIMATION(ANIM_TYPE_MOVE, MOVE_SWORDS_DANCE, player);
         // ANIMATION(ANIM_TYPE_GENERAL, B_ANIM_STATS_CHANGE, player);

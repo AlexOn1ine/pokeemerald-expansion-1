@@ -12315,10 +12315,12 @@ void BS_TryDefog(void)
     }
     else
     {
+        enum BattlerId savedBattler = gBattlerAttacker;
         if (TryDefogClear(gBattlerAttacker, FALSE))
             gBattlescriptCurrInstr = cmd->nextInstr;
         else
             gBattlescriptCurrInstr = cmd->failInstr;
+        gBattlerAttacker = savedBattler;
     }
 }
 

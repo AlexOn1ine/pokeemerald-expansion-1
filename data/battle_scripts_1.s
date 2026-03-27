@@ -83,17 +83,15 @@ BattleScript_EffectStatChangeHandleFailure:
 
 BattleScript_EffectDefog::
 	attackcanceler
-	trydefog FALSE, BattleScript_EffectDefogDoMoveAnimation
-	goto BattleScript_EffectStatChangeAfterCanceler
-
-BattleScript_EffectDefogDoMoveAnimation::
+	trydefog FALSE, BattleScript_EffectStatChangeAfterCanceler
 	attackanimation
 	waitanimation
-	tryanystatchange BattleScript_EffectDefogDoMoveAnimationEnd
+	tryanystatchange BattleScript_EffectDefogFailedEvasion
 	call BattleScript_SwapFromSubstitute
-BattleScript_EffectDefogDoMoveAnimationEnd:
+BattleScript_EffectDefogFailedEvasion:
 	trystatchange
 	call BattleScript_SwapToSubstitute
+    copybyte gEffectBattler, gBattlerAttacker
     saveattacker
 	trydefog TRUE, NULL
     restoreattacker
@@ -958,6 +956,12 @@ BattleScript_ItDoesntAffectScrTarget::
 	waitmessage B_WAIT_TIME_SHORT
 	flushtextbox
 	return
+
+BattleScript_ButItFailedRet::
+	pause B_WAIT_TIME_SHORT
+    printstring STRINGID_BUTITFAILED
+	waitmessage B_WAIT_TIME_LONG
+    return
 
 BattleScript_MoveEffectSmackDown::
 	printstring STRINGID_FELLSTRAIGHTDOWN

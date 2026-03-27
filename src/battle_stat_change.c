@@ -109,6 +109,7 @@ static bool32 IsBlockedBySpecificCondition(struct BattleCalcValues *cv, struct S
     return FALSE;
 }
 
+// Behind a sub defog still works but not if stats are blocked by any other mean?
 static bool32 IsSubstituteBlocked(struct BattleCalcValues *cv, struct StatChange *st)
 {
     // Need to set certain correctly
@@ -121,7 +122,7 @@ static bool32 IsSubstituteBlocked(struct BattleCalcValues *cv, struct StatChange
     if (!st->onlyChecking)
     {
         gBattleScripting.battler = st->battler;
-        st->script = BattleScript_ItDoesntAffectScrTarget;
+        st->script = BattleScript_ButItFailedRet;
     }
 
     return TRUE;
@@ -132,12 +133,6 @@ bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 {
     u32 numAdditionalEffects = GetMoveAdditionalEffectCount(cv->move);
     u32 canAnyStatChange = FALSE;
-
-    if (IsBlockedBySpecificCondition(cv, st))
-        return FALSE;
-
-    if (IsSubstituteBlocked(cv, st))
-        return FALSE;
 
     for (u32 i = 0; i < numAdditionalEffects; i++)
     {
@@ -155,6 +150,10 @@ bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
                 st->stage = -1 * st->stage;
 
             SetStatChange(st->battler, st->stat, st->stage);
+
+            if (IsBlockedBySpecificCondition(cv, st) || IsSubstituteBlocked(cv, st)) // Still need to collect stats for failure handling
+                continue;
+
             AdjustStatStage(cv, st);
 
             if (st->stage < 0)
@@ -180,6 +179,12 @@ bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 
 enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 {
+    if (IsBlockedBySpecificCondition(cv, st) || IsSubstituteBlocked(cv, st))
+    {
+        st->nextBattler = TRUE;
+        return STAT_CHANGE_BLOCKED_BY_TARGET;
+    }
+
     for (u32 i = 0; i < st->statStageAmount; i++)
     {
         if (i + 1 == st->statStageAmount) // Avoids redundant looping
