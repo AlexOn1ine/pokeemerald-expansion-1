@@ -17,25 +17,33 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
         .battleTvScore = 1,
     },
 
-    [EFFECT_STAT_CHANGE_USER] =
-    {
-        .battleScript = BattleScript_EffectStatChangeUser,
-        .battleTvScore = 0, // TODO: Assign points
-        // .battleFactoryStyle = FACTORY_STYLE_PREPARATION,
-        .encourageEncore = TRUE,
-    },
-
-    [EFFECT_STAT_CHANGE_TARGET] =
-    {
-        .battleScript = BattleScript_EffectStatChangeTarget,
-        .battleTvScore = 0, // TODO: Assign points
-        // .battleFactoryStyle = FACTORY_STYLE_PREPARATION,
-        .encourageEncore = TRUE,
-    },
-
     [EFFECT_STAT_CHANGE] =
     {
         .battleScript = BattleScript_EffectStatChange,
+        .battleTvScore = 0, // TODO: Assign points
+        // .battleFactoryStyle = FACTORY_STYLE_PREPARATION,
+        .encourageEncore = TRUE,
+    },
+
+    [EFFECT_DEFENSE_CURL] =
+    {
+        .battleScript = BattleScript_EffectStatChange,
+        .battleTvScore = 0, // TODO: Assign points
+        // .battleFactoryStyle = FACTORY_STYLE_PREPARATION,
+        .encourageEncore = TRUE,
+    },
+
+    [EFFECT_MINIMIZE] =
+    {
+        .battleScript = BattleScript_EffectStatChange,
+        .battleTvScore = 0, // TODO: Assign points
+        // .battleFactoryStyle = FACTORY_STYLE_PREPARATION,
+        .encourageEncore = TRUE,
+    },
+
+    [EFFECT_AUTOTOMIZE] =
+    {
+        .battleScript = BattleScript_EffectAutotomize,
         .battleTvScore = 0, // TODO: Assign points
         // .battleFactoryStyle = FACTORY_STYLE_PREPARATION,
         .encourageEncore = TRUE,
@@ -538,7 +546,7 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
 
     [EFFECT_CAPTIVATE] =
     {
-        .battleScript = BattleScript_EffectStatChangeTarget,
+        .battleScript = BattleScript_EffectStatChange,
         .battleTvScore = 0, // TODO: Assign points
     },
 
@@ -1296,7 +1304,7 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
 
     [EFFECT_GROWTH] =
     {
-        .battleScript = BattleScript_EffectStatChangeUser,
+        .battleScript = BattleScript_EffectStatChange,
         .battleTvScore = 0, // TODO: Assign points
         .battleFactoryStyle = FACTORY_STYLE_PREPARATION,
         .encourageEncore = TRUE,
@@ -1310,7 +1318,7 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
 
     [EFFECT_STAT_CHANGE_ON_STATUS] =
     {
-        .battleScript = BattleScript_EffectStatChangeTarget,
+        .battleScript = BattleScript_EffectStatChange,
         .battleTvScore = 0, // TODO: Assign points
     },
 
@@ -1473,7 +1481,7 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
 
     [EFFECT_STAT_CHANGE_MAGNETIC] =
     {
-        .battleScript = BattleScript_EffectStatChangeUser,
+        .battleScript = BattleScript_EffectStatChange,
         .battleTvScore = 0, // TODO: Assign points
         .encourageEncore = TRUE,
     },
@@ -1667,7 +1675,7 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
 
     [EFFECT_EXTREME_EVOBOOST] =
     {
-        .battleScript = BattleScript_EffectStatChangeUser,
+        .battleScript = BattleScript_EffectStatChange,
         .battleTvScore = 0, // TODO: Assign points
     },
 

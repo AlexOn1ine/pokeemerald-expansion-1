@@ -543,7 +543,6 @@ enum __attribute__((packed)) MoveEffect
     MOVE_EFFECT_SALT_CURE,
     MOVE_EFFECT_EERIE_SPELL,
     MOVE_EFFECT_FLING, // If used without EFFECT_FLING, the move will be a regular damage move with fling as an additional effect without the failure and dmg modifier parts
-    MOVE_EFFECT_DECREASE_WEIGHT, // TODO: Might be better to remove
 
     // Max move effects happen earlier in the execution chain.
     // For example stealth rock from G-Max Stonesurge is set up before abilities but from Stone Axe after.
@@ -588,16 +587,13 @@ enum __attribute__((packed)) MoveEffect
     MOVE_EFFECT_FIXED_POWER,
     // Max move effects end. They can be used for (custom) normal moves.
 
+    STAT_CHANGE_EFFECT_PLUS,
+    STAT_CHANGE_EFFECT_MINUS,
+
     // Move effects that happen before the move hits. Set in SetPreAttackMoveEffect
     MOVE_EFFECT_BREAK_SCREEN,
     MOVE_EFFECT_STEAL_STATS,
     MOVE_EFFECT_BEAT_UP_MESSAGE, // Handles the message printing for gen2,3 and 4
-    MOVE_EFFECT_DEFENSE_CURL_VOLATILE,
-    MOVE_EFFECT_MINIMIZE_VOLATILE,
-
-    // Used for EFFECT_STAT_CHANGE_USER / EFFECT_STAT_CHANGE_TARGET
-    STAT_CHANGE_EFFECT_PLUS,
-    STAT_CHANGE_EFFECT_MINUS,
 
     NUM_MOVE_EFFECTS
 };

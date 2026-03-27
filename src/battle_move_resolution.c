@@ -1253,18 +1253,6 @@ static enum CancelerResult CancelerMoveFailure(struct BattleContext *ctx)
          || ctx->abilityAtk == ABILITY_KLUTZ
          || gBattleMons[ctx->battlerAtk].volatiles.embargo)
             battleScript = BattleScript_ButItFailed;
-    case EFFECT_CAPTIVATE:
-        if (ctx->abilityDef == ABILITY_OBLIVIOUS)
-        {
-            battleScript = BattleScript_NotAffectedAbilityPopUp;
-            gLastUsedAbility = ABILITY_OBLIVIOUS;
-            RecordAbilityBattle(ctx->battlerAtk, ABILITY_OBLIVIOUS);
-        }
-        else if (AreBattlersOfSameGender(ctx->battlerAtk, ctx->battlerAtk))
-        {
-            battleScript = BattleScript_ButItFailed;
-        }
-        break;
     case EFFECT_PRESENT:
     {
         u32 rand = RandomUniform(RNG_PRESENT, 0, 0xFF);
@@ -1278,6 +1266,16 @@ static enum CancelerResult CancelerMoveFailure(struct BattleContext *ctx)
             gBattleStruct->presentBasePower = 0; // Healing
     }
         break;
+    case EFFECT_STAT_CHANGE_MAGNETIC:
+        if (ctx->abilityAtk != ABILITY_PLUS && ctx->abilityAtk != ABILITY_MINUS)
+        {
+            enum Ability abilityPartner = GetBattlerAbility(BATTLE_PARTNER(ctx->battlerAtk));
+            if (abilityPartner != ABILITY_PLUS && abilityPartner != ABILITY_MINUS)
+            {
+                battleScript = BattleScript_ButItFailed;
+                break;
+            }
+        }
     default:
         break;
     }
@@ -1376,6 +1374,28 @@ static enum CancelerResult CancelerMoveEffectFailureTarget(struct BattleContext 
             if (GetActiveGimmick(battlerDef) == GIMMICK_DYNAMAX)
             {
                 battleScript = BattleScript_MoveBlockedByDynamax;
+            }
+            else
+            {
+                numAffectedTargets++;
+                continue;
+            }
+            break;
+        case EFFECT_CAPTIVATE:
+            if (AreBattlersOfSameGender(ctx->battlerAtk, ctx->battlerAtk))
+            {
+                battleScript = BattleScript_ButItFailed;
+            }
+            else
+            {
+                numAffectedTargets++;
+                continue;
+            }
+            break;
+        case EFFECT_STAT_CHANGE_ON_STATUS:
+            if (!(gBattleMons[ctx->battlerDef].status1 & GetMoveStatusOnStatChange(ctx->move)))
+            {
+                battleScript = BattleScript_ButItFailed;
             }
             else
             {
@@ -1796,7 +1816,7 @@ static enum CancelerResult CancelerTargetFailure(struct BattleContext *ctx)
         else if (GetMoveEffect(ctx->move) == EFFECT_SYNCHRONOISE && !DoBattlersShareType(ctx->battlerAtk, ctx->battlerDef))
         {
             gBattleStruct->moveResultFlags[ctx->battlerDef] = MOVE_RESULT_NO_EFFECT;
-            BattleScriptCall(BattleScript_ItDoesntScrTarget);
+            BattleScriptCall(BattleScript_ItDoesntAffectScrTarget);
             targetAvoidedAttack = TRUE;
         }
         else if (GetMoveEffect(ctx->move) == EFFECT_SKY_DROP

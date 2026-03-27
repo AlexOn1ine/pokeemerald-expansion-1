@@ -2959,17 +2959,11 @@ bool32 IsUngroundingEffect(enum BattleMoveEffects effect)
 }
 
 // for anger point
+// Loop over the move and check if anything boosts attack
 bool32 IsAttackBoostMoveEffect(enum BattleMoveEffects effect)
 {
     switch (effect)
     {
-    // case EFFECT_ATTACK_UP:
-    // case EFFECT_ATTACK_UP_2:
-    // case EFFECT_ATTACK_ACCURACY_UP:
-    // case EFFECT_ATTACK_SPATK_UP:
-    // case EFFECT_DRAGON_DANCE:
-    // case EFFECT_COIL:
-    // case EFFECT_BULK_UP:
     case EFFECT_STAT_CHANGE_HALF_HP:
     case EFFECT_GROWTH:
         return TRUE;
@@ -2978,36 +2972,7 @@ bool32 IsAttackBoostMoveEffect(enum BattleMoveEffects effect)
     }
 }
 
-/*
-    case EFFECT_ATTACK_UP:
-    case EFFECT_ATTACK_UP_2:
-    case EFFECT_DEFENSE_UP:
-    case EFFECT_DEFENSE_UP_2:
-    case EFFECT_DEFENSE_UP_3:
-    case EFFECT_SPEED_UP:
-    case EFFECT_SPEED_UP_2:
-    case EFFECT_SPECIAL_ATTACK_UP:
-    case EFFECT_SPECIAL_ATTACK_UP_2:
-    case EFFECT_SPECIAL_ATTACK_UP_3:
-    case EFFECT_SPECIAL_DEFENSE_UP:
-    case EFFECT_SPECIAL_DEFENSE_UP_2:
-    case EFFECT_ATTACK_ACCURACY_UP:
-    case EFFECT_ACCURACY_UP:
-    case EFFECT_ACCURACY_UP_2:
-    case EFFECT_EVASION_UP:
-    case EFFECT_EVASION_UP_2:
-    case EFFECT_CALM_MIND:
-    case EFFECT_COSMIC_POWER:
-    case EFFECT_DRAGON_DANCE:
-    case EFFECT_ATTACK_SPATK_UP:
-    case EFFECT_COIL:
-    case EFFECT_QUIVER_DANCE:
-    case EFFECT_VICTORY_DANCE:
-    case EFFECT_BULK_UP:
-    case EFFECT_DEFENSE_CURL:
-    case EFFECT_MINIMIZE:
-    case EFFECT_SHIFT_GEAR:
-*/
+// Would be better to just loop over the move and check if any additional effect raises stats
 bool32 IsStatRaisingEffect(enum BattleMoveEffects effect)
 {
     switch (effect)
@@ -3018,7 +2983,7 @@ bool32 IsStatRaisingEffect(enum BattleMoveEffects effect)
     case EFFECT_ACUPRESSURE:
     case EFFECT_STAT_CHANGE_MAGNETIC:
     case EFFECT_GEOMANCY:
-    case EFFECT_STAT_CHANGE_USER:
+    case EFFECT_STAT_CHANGE: // TODO: can be both
         return TRUE;
     case EFFECT_CHARGE:
         return B_CHARGE_SPDEF_RAISE >= GEN_5;
@@ -3026,24 +2991,8 @@ bool32 IsStatRaisingEffect(enum BattleMoveEffects effect)
         return FALSE;
     }
 }
-/*
-    case EFFECT_ATTACK_DOWN:
-    case EFFECT_ATTACK_DOWN_2:
-    case EFFECT_SPECIAL_ATTACK_DOWN:
-    case EFFECT_SPECIAL_ATTACK_DOWN_2:
-    case EFFECT_DEFENSE_DOWN:
-    case EFFECT_DEFENSE_DOWN_2:
-    case EFFECT_SPECIAL_DEFENSE_DOWN:
-    case EFFECT_SPECIAL_DEFENSE_DOWN_2:
-    case EFFECT_SPEED_DOWN:
-    case EFFECT_SPEED_DOWN_2:
-    case EFFECT_ACCURACY_DOWN:
-    case EFFECT_ACCURACY_DOWN_2:
-    case EFFECT_EVASION_DOWN:
-    case EFFECT_EVASION_DOWN_2:
-    case EFFECT_TICKLE:
-    case EFFECT_NOBLE_ROAR:
-*/
+
+// Would be better to just loop over the move and check if any additional effect raises stats
 bool32 IsStatLoweringEffect(enum BattleMoveEffects effect)
 {
     // ignore other potentially-beneficial effects like defog, gravity
@@ -3057,6 +3006,7 @@ bool32 IsStatLoweringEffect(enum BattleMoveEffects effect)
     }
 }
 
+// Damage moves
 bool32 IsSelfStatLoweringEffect(enum MoveEffect effect)
 {
     // Self stat lowering moves like Overheart, Superpower etc.
@@ -3085,6 +3035,7 @@ bool32 IsSelfStatLoweringEffect(enum MoveEffect effect)
     }
 }
 
+// Damage moves
 bool32 IsSelfStatRaisingEffect(enum MoveEffect effect)
 {
     // Self stat lowering moves like Power Up Punch or Charge Beam
@@ -4781,16 +4732,16 @@ static enum AIScore IncreaseStatUpScoreInternal(enum BattlerId battlerAtk, enum 
     if (!ShouldRaiseAnyStat(battlerAtk, battlerDef))
         return NO_INCREASE;
 
-    // Don't increase stat if AI is at +4
-    if (gBattleMons[battlerAtk].statStages[statId] >= MAX_STAT_STAGE - 2)
-        return NO_INCREASE;
-
     // Don't increase stat if AI has less then 70% HP and number of hits isn't known
     if (gAiLogicData->hpPercents[battlerAtk] < 70 && noOfHitsToFaint == UNKNOWN_NO_OF_HITS)
-        return NO_INCREASE;
+        return FALSE;
 
     // Don't increase stats if player has a move that can change the KO threshold
     if (HasMoveThatChangesKOThreshold(battlerDef, noOfHitsToFaint, aiIsFaster))
+        return NO_INCREASE;
+
+    // Don't increase stat if AI is at +4
+    if (gBattleMons[battlerAtk].statStages[statId] >= MAX_STAT_STAGE - 2)
         return NO_INCREASE;
 
     // Stat stages are effectively doubled under Simple.
@@ -6383,9 +6334,147 @@ bool32 IsPartyMonPlannedToBeSwitchedInByPartner(u32 partyIndex, enum BattlerId b
     return FALSE;
 }
 
+// For user and Foe
+s32 GetStatChangeScore(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move)
+{
+    s32 tempScore = 0;
+    enum MoveTarget targetType = AI_GetBattlerMoveTargetType(battlerAtk, move);
+
+    switch (targetType)
+    {
+    case TARGET_USER:
+    case TARGET_USER_AND_ALLY:
+    case TARGET_USER_OR_ALLY:
+        tempScore = GetSelfStatChangeScore(battlerAtk, battlerDef, move);
+        break;
+    case TARGET_ALLY:
+        break; // Done in AI_DoubleBattle
+    default:
+        if (battlerAtk == BATTLE_PARTNER(battlerDef))
+            break; // Done in AI_DoubleBattle
+        tempScore = GetFoeStatChangeScore(battlerDef, battlerAtk, move);
+        break;
+    }
+
+    return tempScore;
+}
+
+static u32 GetAdjustedStatStage(enum BattlerId battler, enum Move move, s32 stage)
+{
+    if (GetMoveEffect(move) == EFFECT_GROWTH
+     && IsBattlerWeatherAffected(gAiLogicData->holdEffects[battler], AI_GetWeather(), B_WEATHER_SUN))
+        stage = 2;
+
+    switch (gAiLogicData->abilities[battler])
+    {
+    case ABILITY_CONTRARY:
+        return (stage * -1);
+        break;
+    case ABILITY_SIMPLE:
+        return (stage * 2);
+    default:
+        return stage;
+    }
+}
+
+s32 GetSelfStatChangeScore(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move)
+{
+    s32 tempScore = 0;
+    u32 numAdditionalEffects = GetMoveAdditionalEffectCount(move);
+
+    if (!ShouldRaiseAnyStat(battlerAtk, battlerDef))
+        return NO_INCREASE;
+
+    for (u32 i = 0; i < numAdditionalEffects; i++)
+    {
+        const struct AdditionalEffect *effect = GetMoveAdditionalEffectById(move, i);
+
+        if (effect->moveEffect != STAT_CHANGE_EFFECT_PLUS
+         && effect->moveEffect != STAT_CHANGE_EFFECT_MINUS)
+            continue;
+
+        for (enum Stat stat = 0; stat < NUM_STATS; stat++)
+        {
+            u32 stage = GetAdjustedStatStage(battlerAtk, move, GetStatStage(stat, effect));
+
+            if (stage > 0)
+            {
+                // The function handles Simple which in does not need in this case, but it is harmless
+                // Also a lot of recalculating happening in there, can be optimized later
+                tempScore = IncreaseStatUpScoreContrary(battlerAtk, battlerDef, stat, stage);
+            }
+            else if (stage < 0)
+            {
+                if (gAiLogicData->holdEffects[battlerAtk] == HOLD_EFFECT_WHITE_HERB)
+                    break; // No Score decrese
+
+                switch (stat)
+                {
+                case STAT_ATK:
+                    if (HasMoveWithCategory(battlerAtk, DAMAGE_CATEGORY_PHYSICAL))
+                        return NO_INCREASE; // Don't lower power of mons attacking moves
+                    break;
+                case STAT_SPATK:
+                    if (HasMoveWithCategory(battlerAtk, DAMAGE_CATEGORY_SPECIAL))
+                        return NO_INCREASE; // Don't lower power of mons attacking moves
+                    break;
+                default: // Case can be made to also never lower Speed
+                    tempScore--; // Minor score decrease if stats are reduced. Positive stat changes should take priority
+                }
+            }
+        }
+    }
+
+    return (tempScore > BEST_EFFECT) ? BEST_EFFECT : tempScore;
+}
+
+s32 GetFoeStatChangeScore(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move)
+{
+    s32 score = 0;
+    u32 numAdditionalEffects = GetMoveAdditionalEffectCount(move);
+
+    for (u32 i = 0; i < numAdditionalEffects; i++)
+    {
+        const struct AdditionalEffect *effect = GetMoveAdditionalEffectById(gCurrentMove, gBattleStruct->additionalEffectsCounter);
+
+        if (effect->moveEffect != STAT_CHANGE_EFFECT_PLUS
+         && effect->moveEffect != STAT_CHANGE_EFFECT_MINUS)
+            continue;
+
+        for (enum Stat stat = 0; stat < NUM_STATS; stat++)
+        {
+            u32 stage = GetAdjustedStatStage(battlerAtk, move, GetStatStage(stat, effect));
+
+            if (stage > 0)
+            {
+                if ((stat == STAT_ATK && HasMoveWithCategory(battlerDef, DAMAGE_CATEGORY_PHYSICAL))
+                 || (stat == STAT_SPATK && HasMoveWithCategory(battlerDef, DAMAGE_CATEGORY_SPECIAL)))
+                    return -10; // Don't decrease any stats since the price might be to high
+            }
+            else if (stage < 0)
+            {
+                if (gAiLogicData->holdEffects[battlerAtk] == HOLD_EFFECT_WHITE_HERB)
+                    return -10; // White Herb resotres stats
+                score += IncreaseStatDownScore(battlerAtk, battlerDef, stat);
+            }
+        }
+    }
+
+    return (score > BEST_EFFECT) ? BEST_EFFECT : score;
+}
+
+// Check for corresponding atk stat (has split)
+// Check how partner is doing vs target
+s32 UNUSED GetAllyStatChangeScore(u32 battlerAtk, u32 battlerDef, u32 move)
+{
+    return 0;
+}
+
+// Also need functions to check failure
+
+#if 0
 s32 GetSelfStatChangeScore(u32 battlerAtk, u32 battlerDef, u32 move)
 {
-    #if 0
     s32 score = 0;
     bool32 foundStatToIncrease = FALSE;
     u32 numAdditionalEffects = GetMoveAdditionalEffectCount(move);
@@ -6422,13 +6511,11 @@ s32 GetSelfStatChangeScore(u32 battlerAtk, u32 battlerDef, u32 move)
 
     if (score > BEST_EFFECT)
         score = BEST_EFFECT;
-    #endif
     // return score;
     return 0;
 
 }
 
-#if 0
 s32 GetAllyStatChangeScore(u32 battlerAtk, u32 battlerDef, u32 move)
 {
     s32 score = 0;
@@ -6469,6 +6556,7 @@ s32 GetAllyStatChangeScore(u32 battlerAtk, u32 battlerDef, u32 move)
     return score;
 }
 
+// This could be a function that is used in double battles
 bool32 ShouldDecreaseAllyStat(enum BattlerId battlerAtk, enum BattlerId battlerAtkPartner, enum Stat stat)
 {
     if (!CanLowerStat(battlerAtk, battlerAtkPartner, gAiLogicData, stat))

@@ -1977,6 +1977,11 @@
 	.byte \bufferSpeciesName
 	.endm
 
+	.macro tryautotomize failInstr:req
+	callnative BS_TryAutotomize
+	.4byte \failInstr
+	.endm
+
 	.macro tryinstruct failInstr:req
 	callnative BS_TryInstruct
 	.4byte \failInstr

@@ -2990,7 +2990,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_ALL] =
         #else
             "raise evasiveness."),
         #endif
-        .effect = EFFECT_STAT_CHANGE,
+        .effect = EFFECT_MINIMIZE,
         .power = 0,
         .type = TYPE_NORMAL,
         .accuracy = 0,
@@ -3003,13 +3003,6 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_ALL] =
         .mirrorMoveBanned = TRUE,
         .snatchAffected = TRUE,
         .additionalEffects = ADDITIONAL_EFFECTS({
-        // #if B_MINIMIZE_EVASION >= GEN_5
-        //     .moveEffect = MOVE_EFFECT_MINIMIZE_VOLATILE,
-        //     .self = TRUE,
-        //     .preAttackEffect = TRUE,
-        // #endif
-        // },
-        // {
             .moveEffect = STAT_CHANGE_EFFECT_PLUS,
             .evasion = 1,
         }),
@@ -3109,7 +3102,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_ALL] =
         .description = COMPOUND_STRING(
             "Curls up to conceal weak\n"
             "spots and raise Defense."),
-        .effect = EFFECT_STAT_CHANGE,
+        .effect = EFFECT_DEFENSE_CURL,
         .power = 0,
         .type = TYPE_NORMAL,
         .accuracy = 0,
@@ -3122,11 +3115,6 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_ALL] =
         .mirrorMoveBanned = TRUE,
         .snatchAffected = TRUE,
         .additionalEffects = ADDITIONAL_EFFECTS({
-            .moveEffect = MOVE_EFFECT_DEFENSE_CURL_VOLATILE,
-            .self = TRUE,
-            .preAttackEffect = TRUE,
-        },
-        {
             .moveEffect = STAT_CHANGE_EFFECT_PLUS,
             .defense = 1,
         }),
@@ -11651,6 +11639,10 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_ALL] =
         .contestCategory = C_UPDATED_MOVE_CATEGORIES >= GEN_6 ? CONTEST_CATEGORY_COOL : CONTEST_CATEGORY_BEAUTY,
         .contestComboStarterId = 0,
         .contestComboMoves = {0},
+        .additionalEffects = ADDITIONAL_EFFECTS({
+            .moveEffect = STAT_CHANGE_EFFECT_MINUS,
+            .evasion = 1,
+        }),
         .battleAnimScript = gBattleAnimMove_Defog,
     },
 
@@ -12692,7 +12684,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_ALL] =
         .description = COMPOUND_STRING(
             "Sheds additional weight to\n"
             "sharply boost Speed."),
-        .effect = EFFECT_STAT_CHANGE,
+        .effect = EFFECT_AUTOTOMIZE,
         .power = 0,
         .type = TYPE_STEEL,
         .accuracy = 0,
@@ -12705,10 +12697,6 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_ALL] =
         .ignoresProtect = TRUE,
         .mirrorMoveBanned = TRUE,
         .additionalEffects = ADDITIONAL_EFFECTS({
-            .moveEffect = MOVE_EFFECT_DECREASE_WEIGHT,
-            .self = TRUE,
-        },
-        {
             .moveEffect = STAT_CHANGE_EFFECT_PLUS,
             .speed = 2,
         }),
@@ -18253,6 +18241,10 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_ALL] =
         .contestCategory = CONTEST_CATEGORY_BEAUTY,
         .contestComboStarterId = 0,
         .contestComboMoves = {0},
+        .additionalEffects = ADDITIONAL_EFFECTS({
+            .moveEffect = STAT_CHANGE_EFFECT_MINUS,
+            .speed = 1,
+        }),
         .battleAnimScript = gBattleAnimMove_TarShot,
     },
 
@@ -20937,6 +20929,11 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_ALL] =
         .ignoresProtect = TRUE,
         .mirrorMoveBanned = TRUE,
         .metronomeBanned = TRUE,
+        .additionalEffects = ADDITIONAL_EFFECTS({
+            .moveEffect = STAT_CHANGE_EFFECT_PLUS,
+            .attack = 1,
+            .speed = 1,
+        }),
         .battleAnimScript = gBattleAnimMove_TidyUp,
     },
 

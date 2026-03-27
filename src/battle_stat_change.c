@@ -19,8 +19,20 @@ static void TryPlayStatChangeAnimation(struct BattleCalcValues *cv, struct StatC
 
 static bool32 CanAbilityPreventStatLoss(enum Ability ability);
 static bool32 AbilityPreventsSpecificStatDrop(u32 ability, u32 stat);
-static u32 GetNumPositiveStats(enum BattlerId battler);
-static u32 GetNumNegativeStats(enum BattlerId battler);
+static u32 GetNumPositiveStats(struct StatChange *st);
+static u32 GetNumNegativeStats(struct StatChange *st);
+
+u32 static const sAccurateStatOrder[NUM_BATTLE_STATS] =
+{
+    STAT_HP,
+    STAT_ATK,
+    STAT_DEF,
+    STAT_SPATK,
+    STAT_SPDEF,
+    STAT_SPEED,
+    STAT_ACC,
+    STAT_EVASION,
+};
 
 // Single stat check
 bool32 CanStatChange(struct BattleCalcValues *cv, struct StatChange *st)
@@ -44,38 +56,50 @@ bool32 CanStatChange(struct BattleCalcValues *cv, struct StatChange *st)
     return TRUE;
 }
 
-static inline bool32 TargetNotAffected(struct StatChange *st)
-{
-    if (!st->onlyChecking)
-    {
-        st->script = BattleScript_ItDoesntScrTarget;
-        gBattleScripting.battler = st->battler;
-    }
-
-    return TRUE;
-}
-
-// Figure out a strat when to print failure and when not
 static bool32 IsBlockedBySpecificCondition(struct BattleCalcValues *cv, struct StatChange *st)
 {
     switch (GetMoveEffect(cv->move))
     {
-    case EFFECT_STAT_CHANGE_ON_STATUS:
-        if (!(gBattleMons[st->battler].status1 & GetMoveStatusOnStatChange(cv->move)))
-            return TargetNotAffected(st);
+    case EFFECT_CAPTIVATE:
+        if (cv->abilities[st->battler] == ABILITY_OBLIVIOUS)
+        {
+            if (!st->onlyChecking)
+            {
+                st->script = BattleScript_AbilityPopUp;
+                gBattlerAbility = st->battler;
+                gLastUsedAbility = ABILITY_OBLIVIOUS;
+                RecordAbilityBattle(st->battler, ABILITY_OBLIVIOUS);
+            }
+            return TRUE;
+        }
         break;
     case EFFECT_STRENGTH_SAP:
         if (CompareStat(st->battler, st->stat, MAX_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
-            return TargetNotAffected(st);
+        {
+            if (!st->onlyChecking)
+            {
+                st->script = BattleScript_ItDoesntAffectScrTarget;
+                gBattleScripting.battler = st->battler;
+            }
+            return TRUE;
+        }
         break;
-    case EFFECT_STAT_CHANGE_MAGNETIC:
-        if (cv->abilities[st->battler] != ABILITY_PLUS && cv->abilities[st->battler] != ABILITY_MINUS)
-            return TargetNotAffected(st);
-        break;
+    // case EFFECT_STAT_CHANGE_MAGNETIC:
+    //     if (cv->abilities[st->battler] != ABILITY_PLUS && cv->abilities[st->battler] != ABILITY_MINUS)
+    //         return TargetNotAffected(st);
+    //     break;
+    //
     case EFFECT_ROTOTILLER:
         if (!IsBattlerGrounded(st->battler, cv->abilities[st->battler], cv->holdEffects[st->battler])
          || !IS_BATTLER_OF_TYPE(st->battler, TYPE_GRASS))
-            return TargetNotAffected(st);
+        {
+            if (!st->onlyChecking)
+            {
+                st->script = BattleScript_ItDoesntAffectScrTarget;
+                gBattleScripting.battler = st->battler;
+            }
+            return TRUE;
+        }
         break;
 
     default:
@@ -85,58 +109,43 @@ static bool32 IsBlockedBySpecificCondition(struct BattleCalcValues *cv, struct S
     return FALSE;
 }
 
-static bool32 CanMoveMissTarget(struct BattleCalcValues *cv, struct StatChange *st)
+static bool32 IsSubstituteBlocked(struct BattleCalcValues *cv, struct StatChange *st)
 {
-    if (st->certain || !st->checkAccuracy)
+    // Need to set certain correctly
+    if (st->certain || cv->battlerAtk == st->battler)
         return FALSE;
 
-    if (!DoesMoveMissTarget(cv))
+    if (!DoesSubstituteBlockMoveInternal(cv->battlerAtk, st->battler, cv->abilities[cv->battlerAtk], cv->move))
         return FALSE;
-
-    st->targetMissed = TRUE;
 
     if (!st->onlyChecking)
     {
         gBattleScripting.battler = st->battler;
-        gBattleCommunication[MISS_TYPE] = B_MSG_MISSED;
-        gBattleStruct->moveResultFlags[st->battler] |= MOVE_RESULT_MISSED;
-        st->script = BattleScript_MissedTarget;
-        return TRUE;
+        st->script = BattleScript_ItDoesntAffectScrTarget;
     }
 
     return TRUE;
 }
 
-u32 static const sAccurateStatOrder[NUM_BATTLE_STATS] =
-{
-    STAT_HP,
-    STAT_ATK,
-    STAT_DEF,
-    STAT_SPATK,
-    STAT_SPDEF,
-    STAT_SPEED,
-    STAT_ACC,
-    STAT_EVASION,
-};
-
 // Multi stat checks
 bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 {
     u32 numAdditionalEffects = GetMoveAdditionalEffectCount(cv->move);
-    u32 effectsCounter = 0;
     u32 canAnyStatChange = FALSE;
-    enum Stat counter = STAT_ATK;
 
     if (IsBlockedBySpecificCondition(cv, st))
         return FALSE;
 
-    while (effectsCounter < numAdditionalEffects)
-    {
-        const struct AdditionalEffect *additionalEffect = GetMoveAdditionalEffectById(cv->move, effectsCounter);
+    if (IsSubstituteBlocked(cv, st))
+        return FALSE;
 
-        while (counter < NUM_BATTLE_STATS)
+    for (u32 i = 0; i < numAdditionalEffects; i++)
+    {
+        const struct AdditionalEffect *additionalEffect = GetMoveAdditionalEffectById(cv->move, i);
+
+        for (enum Stat j = STAT_ATK; j < NUM_BATTLE_STATS; j++)
         {
-            st->stat = sAccurateStatOrder[counter++];
+            st->stat = sAccurateStatOrder[j];
             st->stage = GetStatStage(st->stat, additionalEffect);
 
             if (st->stage == 0)
@@ -160,37 +169,28 @@ bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
             }
 
             if (st->stage < 0 && CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
-            {
                 continue;
-            }
 
             canAnyStatChange = TRUE;
         }
-
-        counter = STAT_ATK;
-        effectsCounter++;
     }
-
-    // Ignore acc check for ai
-    if (canAnyStatChange && CanMoveMissTarget(cv, st))
-        return FALSE;
 
     return canAnyStatChange;
 }
 
 enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 {
-    for (u32 counter = 0; counter < st->statStageAmount; counter++)
+    for (u32 i = 0; i < st->statStageAmount; i++)
     {
-        if (counter + 1 == st->statStageAmount) // Avoids redundant looping
+        if (i + 1 == st->statStageAmount) // Avoids redundant looping
             st->nextBattler = TRUE;
 
-        if (st->statStageQueue[counter].done)
+        if (st->statStageQueue[i].done)
             continue;
 
-        st->stat = st->statStageQueue[counter].stat;
-        st->stage = st->statStageQueue[counter].stage;
-        st->statStageQueue[counter].done = TRUE;
+        st->stat = st->statStageQueue[i].stat;
+        st->stage = st->statStageQueue[i].stage;
+        st->statStageQueue[i].done = TRUE;
 
         AdjustStatStage(cv, st);
         if (st->stage < 0)
@@ -235,18 +235,6 @@ enum StatChangeResult TrySingleStatChange(struct BattleCalcValues *cv, struct St
     }
 
     return STAT_CHANGE_DIDNT_WORK;
-}
-
-// Needs to check all stats
-static bool32 IsSubstituteBlocked(struct BattleCalcValues *cv, struct StatChange *st)
-{
-    if (!st->nonMoveStatChange || st->certain)
-        return FALSE;
-
-    if (!gBattleMons[st->battler].volatiles.substitute)
-        return FALSE;
-
-    return TRUE;
 }
 
 static bool32 IsMistProtected(struct BattleCalcValues *cv, struct StatChange *st)
@@ -457,6 +445,7 @@ static enum StatChangeResult DecreaseStat(struct BattleCalcValues *cv, struct St
 
     if (!st->onlyChecking)
     {
+        st->statChanged = TRUE;
         gBattleScripting.battler = st->battler;
         gBattleMons[st->battler].statStages[st->stat] += st->stage;
         if (gBattleMons[st->battler].statStages[st->stat] < MIN_STAT_STAGE)
@@ -545,6 +534,7 @@ static enum StatChangeResult IncreaseStat(struct BattleCalcValues *cv, struct St
 
     if (!st->onlyChecking)
     {
+        st->statChanged = TRUE;
         gBattleScripting.battler = st->battler;
         gBattleMons[st->battler].statStages[st->stat] += st->stage;
         gProtectStructs[st->battler].statRaised = TRUE;
@@ -575,7 +565,7 @@ static void TryPlayStatChangeAnimation(struct BattleCalcValues *cv, struct StatC
         u32 isStatChangeByTwo = abs(st->stage) > 1;
         u32 numNegativeStats = 0;
         if (!st->forceAnim)
-            numNegativeStats = GetNumNegativeStats(st->battler);
+            numNegativeStats = GetNumNegativeStats(st);
 
         statAnimId += isStatChangeByTwo ? STAT_ANIM_MINUS2 : STAT_ANIM_MINUS1;
 
@@ -597,7 +587,7 @@ static void TryPlayStatChangeAnimation(struct BattleCalcValues *cv, struct StatC
         u32 numPositiveStats = 0;
 
         if (!st->forceAnim)
-            numPositiveStats = GetNumPositiveStats(st->battler);
+            numPositiveStats = GetNumPositiveStats(st);
 
         statAnimId += isStatChangeByTwo ? STAT_ANIM_PLUS2 : STAT_ANIM_PLUS1;
 
@@ -669,7 +659,6 @@ static bool32 AbilityPreventsSpecificStatDrop(u32 ability, u32 stat)
     }
 }
 
-// Union is not possible
 u32 GetStatStage(u32 stat, const struct AdditionalEffect *additionalEffect)
 {
     switch (stat)
@@ -686,24 +675,23 @@ u32 GetStatStage(u32 stat, const struct AdditionalEffect *additionalEffect)
     return 0;
 }
 
-// TODO just the internatl queue
-static u32 GetNumPositiveStats(enum BattlerId battler)
+static u32 GetNumPositiveStats(struct StatChange *st)
 {
     u32 num = 0;
-    for (u32 i = STAT_ATK; i < gSpecialStatuses[battler].statStageAmount; i++)
+    for (u32 i = STAT_ATK; i < st->statStageAmount; i++)
     {
-        if (gSpecialStatuses[battler].statStageQueue[i].stage > 0)
+        if (st->statStageQueue[i].stage > 0)
             num++;
     }
     return num;
 }
 
-static u32 GetNumNegativeStats(enum BattlerId battler)
+static u32 GetNumNegativeStats(struct StatChange *st)
 {
     u32 num = 0;
-    for (u32 i = STAT_ATK; i < gSpecialStatuses[battler].statStageAmount; i++)
+    for (u32 i = STAT_ATK; i < st->statStageAmount; i++)
     {
-        if (gSpecialStatuses[battler].statStageQueue[i].stage < 0)
+        if (st->statStageQueue[i].stage < 0)
             num++;
     }
     return num;
@@ -716,20 +704,9 @@ void SetStatChange(enum BattlerId battler, enum Stat stat, s32 stage)
     gSpecialStatuses[battler].statStageAmount++;
 }
 
-// Multiply stats can be boosted by a response ability
+// Used for stat change responses like Defiant and Mirror Armor
 void SetStatChange2(enum BattlerId battler, enum Stat stat, s32 stage)
 {
-    // if (stage < 0)
-    // {
-    //     if (CompareStat(battler, stat, MIN_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
-    //         return;
-    // }
-    // else
-    // {
-    //     if (CompareStat(battler, stat, MAX_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
-    //         return;
-    // }
-    //
     gSpecialStatuses[battler].statStageQueue2[gSpecialStatuses[battler].statStageAmount2].stat = stat;
     gSpecialStatuses[battler].statStageQueue2[gSpecialStatuses[battler].statStageAmount2].stage = stage;
     gSpecialStatuses[battler].statStageAmount2++;
@@ -830,8 +807,3 @@ bool32 CompareStat(enum BattlerId battler, enum Stat statId, u32 cmpTo, u32 cmpK
 
     return ret;
 }
-
-// OLD FUNCTIONS
-u32 ChangeStatBuffs(enum BattlerId battler, s8 statValue, enum Stat statId, union StatChangeFlags flags, u32 stats, const u8 *BS_ptr) { return STAT_CHANGE_WORKED; }
-
-

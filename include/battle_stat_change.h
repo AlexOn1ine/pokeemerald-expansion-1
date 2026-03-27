@@ -48,14 +48,15 @@ struct StatChange
     u32 statChangePrevented:1;
     u32 intimidate:1;
 
+    u32 statChanged:1;
     u32 itemMessage:1;
     u32 checkAccuracy:1;
     u32 targetMissed:1;
+    u32 defog:1;
 
     // Some padding
 };
 
-u32 ChangeStatBuffs(enum BattlerId battler, s8 statValue, enum Stat statId, union StatChangeFlags flags, u32 stats, const u8 *BS_ptr);
 bool32 CompareStat(enum BattlerId battler, enum Stat statId, u32 cmpTo, u32 cmpKind, enum Ability ability);
 bool32 CanStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st);

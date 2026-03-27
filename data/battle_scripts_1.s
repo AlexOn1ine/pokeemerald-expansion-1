@@ -71,33 +71,68 @@ BattleScript_TeraFormChange::
 	switchinabilities BS_ATTACKER
 	end3
 
-BattleScript_EffectStatChangeTarget::
-	attackcanceler
-	jumpifsubstituteblocks BattleScript_ButItFailed
-	accuracycheck BattleScript_MoveMissedPause
-	tryanystatchange BattleScript_EffectStatChangeTarget_End
-	attackanimation
-	waitanimation
-BattleScript_EffectStatChangeTarget_End:
-	trystatchange
-	goto BattleScript_MoveEnd
-
-BattleScript_EffectStatChangeUser::
-	attackcanceler
-	tryanystatchange BattleScript_StatChangeUserHandleFailure
-	attackanimation
-	waitanimation
-BattleScript_StatChangeUserHandleFailure:
-	trystatchange
-	goto BattleScript_MoveEnd
-
 BattleScript_EffectStatChange::
 	attackcanceler
+BattleScript_EffectStatChangeAfterCanceler:
 	tryanystatchange BattleScript_EffectStatChangeHandleFailure
 	attackanimation
 	waitanimation
 BattleScript_EffectStatChangeHandleFailure:
 	trystatchange
+	goto BattleScript_MoveEnd
+
+BattleScript_EffectDefog::
+	attackcanceler
+	trydefog FALSE, BattleScript_EffectDefogDoMoveAnimation
+	goto BattleScript_EffectStatChangeAfterCanceler
+
+BattleScript_EffectDefogDoMoveAnimation::
+	attackanimation
+	waitanimation
+	tryanystatchange BattleScript_EffectDefogDoMoveAnimationEnd
+	call BattleScript_SwapFromSubstitute
+BattleScript_EffectDefogDoMoveAnimationEnd:
+	trystatchange
+	call BattleScript_SwapToSubstitute
+    saveattacker
+	trydefog TRUE, NULL
+    restoreattacker
+	goto BattleScript_MoveEnd
+
+BattleScript_EffectTidyUp::
+	attackcanceler
+	pause B_WAIT_TIME_MED
+	waitstate
+	saveattacker
+	savetarget
+	trytidyup FALSE, BattleScript_EffectTidyUpDoMoveAnimation
+	restoreattacker
+	restoretarget
+	goto BattleScript_EffectStatChangeAfterCanceler
+
+BattleScript_EffectTidyUpDoMoveAnimation::
+	attackanimation
+	waitanimation
+	trytidyup TRUE, NULL
+	printstring STRINGID_TIDYINGUPCOMPLETE
+	waitmessage B_WAIT_TIME_LONG
+	restoreattacker
+	restoretarget
+	tryanystatchange BattleScript_EffectTidyUpDoMoveAnimationEnd
+BattleScript_EffectTidyUpDoMoveAnimationEnd:
+	trystatchange
+	goto BattleScript_MoveEnd
+
+
+BattleScript_EffectAutotomize::
+	attackcanceler
+	tryanystatchange BattleScript_EffectStatChangeHandleFailure
+	attackanimation
+	waitanimation
+ 	trystatchange
+	tryautotomize BattleScript_MoveEnd
+	printstring STRINGID_BECAMENIMBLE
+	waitmessage B_WAIT_TIME_LONG
 	goto BattleScript_MoveEnd
 
 BattleScript_IncreaseStatChangeMessage::
@@ -129,27 +164,6 @@ BattleScript_MissedTarget::
 	printstring STRINGID_PKMNAVOIDEDATTACK
 	waitmessage B_WAIT_TIME_LONG
 	return
-
-BattleScript_EffectTidyUp::
-	attackcanceler
-	pause B_WAIT_TIME_MED
-	waitstate
-	saveattacker
-	savetarget
-	trytidyup FALSE, BattleScript_EffectTidyUpDoMoveAnimation
-	restoreattacker
-	restoretarget
-	@goto BattleScript_EffectDragonDanceFromStatUp
-
-BattleScript_EffectTidyUpDoMoveAnimation::
-	attackanimation
-	waitanimation
-	trytidyup TRUE, NULL
-	printstring STRINGID_TIDYINGUPCOMPLETE
-	waitmessage B_WAIT_TIME_LONG
-	restoreattacker
-	restoretarget
-	@goto BattleScript_EffectDragonDanceFromStatUp
 
 BattleScript_EffectShedTail::
 	attackcanceler
@@ -556,7 +570,7 @@ BattleScript_EffectClangorousSoul::
 	waitanimation
 	healthbarupdate BS_ATTACKER, PASSIVE_HP_UPDATE
 	datahpupdate BS_ATTACKER, PASSIVE_HP_UPDATE
-	call BattleScript_EffectStatChangeUser
+	call BattleScript_EffectStatChange
 
 BattleScript_EffectOctolock::
 	attackcanceler
@@ -583,15 +597,11 @@ BattleScript_EffectPoltergeist::
 
 BattleScript_EffectTarShot::
 	attackcanceler
-	jumpifsubstituteblocks BattleScript_ButItFailed
-	accuracycheck BattleScript_MoveMissedPause
 	cantarshotwork BattleScript_ButItFailed
-	setstatchanger STAT_SPEED, 1, TRUE
 	attackanimation
 	waitanimation
-	@statbuffchange BS_TARGET, STAT_CHANGE_ALLOW_PTR, BattleScript_TryTarShot
-	printfromtable gStatDownStringIds
-	waitmessage B_WAIT_TIME_LONG
+	tryanystatchange BattleScript_TryTarShot
+	trystatchange
 BattleScript_TryTarShot:
 	trytarshot BattleScript_MoveEnd
 	printstring STRINGID_PKMNBECAMEWEAKERTOFIRE
@@ -943,7 +953,7 @@ BattleScript_EffectPsychoShiftCanWork:
 	updatestatusicon BS_ATTACKER
 	goto BattleScript_MoveEnd
 
-BattleScript_ItDoesntScrTarget::
+BattleScript_ItDoesntAffectScrTarget::
 	printstring STRINGID_ITDOESNTAFFECTSCR
 	waitmessage B_WAIT_TIME_SHORT
 	flushtextbox
@@ -958,7 +968,7 @@ BattleScript_EffectHitEnemyHealAlly::
 	jumpiftargetally BattleScript_EffectHealPulse
 	goto BattleScript_EffectHit
 
-BattleScript_EffectDefog::
+BattleScript_EffectDefog_OLD::
 	setstatchanger STAT_EVASION, 1, TRUE
 	attackcanceler
 	jumpifgenconfiglowerthan CONFIG_B_DEFOG_EFFECT_CLEARING, GEN_5, BattleScript_DefogAfterSubstituteCheck
@@ -1014,11 +1024,6 @@ BattleScript_EffectInstruct::
 	copybyte gBattlerAttacker, gBattlerTarget
 	copybyte gBattlerTarget, gEffectBattler
 	jumptocalledmove TRUE
-
-BattleScript_MoveEffectWeightLoss::
-	printstring STRINGID_BECAMENIMBLE
-	waitmessage B_WAIT_TIME_LONG
-	return
 
 BattleScript_FinalGambit::
 	setatkhptozero
@@ -2462,7 +2467,7 @@ BattleScript_EffectStatChangeHalfHp::
 	waitanimation
 	healthbarupdate BS_ATTACKER, PASSIVE_HP_UPDATE
 	datahpupdate BS_ATTACKER, PASSIVE_HP_UPDATE
-	call BattleScript_EffectStatChangeUser
+	call BattleScript_EffectStatChange
 
 BattleScript_EffectPsychUp::
 	attackcanceler
@@ -2551,8 +2556,7 @@ BattleScript_NotAffected::
 
 BattleScript_NotAffectedAbilityPopUp::
 	pause B_WAIT_TIME_SHORT
-	call BattleScript_AbilityPopUpTarget
-	setmoveresultflags MOVE_RESULT_DOESNT_AFFECT_FOE
+	call BattleScript_AbilityPopUp
 	resultmessage
 	waitmessage B_WAIT_TIME_LONG
 	goto BattleScript_MoveEnd
@@ -6577,4 +6581,3 @@ BattleScript_SilphScopeUnveiled::
 	printstring STRINGID_GHOSTWASMAROWAK
 	waitmessage B_WAIT_TIME_LONG
 	end2
-
