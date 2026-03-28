@@ -721,13 +721,16 @@ struct BattleStruct
     u8 moveBouncer;
     u8 dancerSavedAttacker:3;
     u8 dancerSavedTarget:3;
-    u8 unused3:2;
+    u8 defogActivates:1;
+    u8 tidyUpActivates:1;
     u8 positiveAnimPlayed:1;
     u8 negativeAnimPlayed:1;
-    u8 statChangeBattler:3;
-    u8 unused4:1;
+    u8 statChangeBattler:3; // will be removed
+    u8 defogSavedBattler:3;
+    u8 printMessage:1;
     u8 statChangeUser:1;
     u8 intimidateActivated:1;
+    u8 partingShotActive:1;
 };
 
 struct AiBattleData

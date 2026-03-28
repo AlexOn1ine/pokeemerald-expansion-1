@@ -710,6 +710,7 @@ enum StatChangedStringID
     B_MSG_STAT_WONT_CHANGE,
     B_MSG_STAT_CHANGE_EMPTY,
     B_MSG_STAT_CHANGED_ITEM,
+    B_MSG_STAT_CHANGED_BELLY_DRUM,
     B_MSG_USED_DIRE_HIT,
 };
 
@@ -1185,6 +1186,15 @@ enum ZenModeStringID
 {
     B_MSG_ZEN_MODE_TRIGGERED,
     B_MSG_ZEN_MODE_ENDED,
+};
+
+// gMoveSpecificMessage
+enum MoveSpecificMessages
+{
+    B_MSG_TIDY_UP,
+    B_MSG_NO_RETREAT,
+    B_MSG_NO_AUTOTOMIZE,
+    B_MSG_TAR_SHOT,
 };
 
 #endif // GUARD_CONSTANTS_BATTLE_STRING_IDS_H

@@ -1485,11 +1485,6 @@
 	.4byte \jumpInstr
 	.endm
 
-	.macro trytarshot failInstr:req
-	callnative BS_TryTarShot
-	.4byte \failInstr
-	.endm
-
 	.macro jumpifnoberry battler:req, jumpInstr:req
 	callnative BS_JumpIfNoBerry
 	.byte \battler
@@ -1553,11 +1548,6 @@
 
 	.macro waitfanfare
 	callnative BS_WaitFanfare
-	.endm
-
-	.macro cantarshotwork failInstr:req
-	callnative BS_CanTarShotWork
-	.4byte \failInstr
 	.endm
 
 	.macro removeterrain
@@ -1975,11 +1965,6 @@
 	.byte \battler
 	.byte \caseId
 	.byte \bufferSpeciesName
-	.endm
-
-	.macro tryautotomize failInstr:req
-	callnative BS_TryAutotomize
-	.4byte \failInstr
 	.endm
 
 	.macro tryinstruct failInstr:req

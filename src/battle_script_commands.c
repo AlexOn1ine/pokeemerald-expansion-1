@@ -6906,134 +6906,6 @@ static void RemoveAllTerrains(void)
     TryToRevertMimicryAndFlags();
 }
 
-#define DEFOG_CLEAR(status, structField, battlescript, move)\
-{                                                           \
-    if (*sideStatuses & status)                             \
-    {                                                       \
-        if (clear)                                          \
-        {                                                   \
-            if (move)                                       \
-                PREPARE_MOVE_BUFFER(gBattleTextBuff1, move);\
-            *sideStatuses &= ~status;                       \
-            sideTimer->structField = 0;                     \
-            BattleScriptCall(battlescript);                 \
-        }                                                   \
-        else                                                \
-        {                                                   \
-            gBattlerAttacker = saveBattler;                 \
-        }                                                   \
-        return TRUE;                                        \
-    }                                                       \
-}
-
-static bool32 DefogClearHazards(u32 saveBattler, enum BattleSide side, bool32 clear)
-{
-    if (!AreAnyHazardsOnSide(side))
-        return FALSE;
-
-    for (u32 hazardType = HAZARDS_NONE + 1; hazardType < HAZARDS_MAX_COUNT; hazardType++)
-    {
-        bool32 checkOrClear = clear ? IsHazardOnSideAndClear(side, hazardType) : IsHazardOnSide(side, hazardType);
-        if (checkOrClear)
-        {
-            if (clear)
-            {
-                gBattleStruct->numHazards[side]--;
-                gBattleCommunication[MULTISTRING_CHOOSER] = hazardType;
-                BattleScriptCall(BattleScript_DefogClearHazards);
-            }
-            else
-            {
-                gBattlerAttacker = saveBattler;
-            }
-            return TRUE;
-        }
-    }
-    return FALSE;
-}
-
-static bool32 TryDefogClear(enum BattlerId battlerAtk, bool32 clear)
-{
-    s32 i;
-    u8 saveBattler = gBattlerAttacker;
-
-    for (i = 0; i < NUM_BATTLE_SIDES; i++)
-    {
-        struct SideTimer *sideTimer = &gSideTimers[i];
-        u32 *sideStatuses = &gSideStatuses[i];
-
-        if (GetBattlerSide(battlerAtk) != i)
-        {
-            gBattlerAttacker = i; // For correct battle string. Ally's / Foe's
-            DEFOG_CLEAR(SIDE_STATUS_REFLECT, reflectTimer, BattleScript_SideStatusWoreOffReturn, MOVE_REFLECT);
-            DEFOG_CLEAR(SIDE_STATUS_LIGHTSCREEN, lightscreenTimer, BattleScript_SideStatusWoreOffReturn, MOVE_LIGHT_SCREEN);
-            DEFOG_CLEAR(SIDE_STATUS_MIST, mistTimer, BattleScript_SideStatusWoreOffReturn, MOVE_MIST);
-            DEFOG_CLEAR(SIDE_STATUS_AURORA_VEIL, auroraVeilTimer, BattleScript_SideStatusWoreOffReturn, MOVE_AURORA_VEIL);
-            DEFOG_CLEAR(SIDE_STATUS_SAFEGUARD, safeguardTimer, BattleScript_SideStatusWoreOffReturn, MOVE_SAFEGUARD);
-        }
-        if (GetConfig(B_DEFOG_EFFECT_CLEARING) >= GEN_6)
-        {
-            gBattlerAttacker = i; // For correct battle string. Ally's / Foe's
-            if (DefogClearHazards(saveBattler, i, clear))
-                return TRUE;
-        }
-        if (gBattleWeather & B_WEATHER_FOG)
-        {
-            if (clear)
-            {
-                gBattleWeather &= ~B_WEATHER_FOG;
-                BattleScriptCall(BattleScript_FogEnded_Ret);
-            }
-            return TRUE;
-        }
-        if (GetConfig(B_DEFOG_EFFECT_CLEARING) >= GEN_8 && (gFieldStatuses & STATUS_FIELD_TERRAIN_ANY))
-        {
-            if (clear)
-            {
-                RemoveAllTerrains();
-                BattleScriptCall(BattleScript_TerrainEnds_Ret);
-            }
-            return TRUE;
-        }
-    }
-
-    gBattlerAttacker = saveBattler;
-
-    return FALSE;
-}
-
-static bool32 TryTidyUpClear(enum BattlerId battlerAtk, bool32 clear)
-{
-    u32 i;
-    u32 saveBattler = gBattlerAttacker;
-
-    for (i = 0; i < NUM_BATTLE_SIDES; i++)
-    {
-        gBattlerAttacker = i; // For correct battle string. Ally's / Foe's
-        if (DefogClearHazards(saveBattler, i, clear))
-            return TRUE;
-    }
-
-    for (i = 0; i < MAX_BATTLERS_COUNT; i++)
-    {
-        if (gBattleMons[i].volatiles.substitute)
-        {
-            if (clear)
-            {
-                gBattlerTarget = i;
-                gBattleMons[i].volatiles.substituteHP = 0;
-                gBattleMons[i].volatiles.substitute = FALSE;
-                BattleScriptCall(BattleScript_SubstituteFade);
-            }
-            gBattlerAttacker = saveBattler;
-            return TRUE;
-        }
-    }
-
-    gBattlerAttacker = saveBattler;
-    return FALSE;
-}
-
 u32 IsFlowerVeilProtected(enum BattlerId battler)
 {
     if (IS_BATTLER_OF_TYPE(battler, TYPE_GRASS))
@@ -12306,22 +12178,22 @@ void BS_TryDefog(void)
 {
     NATIVE_ARGS(u8 clear, const u8 *failInstr);
 
-    if (cmd->clear)
-    {
-        if (TryDefogClear(gEffectBattler, TRUE))
-            return;
-        else
-            gBattlescriptCurrInstr = cmd->nextInstr;
-    }
-    else
-    {
-        enum BattlerId savedBattler = gBattlerAttacker;
-        if (TryDefogClear(gBattlerAttacker, FALSE))
-            gBattlescriptCurrInstr = cmd->nextInstr;
-        else
-            gBattlescriptCurrInstr = cmd->failInstr;
-        gBattlerAttacker = savedBattler;
-    }
+    // if (cmd->clear)
+    // {
+    //     if (TryDefogClear(gEffectBattler, TRUE))
+    //         return;
+    //     else
+    //         gBattlescriptCurrInstr = cmd->nextInstr;
+    // }
+    // else
+    // {
+    //     enum BattlerId savedBattler = gBattlerAttacker;
+    //     if (TryDefogClear(gBattlerAttacker, FALSE))
+    //         gBattlescriptCurrInstr = cmd->nextInstr;
+    //     else
+    //         gBattlescriptCurrInstr = cmd->failInstr;
+    //     gBattlerAttacker = savedBattler;
+    // }
 }
 
 void BS_TryTriggerStatusForm(void)
@@ -12380,20 +12252,20 @@ void BS_TryTidyUp(void)
 {
     NATIVE_ARGS(u8 clear, const u8 *jumpInstr);
 
-    if (cmd->clear)
-    {
-        if (TryTidyUpClear(gEffectBattler, TRUE))
-            return;
-        else
-            gBattlescriptCurrInstr = cmd->nextInstr;
-    }
-    else
-    {
-        if (TryTidyUpClear(gBattlerAttacker, FALSE))
-            gBattlescriptCurrInstr = cmd->jumpInstr;
-        else
-            gBattlescriptCurrInstr = cmd->nextInstr;
-    }
+    // if (cmd->clear)
+    // {
+    //     if (TryTidyUpClear(gEffectBattler, TRUE))
+    //         return;
+    //     else
+    //         gBattlescriptCurrInstr = cmd->nextInstr;
+    // }
+    // else
+    // {
+    //     if (TryTidyUpClear(gBattlerAttacker, FALSE))
+    //         gBattlescriptCurrInstr = cmd->jumpInstr;
+    //     else
+    //         gBattlescriptCurrInstr = cmd->nextInstr;
+    // }
 }
 
 void BS_TryQuash(void)
@@ -12500,31 +12372,6 @@ void BS_JumpIfSleepClause(void)
         gBattlescriptCurrInstr = cmd->jumpInstr;
     else
         gBattlescriptCurrInstr = cmd->nextInstr;
-}
-
-void BS_TryTarShot(void)
-{
-    NATIVE_ARGS(const u8 *failInstr);
-    if (gBattleMons[gBattlerTarget].volatiles.tarShot || GetActiveGimmick(gBattlerTarget) == GIMMICK_TERA)
-    {
-        gBattlescriptCurrInstr = cmd->failInstr;
-    }
-    else
-    {
-        gBattleMons[gBattlerTarget].volatiles.tarShot = TRUE;
-        gBattlescriptCurrInstr = cmd->nextInstr;
-    }
-}
-
-void BS_CanTarShotWork(void)
-{
-    NATIVE_ARGS(const u8 *failInstr);
-    // Tar Shot fails if the target can't be made weaker to fire and it's speed can't be lowered further
-    if (!(gBattleMons[gBattlerTarget].volatiles.tarShot || GetActiveGimmick(gBattlerTarget) == GIMMICK_TERA)
-     || CompareStat(gBattlerTarget, STAT_SPEED, MAX_STAT_STAGE, CMP_LESS_THAN, GetBattlerAbility(gBattlerTarget)))
-        gBattlescriptCurrInstr = cmd->nextInstr;
-    else
-        gBattlescriptCurrInstr = cmd->failInstr;
 }
 
 void BS_JumpIfBlockedBySoundproof(void)
@@ -13846,20 +13693,6 @@ void BS_HandleFormChange(void)
             SetBattlerShadowSpriteCallback(battler, gBattleMons[battler].species);
     }
     gBattlescriptCurrInstr = cmd->nextInstr;
-}
-
-void BS_TryAutotomize(void)
-{
-    NATIVE_ARGS(const u8 *failInstr);
-    if (GetBattlerWeight(gBattlerAttacker) > 1)
-    {
-        gBattleMons[gBattlerAttacker].volatiles.autotomizeCount++;
-        gBattlescriptCurrInstr = cmd->nextInstr;
-    }
-    else
-    {
-        gBattlescriptCurrInstr = cmd->failInstr;
-    }
 }
 
 static inline bool32 IsInstructBannedChargingMove(u32 battler)

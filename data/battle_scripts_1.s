@@ -44,6 +44,11 @@ BattleScript_MagnitudeMessage::
 	waitmessage B_WAIT_TIME_LONG
 	return
 
+BattleScript_MoveSpecificMessage::
+	printfromtable gMoveSpecificMessage
+	waitmessage B_WAIT_TIME_LONG
+	return
+
 BattleScript_Terastallization::
 	@ TODO: no string prints in S/V, but right now this helps with clarity
 	printstring STRINGID_PKMNSTORINGENERGY
@@ -73,65 +78,17 @@ BattleScript_TeraFormChange::
 
 BattleScript_EffectStatChange::
 	attackcanceler
-BattleScript_EffectStatChangeAfterCanceler:
-	tryanystatchange BattleScript_EffectStatChangeHandleFailure
 	attackanimation
 	waitanimation
-BattleScript_EffectStatChangeHandleFailure:
-	trystatchange
 	goto BattleScript_MoveEnd
 
-BattleScript_EffectDefog::
+BattleScript_EffectStatChangeHalfHp::
 	attackcanceler
-	trydefog FALSE, BattleScript_EffectStatChangeAfterCanceler
 	attackanimation
 	waitanimation
-	tryanystatchange BattleScript_EffectDefogFailedEvasion
-	call BattleScript_SwapFromSubstitute
-BattleScript_EffectDefogFailedEvasion:
-	trystatchange
-	call BattleScript_SwapToSubstitute
-    copybyte gEffectBattler, gBattlerAttacker
-    saveattacker
-	trydefog TRUE, NULL
-    restoreattacker
-	goto BattleScript_MoveEnd
-
-BattleScript_EffectTidyUp::
-	attackcanceler
-	pause B_WAIT_TIME_MED
-	waitstate
-	saveattacker
-	savetarget
-	trytidyup FALSE, BattleScript_EffectTidyUpDoMoveAnimation
-	restoreattacker
-	restoretarget
-	goto BattleScript_EffectStatChangeAfterCanceler
-
-BattleScript_EffectTidyUpDoMoveAnimation::
-	attackanimation
-	waitanimation
-	trytidyup TRUE, NULL
-	printstring STRINGID_TIDYINGUPCOMPLETE
-	waitmessage B_WAIT_TIME_LONG
-	restoreattacker
-	restoretarget
-	tryanystatchange BattleScript_EffectTidyUpDoMoveAnimationEnd
-BattleScript_EffectTidyUpDoMoveAnimationEnd:
-	trystatchange
-	goto BattleScript_MoveEnd
-
-
-BattleScript_EffectAutotomize::
-	attackcanceler
-	tryanystatchange BattleScript_EffectStatChangeHandleFailure
-	attackanimation
-	waitanimation
- 	trystatchange
-	tryautotomize BattleScript_MoveEnd
-	printstring STRINGID_BECAMENIMBLE
-	waitmessage B_WAIT_TIME_LONG
-	goto BattleScript_MoveEnd
+	healthbarupdate BS_ATTACKER, PASSIVE_HP_UPDATE
+	datahpupdate BS_ATTACKER, PASSIVE_HP_UPDATE
+	call BattleScript_MoveEnd
 
 BattleScript_IncreaseStatChangeMessage::
 	printfromtable gStatUpStringIds
@@ -593,33 +550,6 @@ BattleScript_EffectPoltergeist::
 	waitmessage B_WAIT_TIME_LONG
 	goto BattleScript_HitFromDamageCalc
 
-BattleScript_EffectTarShot::
-	attackcanceler
-	cantarshotwork BattleScript_ButItFailed
-	attackanimation
-	waitanimation
-	tryanystatchange BattleScript_TryTarShot
-	trystatchange
-BattleScript_TryTarShot:
-	trytarshot BattleScript_MoveEnd
-	printstring STRINGID_PKMNBECAMEWEAKERTOFIRE
-	waitmessage B_WAIT_TIME_LONG
-	goto BattleScript_MoveEnd
-
-BattleScript_EffectNoRetreat::
-	attackcanceler
-	accuracycheck BattleScript_MoveMissedPause
-	jumpifvolatile BS_TARGET, VOLATILE_NO_RETREAT, BattleScript_ButItFailed
-	setvolatile BS_TARGET, VOLATILE_NO_RETREAT
-	attackanimation
-	waitanimation
-	trystatchange
-	jumpifvolatile BS_TARGET, VOLATILE_ESCAPE_PREVENTION, BattleScript_MoveEnd
-	seteffectprimary BS_TARGET, BS_TARGET, MOVE_EFFECT_PREVENT_ESCAPE
-	printstring STRINGID_CANTESCAPEDUETOUSEDMOVE
-	waitmessage B_WAIT_TIME_LONG
-	goto BattleScript_MoveEnd
-
 BattleScript_BothCanNoLongerEscape::
 	printstring STRINGID_BOTHCANNOLONGERESCAPE
 	waitmessage B_WAIT_TIME_LONG
@@ -666,9 +596,6 @@ BattleScript_EffectStuffCheeks::
 	bicword gHitMarker, HITMARKER_DISABLE_ANIMATION
 	setbyte sBERRY_OVERRIDE, 0
 	removeitem BS_ATTACKER
-	tryanystatchange BattleScript_EffectStatChangeHandleFailure
-    trystatchange
-BattleScript_StuffCheeksEnd:
 	goto BattleScript_MoveEnd
 
 BattleScript_EffectJungleHealing::
@@ -840,6 +767,10 @@ BattleScript_PartingShotHandleFailureSwitch:
 BattleScript_EffectPartingShotSwitchNoAnim:
 	moveendall
 	goto BattleScript_MoveSwitchPursuitEnd
+
+BattleScript_PartingShotEscape::
+	call BattleScript_MoveSwitchPursuitRet
+	return
 
 BattleScript_PartingShotHandleFailure::
 	jumpifgenconfiglowerthan CONFIG_B_PARTING_SHOT_SWITCH, GEN_7, BattleScript_PartingShotHandleFailureSwitch
@@ -2232,18 +2163,8 @@ BattleScript_NightmareWorked::
 	waitmessage B_WAIT_TIME_LONG
 	goto BattleScript_MoveEnd
 
-BattleScript_EffectCurse::
-	jumpiftype BS_ATTACKER, TYPE_GHOST, BattleScript_GhostCurse
-	attackcanceler
-	jumpiftype BS_ATTACKER, TYPE_GHOST, BattleScript_GhostCurse
-	tryanystatchange BattleScript_EffectCurseHandleFailure
-	attackanimation
-	waitanimation
-BattleScript_EffectCurseHandleFailure:
-	trystatchange
-	goto BattleScript_MoveEnd
-
 BattleScript_GhostCurse::
+	attackcanceler
 	jumpifbytenotequal gBattlerAttacker, gBattlerTarget, BattleScript_DoGhostCurse
 	getmovetarget
 BattleScript_DoGhostCurse::
@@ -2463,15 +2384,6 @@ BattleScript_BlockedByPrimalWeather::
 	jumpifhalfword CMP_COMMON_BITS, gBattleWeather, B_WEATHER_RAIN_PRIMAL, BattleScript_NoReliefFromHeavyRain
 	jumpifhalfword CMP_COMMON_BITS, gBattleWeather, B_WEATHER_STRONG_WINDS, BattleScript_MysteriousAirCurrentBlowsOn
 	return
-
-BattleScript_EffectStatChangeHalfHp::
-	attackcanceler
-	halvehp
-	attackanimation
-	waitanimation
-	healthbarupdate BS_ATTACKER, PASSIVE_HP_UPDATE
-	datahpupdate BS_ATTACKER, PASSIVE_HP_UPDATE
-	call BattleScript_EffectStatChange
 
 BattleScript_EffectPsychUp::
 	attackcanceler

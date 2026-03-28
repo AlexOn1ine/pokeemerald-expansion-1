@@ -100,8 +100,11 @@ static bool32 IsBlockedBySpecificCondition(struct BattleCalcValues *cv, struct S
             }
             return TRUE;
         }
+    case EFFECT_TAR_SHOT:
+        if (!gBattleMons[st->battler].volatiles.tarShot
+         && GetActiveGimmick(st->battler) != GIMMICK_TERA)
+            st->forceMoveAnim = TRUE;
         break;
-
     default:
         break;
     }
@@ -157,6 +160,12 @@ bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 
             if (statChangeBlockedOnBattler) // Still need to collect stats for proper failure
                 continue;
+
+            if (cv->move == MOVE_BELLY_DRUM && !CompareStat(st->battler, st->stat, MAX_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
+            {
+                canAnyStatChange = TRUE;
+                continue;
+            }
 
             AdjustStatStage(cv, st);
 
@@ -398,8 +407,6 @@ static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct
 
     if (result == STAT_CHANGE_DIDNT_WORK && !st->onlyChecking && !st->silentFailure)
     {
-        if (st->battler != cv->battlerAtk) // Don't set result flags on self
-            st->statChangePrevented = TRUE;
         PREPARE_STAT_BUFFER(gBattleTextBuff1, st->stat);
     }
 
@@ -430,15 +437,18 @@ static enum StatChangeResult DecreaseStat(struct BattleCalcValues *cv, struct St
         PREPARE_STRING_BUFFER(gBattleTextBuff2, STRINGID_EMPTYSTRING3);
     }
 
-
     if (currStage == MIN_STAT_STAGE)
     {
-        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_WONT_CHANGE;
+        if (cv->move == MOVE_BELLY_DRUM)
+            gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_CHANGED_BELLY_DRUM;
+        else
+            gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_WONT_CHANGE;
+
         gBattleScripting.battler = st->battler;
         st->script = BattleScript_DecreaseStatChangeMessage;
+        st->noStatChange = TRUE;
         if (st->onlyChecking)
             return STAT_CHANGE_DIDNT_WORK;
-        st->statChangePrevented = TRUE;
         return STAT_CHANGE_WORKED; // Handle failure
     }
     else if (!st->onlyChecking)
@@ -456,10 +466,20 @@ static enum StatChangeResult DecreaseStat(struct BattleCalcValues *cv, struct St
         if (gBattleMons[st->battler].statStages[st->stat] < MIN_STAT_STAGE)
             gBattleMons[st->battler].statStages[st->stat] = MIN_STAT_STAGE;
 
-        if (st->itemMessage)
+        if (cv->move == MOVE_BELLY_DRUM)
+        {
+            gBattleMons[st->battler].statStages[st->stat] = MIN_STAT_STAGE;
+            gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_CHANGED_BELLY_DRUM;
+        }
+        else if (st->itemMessage)
+        {
             gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_CHANGED_ITEM;
+        }
         else
+        {
+
             gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_CHANGED;
+        }
 
         st->script = BattleScript_DecreaseStatChangeMessage;
         TryPlayStatChangeAnimation(cv, st);
@@ -497,9 +517,9 @@ static enum StatChangeResult IncreaseStat(struct BattleCalcValues *cv, struct St
         gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_WONT_CHANGE;
         st->script = BattleScript_IncreaseStatChangeMessagePause;
         gBattleScripting.battler = st->battler;
+        st->noStatChange = TRUE;
         if (st->onlyChecking)
             return STAT_CHANGE_DIDNT_WORK;
-        st->statChangePrevented = TRUE;
         return STAT_CHANGE_WORKED; // Handle failure
     }
     else if (!st->onlyChecking)
@@ -546,10 +566,19 @@ static enum StatChangeResult IncreaseStat(struct BattleCalcValues *cv, struct St
         if (gBattleMons[st->battler].statStages[st->stat] > MAX_STAT_STAGE)
             gBattleMons[st->battler].statStages[st->stat] = MAX_STAT_STAGE;
 
-        if (st->itemMessage)
+        if (cv->move == MOVE_BELLY_DRUM)
+        {
+            gBattleMons[st->battler].statStages[st->stat] = MAX_STAT_STAGE;
+            gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_CHANGED_BELLY_DRUM;
+        }
+        else if (st->itemMessage)
+        {
             gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_CHANGED_ITEM;
+        }
         else
+        {
             gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_CHANGED;
+        }
 
         st->script = BattleScript_IncreaseStatChangeMessage;
         TryPlayStatChangeAnimation(cv, st);
@@ -612,18 +641,19 @@ static void TryPlayStatChangeAnimation(struct BattleCalcValues *cv, struct StatC
 
 static void AdjustStatStage(struct BattleCalcValues *cv, struct StatChange *st)
 {
-    if (GetMoveEffect(cv->move) == EFFECT_GROWTH && IsBattlerWeatherAffected(cv->holdEffects[st->battler], GetWeather(), B_WEATHER_SUN))
+    u32 effect = GetMoveEffect(cv->move);
+    if (effect == EFFECT_GROWTH && IsBattlerWeatherAffected(cv->holdEffects[st->battler], GetWeather(), B_WEATHER_SUN))
         st->stage = 2;
 
     switch (cv->abilities[st->battler])
     {
     case ABILITY_CONTRARY:
-        st->stage = st->stage * -1;
+        st->stage = -1 * st->stage;
         if (!st->onlyChecking)
             RecordAbilityBattle(st->battler, cv->abilities[st->battler]);
         break;
     case ABILITY_SIMPLE:
-        st->stage = st->stage * 2;
+        st->stage = 2 * st->stage;
         if (!st->onlyChecking)
             RecordAbilityBattle(st->battler, cv->abilities[st->battler]);
         break;
