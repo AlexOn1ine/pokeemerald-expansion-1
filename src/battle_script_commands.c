@@ -1043,8 +1043,7 @@ static void Cmd_attackcanceler(void)
     }
 
     // Hack: Prevents messages being printed multiply times
-    if (gBattleStruct->battlerState[gBattlerAttacker].targetsDone[gBattlerTarget]
-     || ShouldSkipToMoveEnd())
+    if (ShouldSkipToMoveEnd())
     {
         gBattlescriptCurrInstr = BattleScript_MoveEnd;
         return;
@@ -11070,6 +11069,7 @@ static void Cmd_tryanystatchange(void)
             cv.holdEffects[st.battler] = GetBattlerHoldEffect(st.battler);
         }
 
+        st.certain = cv.battlerAtk == st.battler;
         if (CanAnyStatChange(&cv, &st))
         {
             statChangeBattler  |= 1u << st.battler;

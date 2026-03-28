@@ -2235,6 +2235,7 @@ BattleScript_NightmareWorked::
 BattleScript_EffectCurse::
 	jumpiftype BS_ATTACKER, TYPE_GHOST, BattleScript_GhostCurse
 	attackcanceler
+	jumpiftype BS_ATTACKER, TYPE_GHOST, BattleScript_GhostCurse
 	tryanystatchange BattleScript_EffectCurseHandleFailure
 	attackanimation
 	waitanimation
@@ -2246,7 +2247,6 @@ BattleScript_GhostCurse::
 	jumpifbytenotequal gBattlerAttacker, gBattlerTarget, BattleScript_DoGhostCurse
 	getmovetarget
 BattleScript_DoGhostCurse::
-	attackcanceler
 	cursetarget BattleScript_ButItFailed
 	setbyte sB_ANIM_TURN, 0
 	attackanimation

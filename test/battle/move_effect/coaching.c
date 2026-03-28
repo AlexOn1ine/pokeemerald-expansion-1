@@ -137,3 +137,21 @@ AI_DOUBLE_BATTLE_TEST("AI uses Coaching")
             TURN {  NOT_EXPECT_MOVE(opponentLeft, MOVE_COACHING); }
     }
 }
+
+DOUBLE_BATTLE_TEST("Coaching ignores Substitute")
+{
+    ASSUME(GetMoveEffect(MOVE_SUBSTITUTE) == EFFECT_SUBSTITUTE);
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_WYNAUT);
+        OPPONENT(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET);
+    } WHEN {
+        TURN { MOVE(playerRight, MOVE_SUBSTITUTE); MOVE(playerLeft, MOVE_COACHING, target: playerRight); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_SUBSTITUTE, playerRight);
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_COACHING, playerLeft);
+        MESSAGE("Wynaut's Attack rose!");
+        MESSAGE("Wynaut's Defense rose!");
+    }
+}

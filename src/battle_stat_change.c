@@ -113,7 +113,7 @@ static bool32 IsBlockedBySpecificCondition(struct BattleCalcValues *cv, struct S
 static bool32 IsSubstituteBlocked(struct BattleCalcValues *cv, struct StatChange *st)
 {
     // Need to set certain correctly
-    if (st->certain || cv->battlerAtk == st->battler)
+    if (st->certain || cv->battlerAtk == st->battler || GetBattlerMoveTargetType(cv->battlerAtk, cv->move) == TARGET_ALLY)
         return FALSE;
 
     if (!DoesSubstituteBlockMoveInternal(cv->battlerAtk, st->battler, cv->abilities[cv->battlerAtk], cv->move))
@@ -132,7 +132,11 @@ static bool32 IsSubstituteBlocked(struct BattleCalcValues *cv, struct StatChange
 bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 {
     u32 numAdditionalEffects = GetMoveAdditionalEffectCount(cv->move);
-    u32 canAnyStatChange = FALSE;
+    bool32 canAnyStatChange = FALSE;
+    bool32 statChangeBlockedOnBattler = FALSE;
+
+    if (IsBlockedBySpecificCondition(cv, st) || IsSubstituteBlocked(cv, st))
+        statChangeBlockedOnBattler = TRUE;
 
     for (u32 i = 0; i < numAdditionalEffects; i++)
     {
@@ -151,7 +155,7 @@ bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 
             SetStatChange(st->battler, st->stat, st->stage);
 
-            if (IsBlockedBySpecificCondition(cv, st) || IsSubstituteBlocked(cv, st)) // Still need to collect stats for failure handling
+            if (statChangeBlockedOnBattler) // Still need to collect stats for proper failure
                 continue;
 
             AdjustStatStage(cv, st);
@@ -382,11 +386,7 @@ static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct
 {
     enum StatChangeResult result = STAT_CHANGE_WORKED;
 
-    // if (GetMoveEffect(cv->move) == EFFECT_CURSE || cv->battlerAtk == st->battler)
-    //     st->certain = TRUE;
-
-    if (IsSubstituteBlocked(cv,st)
-     || IsMistProtected(cv, st)
+    if (IsMistProtected(cv, st)
      || IsFlowerVeilBlocked(cv, st)
      || IsClearAmuletBlocked(cv, st)
      || IsIntimidateBlocked(cv, st)
