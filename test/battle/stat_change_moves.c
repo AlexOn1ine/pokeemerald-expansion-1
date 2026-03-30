@@ -211,3 +211,18 @@ DOUBLE_BATTLE_TEST("Stat Change test 13")
     }
 }
 
+SINGLE_BATTLE_TEST("Stat Change test 14")
+{
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET) { Ability(ABILITY_MIRROR_ARMOR); }
+    } WHEN {
+        TURN { MOVE(player, MOVE_LEER); }
+    } SCENE {
+        // ANIMATION(ANIM_TYPE_MOVE, MOVE_SWORDS_DANCE, player);
+        // ANIMATION(ANIM_TYPE_GENERAL, B_ANIM_STATS_CHANGE, player);
+    } THEN {
+        // EXPECT_EQ(player->statStages[STAT_ATK], 8);
+    }
+}
+

@@ -730,7 +730,8 @@ struct BattleStruct
     u8 printMessage:1;
     u8 statChangeUser:1;
     u8 intimidateActivated:1;
-    u8 partingShotActive:1;
+    u8 allowPartingShot:1;
+    u8 statChangePrevented:1;
 };
 
 struct AiBattleData

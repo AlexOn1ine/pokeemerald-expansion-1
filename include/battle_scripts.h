@@ -671,7 +671,6 @@ extern const u8 BattleScript_EffectPsychicTerrain[];
 extern const u8 BattleScript_EffectElectrify[];
 extern const u8 BattleScript_EffectReflectType[];
 extern const u8 BattleScript_EffectSoak[];
-extern const u8 BattleScript_EffectToxicThread[];
 extern const u8 BattleScript_TryHitSwitchTarget[];
 extern const u8 BattleScript_HitSwitchTargetDynamaxed[];
 extern const u8 BattleScript_AbilityPreventsPhasingOutRet[];
@@ -688,7 +687,6 @@ extern const u8 BattleScript_EffectAuroraVeil[];
 extern const u8 BattleScript_EffectThirdType[];
 extern const u8 BattleScript_EffectAcupressure[];
 extern const u8 BattleScript_EffectPowder[];
-extern const u8 BattleScript_EffectPartingShot[];
 extern const u8 BattleScript_EffectInstruct[];
 extern const u8 BattleScript_EffectLaserFocus[];
 extern const u8 BattleScript_EffectPurify[];
@@ -724,5 +722,6 @@ extern const u8 BattleScript_GhostBallDodge[];
 extern const u8 BattleScript_GhostGetOutGetOut[];
 extern const u8 BattleScript_TooScaredToMove[];
 extern const u8 BattleScript_SilphScopeUnveiled[];
+extern const u8 BattleScript_ToxicThread[];
 
 #endif // GUARD_BATTLE_SCRIPTS_H

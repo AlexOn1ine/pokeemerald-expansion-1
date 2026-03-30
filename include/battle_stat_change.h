@@ -45,7 +45,6 @@ struct StatChange
     u32 nextBattler:1;
     u32 forceAnim:1;
     u32 ignoreAnim:1;
-    u32 noStatChange:1;
     u32 intimidate:1;
 
     u32 statChanged:1;
@@ -54,6 +53,7 @@ struct StatChange
     u32 targetMissed:1;
     u32 defog:1;
     u32 forceMoveAnim:1;
+    u32 stickyWeb:1;
 
     // Some padding
 };

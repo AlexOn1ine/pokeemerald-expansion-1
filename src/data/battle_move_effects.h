@@ -1324,7 +1324,7 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
 
     [EFFECT_TOXIC_THREAD] =
     {
-        .battleScript = BattleScript_EffectToxicThread,
+        .battleScript = BattleScript_EffectStatChange,
         .battleTvScore = 0, // TODO: Assign points
     },
 

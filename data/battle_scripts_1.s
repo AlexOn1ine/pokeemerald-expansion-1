@@ -90,6 +90,15 @@ BattleScript_EffectStatChangeHalfHp::
 	datahpupdate BS_ATTACKER, PASSIVE_HP_UPDATE
 	call BattleScript_MoveEnd
 
+BattleScript_EffectClangorousSoul::
+	attackcanceler
+	cutonethirdhpandraisestats BattleScript_ButItFailed
+	attackanimation
+	waitanimation
+	healthbarupdate BS_ATTACKER, PASSIVE_HP_UPDATE
+	datahpupdate BS_ATTACKER, PASSIVE_HP_UPDATE
+	call BattleScript_EffectStatChange
+
 BattleScript_IncreaseStatChangeMessage::
 	printfromtable gStatUpStringIds
 	waitmessage B_WAIT_TIME_LONG
@@ -518,15 +527,6 @@ BattleScript_RemoveItem::
 	removeitem BS_ATTACKER
 	return
 
-BattleScript_EffectClangorousSoul::
-	attackcanceler
-	cutonethirdhpandraisestats BattleScript_ButItFailed
-	attackanimation
-	waitanimation
-	healthbarupdate BS_ATTACKER, PASSIVE_HP_UPDATE
-	datahpupdate BS_ATTACKER, PASSIVE_HP_UPDATE
-	call BattleScript_EffectStatChange
-
 BattleScript_EffectOctolock::
 	attackcanceler
 	jumpifsubstituteblocks BattleScript_ButItFailed
@@ -753,29 +753,9 @@ BattleScript_EffectLaserFocus::
 	waitmessage B_WAIT_TIME_LONG
 	goto BattleScript_MoveEnd
 
-BattleScript_EffectPartingShot::
-	attackcanceler
-	tryanystatchange BattleScript_PartingShotHandleFailure
-	attackanimation
-	waitanimation
-	setbyte sB_ANIM_TARGETS_HIT, 1
-BattleScript_PartingShotHandleFailureSwitch:
-	trystatchange
- 	jumpifbyte CMP_NOT_EQUAL, sB_ANIM_TARGETS_HIT, 0, BattleScript_EffectPartingShotSwitchNoAnim
-	attackanimation
-	waitanimation
-BattleScript_EffectPartingShotSwitchNoAnim:
-	moveendall
-	goto BattleScript_MoveSwitchPursuitEnd
-
 BattleScript_PartingShotEscape::
 	call BattleScript_MoveSwitchPursuitRet
 	return
-
-BattleScript_PartingShotHandleFailure::
-	jumpifgenconfiglowerthan CONFIG_B_PARTING_SHOT_SWITCH, GEN_7, BattleScript_PartingShotHandleFailureSwitch
-	trystatchange
-	goto BattleScript_MoveEnd
 
 BattleScript_EffectPowder::
 	attackcanceler
@@ -903,45 +883,6 @@ BattleScript_EffectHitEnemyHealAlly::
 	jumpiftargetally BattleScript_EffectHealPulse
 	goto BattleScript_EffectHit
 
-BattleScript_EffectDefog_OLD::
-	setstatchanger STAT_EVASION, 1, TRUE
-	attackcanceler
-	jumpifgenconfiglowerthan CONFIG_B_DEFOG_EFFECT_CLEARING, GEN_5, BattleScript_DefogAfterSubstituteCheck
-	jumpifsubstituteblocks BattleScript_DefogIfCanClearHazards
-BattleScript_DefogAfterSubstituteCheck:
-	jumpifstat BS_TARGET, CMP_NOT_EQUAL, STAT_EVASION, MIN_STAT_STAGE, BattleScript_DefogWorks
-BattleScript_DefogIfCanClearHazards:
-	trydefog FALSE, BattleScript_ButItFailed
-BattleScript_DefogWorks:
-	accuracycheck BattleScript_MoveMissedPause
-	jumpifgenconfiglowerthan CONFIG_B_DEFOG_EFFECT_CLEARING, GEN_5, BattleScript_DefogWorksAfterSubstituteCheck
-	jumpifsubstituteblocks BattleScript_DefogTryHazardsWithAnim
-BattleScript_DefogWorksAfterSubstituteCheck:
-	@statbuffchange BS_TARGET, STAT_CHANGE_ALLOW_PTR | STAT_CHANGE_ONLY_CHECKING, BattleScript_DefogTryHazardsWithAnim
-	jumpifbyte CMP_LESS_THAN, cMULTISTRING_CHOOSER, B_MSG_STAT_WONT_CHANGE, BattleScript_DefogDoAnim
-	jumpifbyte CMP_EQUAL, cMULTISTRING_CHOOSER, B_MSG_STAT_CHANGE_EMPTY, BattleScript_DefogTryHazardsWithAnim
-	pause B_WAIT_TIME_SHORT
-	setmoveresultflags MOVE_RESULT_MISSED @ TODO: Is this even necessary?
-	goto BattleScript_DefogPrintString
-BattleScript_DefogDoAnim::
-	attackanimation
-	waitanimation
-	call BattleScript_SwapFromSubstitute
-	@statbuffchange BS_TARGET, STAT_CHANGE_ALLOW_PTR, BattleScript_DefogTryHazards
-	call BattleScript_SwapToSubstitute
-BattleScript_DefogPrintString::
-	printfromtable gStatDownStringIds
-	waitmessage B_WAIT_TIME_LONG
-BattleScript_DefogTryHazards:
-	copybyte gEffectBattler, gBattlerAttacker
-	trydefog TRUE, NULL
-	copybyte gBattlerAttacker, gEffectBattler
-	goto BattleScript_MoveEnd
-BattleScript_DefogTryHazardsWithAnim:
-	attackanimation
-	waitanimation
-	goto BattleScript_DefogTryHazards
-
 BattleScript_MoveEffectDefog::
 	saveattacker
 	trydefog TRUE, NULL
@@ -978,21 +919,9 @@ BattleScript_HitSwitchTargetForceRandomSwitchFailed:
 	setbyte sSWITCH_CASE, B_SWITCH_NORMAL
 	return
 
-BattleScript_EffectToxicThread::
-	attackcanceler
-	jumpifsubstituteblocks BattleScript_ButItFailed
-	checknonvolatiletrigger MOVE_EFFECT_POISON, BattleScript_EffectStatDownFromAccCheck
-	attackanimation
-	waitanimation
-BattleScript_EffectStatDownFromAccCheck:
-	accuracycheck BattleScript_MoveMissedPause
-	tryanystatchange BattleScript_ToxicThreadTryPsn
-	attackanimation
-	waitanimation
-	trystatchange
-BattleScript_ToxicThreadTryPsn::
+BattleScript_ToxicThread::
 	seteffectprimary BS_ATTACKER, BS_TARGET, MOVE_EFFECT_POISON
-	goto BattleScript_MoveEnd
+    return
 
 BattleScript_EffectSoak::
 	attackcanceler
@@ -1662,14 +1591,6 @@ BattleScript_MirrorArmorReflect::
 	call BattleScript_AbilityPopUp
 	trybattlerstatchange BS_SCRIPTING, STAT_CHANGE_SECOND_QUEUE | STAT_CHANGE_MIRROR_ARMOR
 	return
-
-@ gBattlerTarget is battler with Mirror Armor
-BattleScript_MirrorArmorReflectStickyWeb:
-	call BattleScript_AbilityPopUp
-	setattackertostickywebuser
-	jumpifbyteequal gBattlerAttacker, gBattlerTarget, BattleScript_StickyWebOnSwitchInEnd   @ Sticky web user not on field -> no stat loss
-	@call BattleScript_MirrorArmorReflectStatLoss
-	goto BattleScript_StickyWebOnSwitchInEnd
 
 BattleScript_StatDown::
 	printfromtable gStatDownStringIds
@@ -2492,7 +2413,7 @@ BattleScript_EffectStockpile::
 
 BattleScript_MoveEffectStockpileWoreOff::
 	dostockpilestatchangeswearoff BS_ATTACKER
-    trybattlerstatchange BS_ATTACKER, STAT_CHANGE_CERTAIN
+	trybattlerstatchange BS_ATTACKER, STAT_CHANGE_CERTAIN
 	printstring STRINGID_STOCKPILEDEFFECTWOREOFF
 	waitmessage B_WAIT_TIME_SHORT
 	return
@@ -3570,20 +3491,9 @@ BattleScript_ToxicSpikesBadlyPoisoned::
 	return
 
 BattleScript_StickyWebOnSwitchIn::
-	savetarget
-	saveattacker
-	copybyte gBattlerTarget, sBATTLER
 	setbyte sSTICKY_WEB_STAT_DROP, 1
 	printstring STRINGID_STICKYWEBSWITCHIN
-	waitmessage B_WAIT_TIME_LONG
-	jumpifability BS_TARGET, ABILITY_MIRROR_ARMOR, BattleScript_MirrorArmorReflectStickyWeb
-	@statbuffchange BS_TARGET, STAT_CHANGE_CHECK_PREVENTION | STAT_CHANGE_ALLOW_PTR, BattleScript_StickyWebOnSwitchInEnd
-	jumpifbyte CMP_EQUAL, cMULTISTRING_CHOOSER, B_MSG_STAT_CHANGE_EMPTY, BattleScript_StickyWebOnSwitchInEnd
-	printfromtable gStatDownStringIds
-	waitmessage B_WAIT_TIME_LONG
-BattleScript_StickyWebOnSwitchInEnd:
-	restoretarget
-	restoreattacker
+	trybattlerstatchange BS_EFFECT_BATTLER, STAT_CHANGE_STICKY_WEB
 	setbyte sSTICKY_WEB_STAT_DROP, 0
 	return
 
@@ -3656,6 +3566,7 @@ BattleScript_AbilityStatChangeEnd2::
 
 BattleScript_AbilityStatChange::
 	call BattleScript_AbilityPopUp
+    copybyte sSAVED_BATTLER, gBattlerAbility
 	trynonmovestatchange STAT_CHANGE_NO_FLAGS
 	return
 
@@ -3665,6 +3576,7 @@ BattleScript_DefiantActivates::
 	return
 
 BattleScript_MoveEffectStatChange::
+    copybyte sSAVED_BATTLER, gBattlerAttacker
 	trynonmovestatchange STAT_CHANGE_SILENT_FAILURE
 	return
 
@@ -3709,7 +3621,7 @@ BattleScript_PerishSongCountGoesDown::
 BattleScript_AllStatsUpZMove::
 	printfromtable gZEffectStringIds
 	waitmessage B_WAIT_TIME_LONG
-	trynonmovestatchange STAT_CHANGE_NO_FLAGS
+	trybattlerstatchange BS_ATTACKER, STAT_CHANGE_NO_FLAGS
 	return
 
 BattleScript_RapidSpinAway::
@@ -4792,6 +4704,7 @@ BattleScript_TryIntimidateHoldEffectsRet:
 
 BattleScript_IntimidateActivates::
 	call BattleScript_AbilityPopUp
+    copybyte sSAVED_BATTLER, gBattlerAbility
 	trynonmovestatchange STAT_CHANGE_INTIMIDATE
 	destroyabilitypopup
 	return
@@ -4860,7 +4773,7 @@ BattleScript_CommanderActivates::
 	call BattleScript_AbilityPopUp
 	printstring STRINGID_COMMANDERACTIVATES
 	waitmessage B_WAIT_TIME_LONG
-	trynonmovestatchange STAT_CHANGE_NO_FLAGS
+	trybattlerstatchange BS_EFFECT_BATTLER, STAT_CHANGE_NO_FLAGS
 	return
 
 BattleScript_HospitalityActivates::
@@ -5565,7 +5478,7 @@ BattleScript_BerryStatRaiseRippen::
 
 BattleScript_ItemStatRaise::
 	playanimation BS_SCRIPTING, B_ANIM_HELD_ITEM_EFFECT, sB_ANIM_ARG1
-	trynonmovestatchange STAT_CHANGE_NO_FLAGS
+	trybattlerstatchange BS_SCRIPTING, STAT_CHANGE_ITEM
 	removeitem BS_SCRIPTING
 	return
 

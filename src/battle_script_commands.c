@@ -10995,36 +10995,6 @@ static void Cmd_tryanystatchange(void)
     gBattleStruct->statChangeBattler = 0;
 }
 
-static void SetStrengthSapHealing(enum Stat stat)
-{
-    u32 healAmount = 0;
-    switch (stat)
-    {
-    case STAT_ATK:
-        healAmount = gBattleMons[gBattlerTarget].attack;
-        break;
-    case STAT_DEF:
-        healAmount = gBattleMons[gBattlerTarget].defense;
-        break;
-    case STAT_SPATK:
-        healAmount = gBattleMons[gBattlerTarget].spAttack;
-        break;
-    case STAT_SPDEF:
-        healAmount = gBattleMons[gBattlerTarget].spDefense;
-        break;
-    case STAT_SPEED:
-        healAmount = gBattleMons[gBattlerTarget].speed;
-        break;
-    default:
-        errorf("Illegal stat requested");
-        return;
-    }
-
-    healAmount *= gStatStageRatios[gBattleMons[gBattlerTarget].statStages[stat]][0];
-    healAmount /= gStatStageRatios[gBattleMons[gBattlerTarget].statStages[stat]][1];
-    gBattleStruct->passiveHpUpdate[gBattlerAttacker] = healAmount;
-}
-
 static void SetStatChangeVolatile(enum BattlerId battler, enum Move move)
 {
     switch (GetMoveEffect(move))
@@ -11095,8 +11065,8 @@ static void Cmd_trystatchange(void)
             cv.holdEffects[st.battler] = GetBattlerHoldEffect(st.battler);
         }
 
-        if (GetMoveEffect(cv.move) == EFFECT_STRENGTH_SAP)
-            SetStrengthSapHealing(STAT_ATK);
+        // if (GetMoveEffect(cv.move) == EFFECT_STRENGTH_SAP)
+        //     SetStrengthSapHealing(STAT_ATK);
 
         bool32 goToNextInstr = FALSE; // Prevents an addtional stat change call
         bool32 runScript = FALSE;
@@ -11155,13 +11125,15 @@ static void Cmd_trynonmovestatchange(void)
         .move = MOVE_NONE,
     };
 
+    u32 flags = cmd->statChangeFlags;
+    #define SET_FLAG(statChangeFlag) (flags & statChangeFlag) ? TRUE : FALSE
     struct StatChange st = {
         .nonMoveStatChange = TRUE,
-        .allowMirrorArmor = TRUE,
-        .silentFailure = cmd->statChangeFlags & STAT_CHANGE_SILENT_FAILURE,
-        .intimidate = cmd->statChangeFlags & STAT_CHANGE_INTIMIDATE,
-        .mirrorArmored = cmd->statChangeFlags & STAT_CHANGE_MIRROR_ARMOR,
+        .silentFailure = SET_FLAG(STAT_CHANGE_SILENT_FAILURE),
+        .intimidate = SET_FLAG(STAT_CHANGE_INTIMIDATE),
+        .mirrorArmored = SET_FLAG(STAT_CHANGE_MIRROR_ARMOR),
     };
+    #undef SET_FLAG
 
     while (gBattleStruct->statChangeBattler < gBattlersCount)
     {
@@ -11176,8 +11148,7 @@ static void Cmd_trynonmovestatchange(void)
             continue;
         }
 
-        // For stats that aren't self induced. Think sticky web, syrup bomb as opposed to superpower
-        if (!(cmd->statChangeFlags & STAT_CHANGE_IGNORE_SELF))
+        if (cmd->statChangeFlags & STAT_CHANGE_IGNORE_SELF)
             st.certain = gBattlerAttacker == st.battler;
 
         cv.abilities[st.battler] = GetBattlerAbility(st.battler);
@@ -11228,7 +11199,6 @@ static void Cmd_trybattlerstatchange(void)
     if (gBattleControllerExecFlags)
         return;
 
-    u32 flags = cmd->statChangeFlags;
 
     struct BattleCalcValues cv = {
         .battlerAtk = gBattlerAttacker,
@@ -11236,6 +11206,7 @@ static void Cmd_trybattlerstatchange(void)
         .move = MOVE_NONE,
     };
 
+    u32 flags = cmd->statChangeFlags;
     #define SET_FLAG(statChangeFlag) (flags & statChangeFlag) ? TRUE : FALSE
     struct StatChange st = {
         .battler = GetBattlerForBattleScript(cmd->battler),
@@ -11245,6 +11216,7 @@ static void Cmd_trybattlerstatchange(void)
         .intimidate = SET_FLAG(STAT_CHANGE_INTIMIDATE),
         .mirrorArmored = SET_FLAG(STAT_CHANGE_MIRROR_ARMOR),
         .itemMessage = SET_FLAG(STAT_CHANGE_ITEM),
+        .stickyWeb = SET_FLAG(STAT_CHANGE_STICKY_WEB),
     };
     #undef SET_FLAG
 
@@ -12246,26 +12218,6 @@ void BS_TryAllySwitch(void)
     {
         gBattlescriptCurrInstr = cmd->nextInstr;
     }
-}
-
-void BS_TryTidyUp(void)
-{
-    NATIVE_ARGS(u8 clear, const u8 *jumpInstr);
-
-    // if (cmd->clear)
-    // {
-    //     if (TryTidyUpClear(gEffectBattler, TRUE))
-    //         return;
-    //     else
-    //         gBattlescriptCurrInstr = cmd->nextInstr;
-    // }
-    // else
-    // {
-    //     if (TryTidyUpClear(gBattlerAttacker, FALSE))
-    //         gBattlescriptCurrInstr = cmd->jumpInstr;
-    //     else
-    //         gBattlescriptCurrInstr = cmd->nextInstr;
-    // }
 }
 
 void BS_TryQuash(void)

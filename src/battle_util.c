@@ -1117,14 +1117,17 @@ bool32 IsLastMonToMove(enum BattlerId battler)
 bool32 ShouldDefiantCompetitiveActivate(enum BattlerId battler, enum Ability ability)
 {
     enum BattleSide side = GetBattlerSide(battler);
+
     if (ability != ABILITY_DEFIANT && ability != ABILITY_COMPETITIVE)
         return FALSE;
+
     // if an ally dropped the stats (except for Sticky Web), don't activate
     if (IsBattlerAlly(gSpecialStatuses[battler].changedStatsBattlerId, battler) && !gBattleScripting.stickyWebStatDrop)
         return FALSE;
 
     if (GetConfig(B_DEFIANT_STICKY_WEB) >= GEN_9 || !gBattleScripting.stickyWebStatDrop)
         return TRUE;
+
     // only activate Defiant/Competitive if Web was setup by foe
     return gSideTimers[side].stickyWebBattlerSide != side;
 }
@@ -3982,7 +3985,6 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
 
                 struct StatChange st = {
                     .battler = gBattlerAttacker,
-                    .allowMirrorArmor = TRUE,
                     .onlyChecking = TRUE,
                 };
 
@@ -4643,6 +4645,7 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
              && (gChosenActionByBattler[partner] != B_ACTION_SWITCH || HasBattlerActedThisTurn(partner))
              && GET_BASE_SPECIES_ID(GetMonData(GetBattlerMon(battler), MON_DATA_SPECIES)) == SPECIES_TATSUGIRI)
             {
+                gEffectBattler = partner;
                 gBattleStruct->battlerState[battler].commandingDondozo = TRUE;
                 gBattleStruct->battlerState[partner].commanderSpecies = gBattleMons[battler].species;
                 gBattleMons[battler].volatiles.semiInvulnerable = STATE_COMMANDER;
