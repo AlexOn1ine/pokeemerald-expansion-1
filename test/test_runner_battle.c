@@ -3534,12 +3534,18 @@ void TestRunner_Battle_AIAdjustScore(const char *file, u32 line, enum BattlerId 
 void AssumeStatChange_(u32 sourceLine, u32 moveId, struct StatChangeAssumption asc)
 {
     u32 numAdditionalEffects = GetMoveAdditionalEffectCount(moveId);
+
+    if (asc.attack < 0 || asc.defense < 0 || asc.spAtk < 0 || asc.spDef < 0 || asc.speed < 0 || asc.accuracy < 0 || asc.evasion < 0)
+        ASSUME(MoveHasAdditionalEffect(MOVE_SPICY_EXTRACT, STAT_CHANGE_EFFECT_MINUS));
+
+    if (asc.attack > 0 || asc.defense > 0 || asc.spAtk > 0 || asc.spDef > 0 || asc.speed > 0 || asc.accuracy > 0 || asc.evasion > 0)
+        ASSUME(MoveHasAdditionalEffect(MOVE_SPICY_EXTRACT, STAT_CHANGE_EFFECT_PLUS));
+
     for (u32 i = 0; i < numAdditionalEffects; i++)
     {
         const struct AdditionalEffect *effect = GetMoveAdditionalEffectById(moveId, i);
         if (effect->moveEffect == STAT_CHANGE_EFFECT_MINUS)
         {
-            ASSUME(MoveHasAdditionalEffect(moveId, STAT_CHANGE_EFFECT_MINUS));
             ASSUME(asc.attack == (-1 * effect->attack));
             ASSUME(asc.defense == (-1 * effect->defense));
             ASSUME(asc.spAtk == (-1 * effect->spAtk));
@@ -3548,9 +3554,8 @@ void AssumeStatChange_(u32 sourceLine, u32 moveId, struct StatChangeAssumption a
             ASSUME(asc.accuracy == (-1 * effect->accuracy));
             ASSUME(asc.evasion == (-1 * effect->evasion));
         }
-        else
+        else if (effect->moveEffect == STAT_CHANGE_EFFECT_PLUS)
         {
-            ASSUME(MoveHasAdditionalEffect(moveId, STAT_CHANGE_EFFECT_PLUS));
             ASSUME(asc.attack == effect->attack);
             ASSUME(asc.defense == effect->defense);
             ASSUME(asc.spAtk == effect->spAtk);

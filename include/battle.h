@@ -721,7 +721,7 @@ struct BattleStruct
     u8 moveBouncer;
     u8 dancerSavedAttacker:3;
     u8 dancerSavedTarget:3;
-    u8 defogActivates:1;
+    u8 statChangeMoveAnim:1;
     u8 tidyUpActivates:1;
     u8 positiveAnimPlayed:1;
     u8 negativeAnimPlayed:1;

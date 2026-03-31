@@ -2112,11 +2112,6 @@
 	callnative BS_SetAttackerToStickyWebUser
 	.endm
 
-	.macro cutonethirdhpandraisestats failInstr:req
-	callnative BS_CutOneThirdHpAndRaiseStats
-	.4byte \failInstr
-	.endm
-
 	.macro setpoltergeistmessage
 	callnative BS_SetPoltergeistMessage
 	.endm

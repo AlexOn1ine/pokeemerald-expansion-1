@@ -12168,6 +12168,27 @@ void BS_TryDefog(void)
     // }
 }
 
+
+void BS_TryTidyUp(void)
+{
+    NATIVE_ARGS(u8 clear, const u8 *failInstr);
+
+    if (cmd->clear)
+    {
+        if (TryTidyUpClear(gEffectBattler, TRUE))
+            return;
+        else
+            gBattlescriptCurrInstr = cmd->nextInstr;
+    }
+    else
+    {
+        if (TryTidyUpClear(gBattlerAttacker, FALSE))
+            gBattlescriptCurrInstr = cmd->failInstr;
+        else
+            gBattlescriptCurrInstr = cmd->nextInstr;
+    }
+}
+
 void BS_TryTriggerStatusForm(void)
 {
     NATIVE_ARGS();
@@ -14191,31 +14212,6 @@ void BS_SetAttackerToStickyWebUser(void)
     if (gSideTimers[GetBattlerSide(gBattlerTarget)].stickyWebBattlerId != 0xFF)
         gBattlerAttacker = gSideTimers[GetBattlerSide(gBattlerTarget)].stickyWebBattlerId;
     gBattlescriptCurrInstr = cmd->nextInstr;
-}
-
-void BS_CutOneThirdHpAndRaiseStats(void)
-{
-    NATIVE_ARGS(const u8 *failInstr);
-    bool32 atLeastOneStatBoosted = FALSE;
-    enum Ability ability = GetBattlerAbility(gBattlerAttacker);
-
-    for (u32 stat = 1; stat < NUM_STATS; stat++)
-    {
-        if (CompareStat(gBattlerAttacker, stat, MAX_STAT_STAGE, CMP_LESS_THAN, ability))
-        {
-            atLeastOneStatBoosted = TRUE;
-            break;
-        }
-    }
-    if (atLeastOneStatBoosted)
-    {
-        SetPassiveDamageAmount(gBattlerAttacker, GetNonDynamaxMaxHP(gBattlerAttacker) / 3);
-        gBattlescriptCurrInstr = cmd->nextInstr;
-    }
-    else
-    {
-        gBattlescriptCurrInstr = cmd->failInstr;
-    }
 }
 
 void BS_SetPoltergeistMessage(void)

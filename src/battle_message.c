@@ -1407,14 +1407,6 @@ const u16 gZenModeStringIds[] =
     [B_MSG_ZEN_MODE_ENDED] = STRINGID_ZENMODEENDED
 };
 
-const u16 gMoveSpecificMessage[] =
-{
-    [B_MSG_TIDY_UP] = STRINGID_TIDYINGUPCOMPLETE,
-    [B_MSG_NO_RETREAT] = STRINGID_CANTESCAPEDUETOUSEDMOVE,
-    [B_MSG_NO_AUTOTOMIZE] = STRINGID_BECAMENIMBLE,
-    [B_MSG_TAR_SHOT] = STRINGID_PKMNBECAMEWEAKERTOFIRE,
-};
-
 const u8 gText_PkmnIsEvolving[] = _("What?\n{STR_VAR_1} is evolving!");
 const u8 gText_CongratsPkmnEvolved[] = _("Congratulations! Your {STR_VAR_1}\nevolved into {STR_VAR_2}!{WAIT_SE}\p");
 const u8 gText_PkmnStoppedEvolving[] = _("Huh? {STR_VAR_1}\nstopped evolving!\p");

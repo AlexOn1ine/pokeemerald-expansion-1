@@ -10890,3 +10890,172 @@ bool32 IsNaturalEnemy(u32 speciesAttacker, u32 speciesTarget)
     }
     return FALSE;
 }
+
+static void RemoveAllTerrains(void)
+{
+    switch (gFieldStatuses & STATUS_FIELD_TERRAIN_ANY)
+    {
+    case STATUS_FIELD_MISTY_TERRAIN:
+        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_TERRAIN_END_MISTY;
+        break;
+    case STATUS_FIELD_GRASSY_TERRAIN:
+        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_TERRAIN_END_GRASSY;
+        break;
+    case STATUS_FIELD_ELECTRIC_TERRAIN:
+        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_TERRAIN_END_ELECTRIC;
+        break;
+    case STATUS_FIELD_PSYCHIC_TERRAIN:
+        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_TERRAIN_END_PSYCHIC;
+        break;
+    default:
+        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_TERRAIN_COUNT;  // failsafe
+        break;
+    }
+    gFieldStatuses &= ~STATUS_FIELD_TERRAIN_ANY;    // remove the terrain
+    TryToRevertMimicryAndFlags();
+}
+
+#define DEFOG_CLEAR(status, structField, battlescript, move)\
+{                                                           \
+    if (*sideStatuses & status)                             \
+    {                                                       \
+        if (clear)                                          \
+        {                                                   \
+            if (move)                                       \
+                PREPARE_MOVE_BUFFER(gBattleTextBuff1, move);\
+            *sideStatuses &= ~status;                       \
+            sideTimer->structField = 0;                     \
+            BattleScriptCall(battlescript);                 \
+        }                                                   \
+        else                                                \
+        {                                                   \
+            gBattlerAttacker = saveBattler;                 \
+        }                                                   \
+        return TRUE;                                        \
+    }                                                       \
+}
+
+static bool32 DefogClearHazards(u32 saveBattler, enum BattleSide side, bool32 clear)
+{
+    if (!AreAnyHazardsOnSide(side))
+        return FALSE;
+
+    for (u32 hazardType = HAZARDS_NONE + 1; hazardType < HAZARDS_MAX_COUNT; hazardType++)
+    {
+        bool32 checkOrClear = clear ? IsHazardOnSideAndClear(side, hazardType) : IsHazardOnSide(side, hazardType);
+        if (checkOrClear)
+        {
+            if (clear)
+            {
+                gBattleStruct->numHazards[side]--;
+                gBattleCommunication[MULTISTRING_CHOOSER] = hazardType;
+                BattleScriptCall(BattleScript_DefogClearHazards);
+            }
+            else
+            {
+                gBattlerAttacker = saveBattler;
+            }
+            return TRUE;
+        }
+    }
+    gBattlerAttacker = saveBattler;
+    return FALSE;
+}
+
+bool32 TryDefogClear(enum BattlerId battlerAtk, bool32 clear)
+{
+    s32 i;
+    u8 saveBattler = gBattlerAttacker;
+
+    for (i = 0; i < NUM_BATTLE_SIDES; i++)
+    {
+        struct SideTimer *sideTimer = &gSideTimers[i];
+        u32 *sideStatuses = &gSideStatuses[i];
+
+        if (GetBattlerSide(battlerAtk) != i)
+        {
+            gBattlerAttacker = i; // For correct battle string. Ally's / Foe's
+            DEFOG_CLEAR(SIDE_STATUS_REFLECT, reflectTimer, BattleScript_SideStatusWoreOffReturn, MOVE_REFLECT);
+            DEFOG_CLEAR(SIDE_STATUS_LIGHTSCREEN, lightscreenTimer, BattleScript_SideStatusWoreOffReturn, MOVE_LIGHT_SCREEN);
+            DEFOG_CLEAR(SIDE_STATUS_MIST, mistTimer, BattleScript_SideStatusWoreOffReturn, MOVE_MIST);
+            DEFOG_CLEAR(SIDE_STATUS_AURORA_VEIL, auroraVeilTimer, BattleScript_SideStatusWoreOffReturn, MOVE_AURORA_VEIL);
+            DEFOG_CLEAR(SIDE_STATUS_SAFEGUARD, safeguardTimer, BattleScript_SideStatusWoreOffReturn, MOVE_SAFEGUARD);
+        }
+        if (GetConfig(B_DEFOG_EFFECT_CLEARING) >= GEN_6)
+        {
+            gBattlerAttacker = i; // For correct battle string. Ally's / Foe's
+            if (DefogClearHazards(saveBattler, i, clear))
+                return TRUE;
+        }
+        if (gBattleWeather & B_WEATHER_FOG)
+        {
+            if (clear)
+            {
+                gBattleWeather &= ~B_WEATHER_FOG;
+                BattleScriptCall(BattleScript_FogEnded_Ret);
+            }
+            else
+            {
+                gBattlerAttacker = saveBattler;
+            }
+            return TRUE;
+        }
+        if (GetConfig(B_DEFOG_EFFECT_CLEARING) >= GEN_8 && (gFieldStatuses & STATUS_FIELD_TERRAIN_ANY))
+        {
+            if (clear)
+            {
+                RemoveAllTerrains();
+                BattleScriptCall(BattleScript_TerrainEnds_Ret);
+            }
+            else
+            {
+                gBattlerAttacker = saveBattler;
+            }
+            return TRUE;
+        }
+    }
+
+    gBattlerAttacker = saveBattler;
+
+    return FALSE;
+}
+
+bool32 TryTidyUpClear(enum BattlerId battlerAtk, bool32 clear)
+{
+    u32 i;
+    u32 saveBattler = gBattlerAttacker;
+    u32 clearFound = FALSE;
+
+    for (i = 0; i < NUM_BATTLE_SIDES; i++)
+    {
+        gBattlerAttacker = i; // For correct battle string. Ally's / Foe's
+        if (DefogClearHazards(saveBattler, i, clear))
+        {
+            clearFound = TRUE;
+            break;
+        }
+    }
+
+    if (clearFound)
+        return TRUE;
+
+    for (i = 0; i < MAX_BATTLERS_COUNT; i++)
+    {
+        if (gBattleMons[i].volatiles.substitute)
+        {
+            if (clear)
+            {
+                gBattlerTarget = i;
+                gBattleMons[i].volatiles.substituteHP = 0;
+                gBattleMons[i].volatiles.substitute = FALSE;
+                BattleScriptCall(BattleScript_SubstituteFade);
+            }
+            clearFound = TRUE;
+            break;
+        }
+    }
+
+    gBattlerAttacker = saveBattler;
+    return clearFound;
+}
+

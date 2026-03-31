@@ -423,5 +423,7 @@ void TryResetConsecutiveUseCounter(enum BattlerId battler);
 void SetOrClearRageVolatile(void);
 enum BattlerId GetTargetBySlot(enum BattlerId battlerAtk, enum BattlerId battlerDef);
 bool32 IsNaturalEnemy(u32 speciesAttacker, u32 speciesTarget);
+bool32 TryDefogClear(enum BattlerId battlerAtk, bool32 clear);
+bool32 TryTidyUpClear(enum BattlerId battlerAtk, bool32 clear);
 
 #endif // GUARD_BATTLE_UTIL_H

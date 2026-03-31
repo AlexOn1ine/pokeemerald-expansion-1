@@ -1188,13 +1188,4 @@ enum ZenModeStringID
     B_MSG_ZEN_MODE_ENDED,
 };
 
-// gMoveSpecificMessage
-enum MoveSpecificMessages
-{
-    B_MSG_TIDY_UP,
-    B_MSG_NO_RETREAT,
-    B_MSG_NO_AUTOTOMIZE,
-    B_MSG_TAR_SHOT,
-};
-
 #endif // GUARD_CONSTANTS_BATTLE_STRING_IDS_H

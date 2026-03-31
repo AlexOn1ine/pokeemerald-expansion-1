@@ -25,6 +25,7 @@
 struct StatChange
 {
     const u8 *script;
+    const u8 *moveScript;
     struct StatStages *statStageQueue;
 
     enum BattlerId battler;
@@ -52,8 +53,8 @@ struct StatChange
     u32 checkAccuracy:1;
     u32 targetMissed:1;
     u32 defog:1;
-    u32 forceMoveAnim:1;
     u32 stickyWeb:1;
+    u32 ignoreSub:1;
 
     // Some padding
 };

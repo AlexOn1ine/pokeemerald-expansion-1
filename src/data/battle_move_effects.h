@@ -478,7 +478,7 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
 
     [EFFECT_SWAGGER] =
     {
-        .battleScript = BattleScript_EffectSwagger,
+        .battleScript = BattleScript_EffectStatChange,
         .battleTvScore = 3,
         .battleFactoryStyle = FACTORY_STYLE_SLOW_STEADY,
         .encourageEncore = TRUE,
@@ -596,7 +596,15 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
 
     [EFFECT_STAT_CHANGE_HALF_HP] =
     {
-        .battleScript = BattleScript_EffectStatChangeHalfHp,
+        .battleScript = BattleScript_EffectStatChange,
+        .battleTvScore = 7,
+        .battleFactoryStyle = FACTORY_STYLE_PREPARATION,
+        .encourageEncore = TRUE,
+    },
+
+    [EFFECT_BELLY_DRUM] =
+    {
+        .battleScript = BattleScript_EffectStatChange,
         .battleTvScore = 7,
         .battleFactoryStyle = FACTORY_STYLE_PREPARATION,
         .encourageEncore = TRUE,
@@ -710,7 +718,7 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
 
     [EFFECT_FLATTER] =
     {
-        .battleScript = BattleScript_EffectSwagger,
+        .battleScript = BattleScript_EffectStatChange,
         .battleTvScore = 7,
         .battleFactoryStyle = FACTORY_STYLE_SLOW_STEADY,
     },
@@ -1631,7 +1639,7 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
 
     [EFFECT_CLANGOROUS_SOUL] =
     {
-        .battleScript = BattleScript_EffectClangorousSoul,
+        .battleScript = BattleScript_EffectStatChange,
         .battleTvScore = 0, // TODO: Assign points
     },
 
