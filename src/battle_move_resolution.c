@@ -2068,33 +2068,6 @@ static bool32 ShouldExcludeAllyForAccCheck(enum BattlerId battlerAtk, enum Battl
     }
 }
 
-static enum CancelerResult CancelerBellyDrum(struct BattleContext *ctx)
-{
-    bool32 fails = FALSE;
-
-    switch (ctx->move)
-    {
-        case MOVE_BELLY_DRUM:
-            if (CompareStat(ctx->battlerAtk, STAT_ATK, MAX_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
-                fails = TRUE;
-            break;
-        // case MOVE_STRENGTH_SAP:
-        //     if (CompareStat(ctx->battlerDef, STAT_ATK, MIN_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
-        //         fails = TRUE;
-        //     break;
-        default:
-            break;
-    }
-
-    if (fails)
-    {
-        gBattlescriptCurrInstr = BattleScript_ButItFailed;
-        return CANCELER_RESULT_FAILURE;
-    }
-
-    return CANCELER_RESULT_SUCCESS;
-}
-
 static bool32 ShouldSkipStatChangeOnBattler(enum BattlerId battlerAtk, enum BattlerId battlerDef)
 {
     if (gBattleStruct->battlerState[battlerAtk].targetsDone[battlerDef])
@@ -2169,16 +2142,9 @@ static enum CancelerResult CancelerStatChangeMoves(struct BattleContext *ctx)
         st.certain = cv.battlerAtk == st.battler;
 
         if (CanAnyStatChange(&cv, &st))
-        {
-            if (DoesMoveMissTarget(&cv))
-                gBattleStruct->moveResultFlags[st.battler] = MOVE_RESULT_MISSED;
-            else
-                gBattleStruct->statChangeMoveAnim = TRUE;
-        }
+            gBattleStruct->moveResultFlags[st.battler] |= MOVE_RESULT_ATTEMPT_STAT_CHANGE;
         else if (gBattleStruct->numPossibleTargets > 1)
-        {
             gBattleStruct->moveResultFlags[st.battler] |= MOVE_RESULT_DOESNT_AFFECT_FOE;
-        }
     }
 
     gBattleStruct->additionalEffectsCounter = 0;
@@ -2187,82 +2153,124 @@ static enum CancelerResult CancelerStatChangeMoves(struct BattleContext *ctx)
     return CANCELER_RESULT_SUCCESS;
 }
 
-static const u8 *ShouldPlayMoveAnim(u32 effect)
+static enum CancelerResult CancelerStatChangeMoveAccuracy(struct BattleContext *ctx)
 {
-    const u8 *script = NULL;
+    if (!IsStatChangeMove(ctx->move))
+        return CANCELER_RESULT_SUCCESS;
 
-    switch (effect)
+    struct BattleCalcValues cv = {
+        .battlerAtk = ctx->battlerAtk,
+        .battlerDef = ctx->battlerDef,
+        .move = ctx->move,
+    };
+
+    cv.abilities[cv.battlerAtk] = GetBattlerAbility(cv.battlerAtk);
+    cv.holdEffects[cv.battlerAtk] = GetBattlerHoldEffect(cv.battlerAtk);
+
+    for (enum BattlerId battler = 0; battler < gBattlersCount; battler++)
     {
-    case EFFECT_CLANGOROUS_SOUL:
-        if (CutThirdOfHp(gBattlerAttacker))
-            script = BattleScript_PlayMoveAnimAndChangeHP;
-        break;
-    case EFFECT_STAT_CHANGE_HALF_HP:
-        if (TryHalfHp(gBattlerAttacker, gCurrentMove))
-            script = BattleScript_PlayMoveAnimAndChangeHP;
-        break;
-    case EFFECT_TIDY_UP:
-        if (TryTidyUpClear(gBattlerAttacker, FALSE))
-            script = BattleScript_PlayTidyUp;
-        break;
-    case EFFECT_PARTING_SHOT:
-        if ((GetConfig(B_PARTING_SHOT_SWITCH) < GEN_7 && CanBattlerSwitch(gBattlerAttacker)))
-            script = BattleScript_PlayMoveAnim;
-        break;
-    case EFFECT_DEFOG:
-        if (TryDefogClear(gBattlerAttacker, FALSE))
-            script = BattleScript_PlayMoveAnim;
-        break;
-    default:
-        return script;
+        if (ShouldSkipStatChangeOnBattler(cv.battlerAtk, battler) || gBattlerAttacker == battler)
+            continue;
+
+        cv.abilities[battler] = GetBattlerAbility(battler);
+        cv.holdEffects[battler] = GetBattlerHoldEffect(battler);
+        if (DoesMoveMissTarget(&cv))
+            gBattleStruct->moveResultFlags[battler] = MOVE_RESULT_MISSED;
     }
 
-    if (script == NULL && !gBattleStruct->statChangeMoveAnim)
-        script = BattleScript_ButItFailed;
-
-    return script;
+    return CANCELER_RESULT_SUCCESS;
 }
 
-static bool32 AnyTargetMissed(void)
+struct StatChangeFailure
+{
+    u32 missedAtLeastOneTarget:1;
+    u32 numTargetsPreventedStatChanges:1;
+    u32 atLeastOneTarget:1;
+    u32 failsOnAttacker:1;
+    u32 padding:28;
+};
+
+static void ShouldMoveFail(struct StatChangeFailure *failure)
 {
     for (enum BattlerId battler = 0; battler < gBattlersCount; battler++)
     {
         if (gBattleStruct->moveResultFlags[battler] & MOVE_RESULT_MISSED)
-            return TRUE;
+            failure->missedAtLeastOneTarget = TRUE;
+        if (gBattleStruct->moveResultFlags[battler] & MOVE_RESULT_STAT_CHANGE_PREVENTED)
+            failure->numTargetsPreventedStatChanges++;
+        if (gBattleStruct->moveResultFlags[battler] & MOVE_RESULT_ATTEMPT_STAT_CHANGE)
+            failure->atLeastOneTarget = TRUE;
     }
-    return FALSE;
+
+    switch (GetMoveEffect(gCurrentMove))
+    {
+    case EFFECT_CLANGOROUS_SOUL:
+        if (CutThirdOfHp(gBattlerAttacker))
+            failure->atLeastOneTarget = TRUE;
+        else
+            failure->failsOnAttacker = TRUE;
+        break;
+    case EFFECT_STAT_CHANGE_HALF_HP:
+        if (TryHalfHp(gBattlerAttacker, gCurrentMove))
+            failure->atLeastOneTarget = TRUE;
+        else
+            failure->failsOnAttacker = TRUE;
+        break;
+    case EFFECT_TIDY_UP:
+        if (TryTidyUpClear(gBattlerAttacker, FALSE))
+            failure->atLeastOneTarget = TRUE;
+        break;
+    case EFFECT_PARTING_SHOT:
+        if ((GetConfig(B_PARTING_SHOT_SWITCH) < GEN_7 && CanBattlerSwitch(gBattlerAttacker)))
+            failure->atLeastOneTarget = TRUE;
+        break;
+    case EFFECT_DEFOG:
+        if (TryDefogClear(gBattlerAttacker, FALSE))
+            failure->atLeastOneTarget = TRUE;
+        break;
+    default:
+        break;
+    }
 }
 
-// Needs a possible rewrite
 static enum CancelerResult CancelerStatChangeMoveAnim(struct BattleContext *ctx)
 {
     if (!IsStatChangeMove(ctx->move))
         return CANCELER_RESULT_SUCCESS;
 
-    const u8 *script = ShouldPlayMoveAnim(GetMoveEffect(gCurrentMove));
+    struct StatChangeFailure failure = {0};
+    ShouldMoveFail(&failure);
 
-    if (script == BattleScript_ButItFailed)
+    if (failure.failsOnAttacker)
     {
         gBattlescriptCurrInstr = BattleScript_ButItFailed;
         return CANCELER_RESULT_FAILURE;
     }
-    else if (gBattleStruct->statChangeMoveAnim || script != NULL)
+    else if (failure.atLeastOneTarget) // Play Anim
     {
-        gBattleStruct->statChangeMoveAnim = FALSE;
-
-        if (script != NULL)
-            BattleScriptCall(script);
-        else
+        switch (GetMoveEffect(gCurrentMove))
+        {
+        case EFFECT_STAT_CHANGE_HALF_HP:
+        case EFFECT_CLANGOROUS_SOUL:
+            BattleScriptCall(BattleScript_PlayMoveAnimAndChangeHP);
+        case EFFECT_TIDY_UP:
+            BattleScriptCall(BattleScript_PlayTidyUp);
+        default:
             BattleScriptCall(BattleScript_PlayMoveAnim);
-
+        }
         return CANCELER_RESULT_BREAK;
     }
-    else if (gBattleStruct->numPossibleTargets > 1 && !AnyTargetMissed()) // for multi target moves
+    else if (failure.missedAtLeastOneTarget) // Don't play anim, handle failure
+    {
+        gBattlescriptCurrInstr = BattleScript_MoveEnd;
+        return CANCELER_RESULT_FAILURE;
+    }
+    if (failure.numTargetsPreventedStatChanges == gBattleStruct->numPossibleTargets)
     {
         gBattlescriptCurrInstr = BattleScript_ButItFailed;
         return CANCELER_RESULT_FAILURE;
     }
-    else // Handle stat change failure.
+    else // Handle failure properly
     {
         gBattlescriptCurrInstr = BattleScript_MoveEnd;
         return CANCELER_RESULT_FAILURE;
@@ -2318,9 +2326,9 @@ static enum CancelerResult (*const sMoveSuccessOrderCancelers[])(struct BattleCo
     [CANCELER_TARGET_FAILURE] = CancelerTargetFailure,
     [CANCELER_NOT_FULLY_PROTECTED] = CancelerNotFullyProtected,
     [CANCELER_MULTIHIT_MOVES] = CancelerMultihitMoves,
-    [CANCELER_BELLY_DRUM] = CancelerBellyDrum,
     [CANCELER_STAT_CHANGE_SUB] = CancelerStatChangeSub,
     [CANCELER_STAT_CHANGE_MOVES] = CancelerStatChangeMoves,
+    [CANCELER_ACCURACY] = CancelerStatChangeMoveAccuracy,
     [CANCELER_STAT_CHANGE_MOVE_ANIM] = CancelerStatChangeMoveAnim,
 };
 
@@ -4721,8 +4729,14 @@ static void CalculateMagnitudeDamage(void)
 // Belly Drum, Fillet Away
 static bool32 TryHalfHp(enum BattlerId battler, enum Move move)
 {
-    if (!gBattleStruct->statChangeMoveAnim) // Already checked stats
+    if (gBattleStruct->moveResultFlags[battler] & MOVE_RESULT_STAT_CHANGE_PREVENTED)
         return FALSE;
+
+    if (gCurrentMove == MOVE_BELLY_DRUM)
+    {
+        if (CompareStat(battler, STAT_ATK, MAX_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
+            return FALSE;
+    }
 
     u32 halfHp = GetNonDynamaxMaxHP(battler) / 2;
 
@@ -4735,14 +4749,12 @@ static bool32 TryHalfHp(enum BattlerId battler, enum Move move)
         return TRUE;
     }
 
-    gBattleStruct->moveResultFlags[battler] = MOVE_RESULT_FAILED;
-    gBattleStruct->statChangeMoveAnim = FALSE;
     return FALSE;
 }
 
 static bool32 CutThirdOfHp(enum BattlerId battler)
 {
-    if (!gBattleStruct->statChangeMoveAnim) // Already checked stats
+    if (gBattleStruct->moveResultFlags[battler] & MOVE_RESULT_STAT_CHANGE_PREVENTED)
         return FALSE;
 
     u32 thirdHp = GetNonDynamaxMaxHP(battler) / 3;
@@ -4756,7 +4768,5 @@ static bool32 CutThirdOfHp(enum BattlerId battler)
         return TRUE;
     }
 
-    gBattleStruct->moveResultFlags[battler] = MOVE_RESULT_FAILED;
-    gBattleStruct->statChangeMoveAnim = FALSE;
     return FALSE;
 }

@@ -716,13 +716,6 @@ const struct BattleMoveEffect gBattleMoveEffects[NUM_BATTLE_MOVE_EFFECTS] =
         .encourageEncore = TRUE,
     },
 
-    [EFFECT_FLATTER] =
-    {
-        .battleScript = BattleScript_EffectStatChange,
-        .battleTvScore = 7,
-        .battleFactoryStyle = FACTORY_STYLE_SLOW_STEADY,
-    },
-
     [EFFECT_MEMENTO] =
     {
         .battleScript = BattleScript_EffectMemento,

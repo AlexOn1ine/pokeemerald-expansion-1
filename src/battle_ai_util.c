@@ -1967,7 +1967,6 @@ bool32 IsConfusionMoveEffect(enum BattleMoveEffects moveEffect)
     {
     case EFFECT_CONFUSE:
     case EFFECT_SWAGGER:
-    case EFFECT_FLATTER:
         return TRUE;
     default:
         return FALSE;
@@ -6441,7 +6440,7 @@ s32 GetFoeStatChangeScore(enum BattlerId battlerAtk, enum BattlerId battlerDef, 
          && effect->moveEffect != STAT_CHANGE_EFFECT_MINUS)
             continue;
 
-        for (enum Stat stat = 0; stat < NUM_STATS; stat++)
+        for (enum Stat stat = STAT_ATK; stat < NUM_STATS; stat++)
         {
             u32 stage = GetAdjustedStatStage(battlerAtk, move, GetStatStage(stat, effect));
 
@@ -6470,163 +6469,47 @@ s32 UNUSED GetAllyStatChangeScore(u32 battlerAtk, u32 battlerDef, u32 move)
     return 0;
 }
 
-// Also need functions to check failure
-
-#if 0
-s32 GetSelfStatChangeScore(u32 battlerAtk, u32 battlerDef, u32 move)
+// Only checks if a stat can actually change. Doesn't logical decisions
+bool32 AI_CanAnyStatChange(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move)
 {
-    s32 score = 0;
-    bool32 foundStatToIncrease = FALSE;
     u32 numAdditionalEffects = GetMoveAdditionalEffectCount(move);
-    u32 additionalEffectsCounter = 0;
 
-    while (additionalEffectsCounter < numAdditionalEffects)
+    struct BattleCalcValues cv = {
+        .battlerAtk = battlerAtk,
+        .battlerDef = battlerDef,
+        .move = move,
+    };
+    struct StatChange st = {
+        .onlyChecking = TRUE,
+    };
+
+    cv.abilities[battlerAtk] = gAiLogicData->abilities[battlerAtk];
+    cv.abilities[battlerDef] = gAiLogicData->abilities[battlerDef];
+    cv.holdEffects[battlerAtk] = gAiLogicData->holdEffects[battlerAtk];
+    cv.holdEffects[battlerDef] = gAiLogicData->holdEffects[battlerDef];
+
+    for (u32 i = 0; i < numAdditionalEffects; i++)
     {
-        while (gBattleStruct->statChangeQueueCounter< NUM_STATS)
-        {
-            const struct AdditionalEffect *additionalEffect = GetMoveAdditionalEffectById(gCurrentMove, gBattleStruct->additionalEffectsCounter);
-            u32 stat = gBattleStruct->statChangeQueueCounter++;
+        const struct AdditionalEffect *effect = GetMoveAdditionalEffectById(gCurrentMove, gBattleStruct->additionalEffectsCounter);
 
-            if (!IsStatSet(stat, additionalEffect))
+        if (effect->moveEffect != STAT_CHANGE_EFFECT_PLUS
+         && effect->moveEffect != STAT_CHANGE_EFFECT_MINUS)
+            continue;
+
+        for (enum Stat stat = STAT_ATK; stat < NUM_STATS; stat++)
+        {
+            st.battler = battlerDef;
+            st.stat = stat;
+            st.stage = GetAdjustedStatStage(battlerAtk, move, GetStatStage(stat, effect));
+
+            if (st.stage == 0)
                 continue;
 
-            if (IsStatDecreaseEffect(additionalEffect->moveEffect))
-            {
-                if (gAiLogicData->holdEffects[battlerAtk] == HOLD_EFFECT_WHITE_HERB)
-                    ADJUST_SCORE(WEAK_EFFECT);
-            }
-            else if (IsStatIncreaseEffect(additionalEffect->moveEffect))
-            {
-                u32 stage = additionalEffect->moveEffect - STAT_CHANGE_EFFECT_PLUS_1 + 1;
-                score = IncreaseStatUpScore(battlerAtk, battlerDef, stat, stage);
-                foundStatToIncrease = TRUE;
-            }
+            if (CanStatChange(&cv, &st))
+                return TRUE;
         }
-
-        additionalEffectsCounter++;
-    }
-
-    if (!foundStatToIncrease)
-        return 0; // Incase there was a white herb score increase, but no stats to increase were found
-
-    if (score > BEST_EFFECT)
-        score = BEST_EFFECT;
-    // return score;
-    return 0;
-
-}
-
-s32 GetAllyStatChangeScore(u32 battlerAtk, u32 battlerDef, u32 move)
-{
-    s32 score = 0;
-    bool32 canLowerStat = FALSE;
-    u32 numAdditionalEffects = GetMoveAdditionalEffectCount(move);
-    u32 additionalEffectsCounter = 0;
-
-    while (additionalEffectsCounter < numAdditionalEffects)
-    {
-        while (gBattleStruct->statChangeQueueCounter< NUM_STATS)
-        {
-            const struct AdditionalEffect *additionalEffect = GetMoveAdditionalEffectById(gCurrentMove, gBattleStruct->additionalEffectsCounter);
-            u32 stat = gBattleStruct->statChangeQueueCounter++;
-
-            if (!IsStatSet(stat, additionalEffect))
-                continue;
-
-            if (IsStatDecreaseEffect(additionalEffect->moveEffect))
-            {
-                canLowerStat = CanLowerStat(battlerAtk, battlerAtkPartner, gAiLogicData, stat);
-            }
-            else if (IsStatIncreaseEffect(additionalEffect->moveEffect))
-            {
-                u32 stage = additionalEffect->moveEffect - STAT_CHANGE_EFFECT_PLUS_1 + 1;
-                score = IncreaseStatUpScore(battlerAtk, battlerDef, stat, stage);
-            }
-        }
-
-        additionalEffectsCounter++;
-    }
-
-    if (canLowerStat)
-        return 0;
-
-    if (score > BEST_EFFECT)
-        score = BEST_EFFECT;
-
-    return score;
-}
-
-// This could be a function that is used in double battles
-bool32 ShouldDecreaseAllyStat(enum BattlerId battlerAtk, enum BattlerId battlerAtkPartner, enum Stat stat)
-{
-    if (!CanLowerStat(battlerAtk, battlerAtkPartner, gAiLogicData, stat))
-        return TRUE;
-
-    if (!IsMoldBreakerTypeAbility(battlerAtk, gAiLogicData->abilities[battlerAtk])
-     && DoesAbilityRaiseStatsWhenLowered(gAiLogicData->abilities[battlerAtkPartner]))
-        return TRUE;
-
-    if (gAiLogicData->holdEffects[battlerAtkPartner] == HOLD_EFFECT_WHITE_HERB)
-        return TRUE;
-
-    switch (stat)
-    {
-    case STAT_ATK:
-        if (!HasMoveWithCategory(battlerAtkPartner, DAMAGE_CATEGORY_PHYSICAL))
-            return TRUE;
-
-        break;
-    case STAT_DEF:
-    {
-        enum BattlerId foe = LEFT_FOE(battlerAtk);
-
-        if (HasBattlerSideMoveWithEffect(foe, EFFECT_PSYSHOCK))
-            return FALSE;
-
-        if (IsBattlerAlive(foe) && HasMoveWithCategory(foe, DAMAGE_CATEGORY_PHYSICAL))
-            return FALSE;
-
-        foe = RIGHT_FOE(battlerAtk);
-
-        if (IsBattlerAlive(foe) && HasMoveWithCategory(foe, DAMAGE_CATEGORY_PHYSICAL))
-            return FALSE;
-
-        return TRUE;
-    }
-    case STAT_SPEED:
-        if (HasMoveWithEffect(battlerAtkPartner, EFFECT_GYRO_BALL))
-            return TRUE;
-
-        if (gFieldStatuses & STATUS_FIELD_TRICK_ROOM)
-            return TRUE;
-
-        break;
-    case STAT_SPATK:
-        if (!HasMoveWithCategory(battlerAtkPartner, DAMAGE_CATEGORY_SPECIAL))
-            return TRUE;
-
-        break;
-    case STAT_SPDEF:
-    {
-        enum BattlerId foe = LEFT_FOE(battlerAtk);
-
-        if (HasSideMoveWithCategory(foe, DAMAGE_CATEGORY_SPECIAL))
-        if (IsBattlerAlive(foe) && HasMoveWithCategory(foe, DAMAGE_CATEGORY_SPECIAL))
-            return FALSE;
-
-        foe = RIGHT_FOE(battlerAtk);
-
-        if (IsBattlerAlive(foe) && HasMoveWithCategory(foe, DAMAGE_CATEGORY_SPECIAL))
-            return FALSE;
-
-        return TRUE;
-    }
-    case STAT_ACC:
-    case STAT_EVASION:
-    default:
-        break;
     }
 
     return FALSE;
 }
-#endif
+

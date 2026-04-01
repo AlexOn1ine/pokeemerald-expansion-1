@@ -103,7 +103,6 @@ enum __attribute__((packed)) BattleMoveEffects
     EFFECT_SWALLOW,
     EFFECT_OVERWRITE_ABILITY,
     EFFECT_TORMENT,
-    EFFECT_FLATTER,
     EFFECT_MEMENTO,
     EFFECT_FACADE,
     EFFECT_FOCUS_PUNCH,

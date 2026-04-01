@@ -35,7 +35,6 @@ u32 static const sAccurateStatOrder[NUM_BATTLE_STATS] =
     STAT_EVASION,
 };
 
-// Single stat check
 bool32 CanStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 {
     AdjustStatStage(cv, st);
@@ -44,15 +43,15 @@ bool32 CanStatChange(struct BattleCalcValues *cv, struct StatChange *st)
     {
         if (CompareStat(st->battler, st->stat, MIN_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
             return FALSE;
+
+        if (st->stage < 0 && CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
+            return FALSE;
     }
     else
     {
         if (CompareStat(st->battler, st->stat, MAX_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
             return FALSE;
     }
-
-    if (st->stage < 0 && CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
-        return FALSE;
 
     return TRUE;
 }
