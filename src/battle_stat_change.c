@@ -10,6 +10,18 @@
 #include "item.h"
 #include "move.h"
 
+static const u8 *const statString[] =
+{
+    NULL,
+    COMPOUND_STRING("Attack"),
+    COMPOUND_STRING("Defense"),
+    COMPOUND_STRING("Speed"),
+    COMPOUND_STRING("Sp. Atk"),
+    COMPOUND_STRING("Sp. Def"),
+    COMPOUND_STRING("Accuracy"),
+    COMPOUND_STRING("Evasion"),
+};
+
 // Stat change
 
 static enum StatChangeResult TryStatDecreases(struct BattleCalcValues *cv, struct StatChange *st);
@@ -40,7 +52,6 @@ static u32 GetNumPositiveStats(struct StatChange *st);
 static u32 GetNumNegativeStats(struct StatChange *st);
 static void SetAdditionalEffectsOnStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 static void MarkStatsAsDone(struct StatChange *st, enum Stat stat);
-
 
 enum Stat const sAccurateStatOrder[NUM_BATTLE_STATS] =
 {
@@ -320,7 +331,7 @@ static enum StatChangeResult TryStatIncreases(struct BattleCalcValues *cv, struc
             continue;
 
         st->stat = st->statStageQueue[i].stat;
-        st->stage = st->statStageQueue[i].stage;
+        st->stage = sAccurateStatOrder[st->statStageQueue[i].stage];
 
         if (cv->move == MOVE_NONE)
             AdjustStatStage(cv, st);
@@ -334,6 +345,7 @@ static enum StatChangeResult TryStatIncreases(struct BattleCalcValues *cv, struc
         if (IncreaseStat(cv, st) == STAT_CHANGE_WORKED)
         {
             maxStage = max(st->stage, maxStage);
+            // statsChanged[numChanges++] = sAccurateStatOrder[st->stat];
             statsChanged[numChanges++] = st->stat;
         }
     }
@@ -349,11 +361,43 @@ static enum StatChangeResult TryStatIncreases(struct BattleCalcValues *cv, struc
     return STAT_CHANGE_DIDNT_WORK;
 }
 
+#include "string_util.h"
+#include "battle_message.h"
+#include "line_break.h"
+#include "text.h"
+void SetPokemonmeWithPrefix(enum BattlerId battler)
+{
+    if (!IsOnPlayerSide(battler))
+    {
+        if (gBattleTypeFlags & BATTLE_TYPE_TRAINER)
+            StringCopy(gDisplayedStringBattle, COMPOUND_STRING("The opposing "));
+        else
+            StringCopy(gDisplayedStringBattle, COMPOUND_STRING("The wild "));
+    }
+    else
+    {
+        StringCopy(gDisplayedStringBattle, COMPOUND_STRING(""));
+    }
+
+    struct Pokemon *illusionMon = GetIllusionMonPtr(battler);
+    struct Pokemon *mon = GetBattlerMon(battler);
+
+    if (illusionMon != NULL)
+        mon = illusionMon;
+
+    u8 nickname[POKEMON_NAME_LENGTH + 1];
+    GetMonData(mon, MON_DATA_NICKNAME, nickname);
+    StringAppend(gDisplayedStringBattle, nickname);
+    StringAppend(gDisplayedStringBattle, COMPOUND_STRING(" "));
+}
+
 static void BuildStatChangeString(s32 stage, s8 statsChanged[], u32 numChanges)
 {
+    SetPokemonmeWithPrefix(gBattleScripting.battler);
+    StringAppend(gDisplayedStringBattle, statString[statsChanged[0]]);
 
-    PREPARE_STAT_BUFFER(gBattleTextBuff1, statsChanged[0]);
-
+    DebugPrintf("stat: %S", statString[statsChanged[0]]);
+    DebugPrintf("stat: %S", statString[statsChanged[1]]);
     if (numChanges > 1)
     {
         for (u32 i = 1; i < NUM_BATTLE_STATS; i++)
@@ -361,26 +405,28 @@ static void BuildStatChangeString(s32 stage, s8 statsChanged[], u32 numChanges)
             if (statsChanged[i] == -1)
                 break;
 
-            PREPARE_STAT_BUFFER(gBattleTextBuff1, STRINGID_STATSCOMMA);
+            StringAppend(gDisplayedStringBattle, COMPOUND_STRING(", "));
             if (statsChanged[i + 1] == -1)
-                PREPARE_STAT_BUFFER(gBattleTextBuff1, STRINGID_STATSAND);
-            PREPARE_STAT_BUFFER(gBattleTextBuff1, statsChanged[i]);
+                StringAppend(gDisplayedStringBattle, COMPOUND_STRING("and "));
+            StringAppend(gDisplayedStringBattle, statString[statsChanged[i]]);
         }
     }
 
     if (stage == 2)
     {
-        PREPARE_STRING_BUFFER(gBattleTextBuff2, STRINGID_STATSHARPLY);
+        StringAppend(gDisplayedStringBattle, COMPOUND_STRING(" rose sharply!"));
     }
     else if (stage >= 3)
     {
-        PREPARE_STRING_BUFFER(gBattleTextBuff2, STRINGID_DRASTICALLY);
+        StringAppend(gDisplayedStringBattle, COMPOUND_STRING(" rose drastically!"));
     }
     else
     {
-        PREPARE_STRING_BUFFER(gBattleTextBuff2, STRINGID_EMPTYSTRING3);
+        StringAppend(gDisplayedStringBattle, COMPOUND_STRING(" rose!"));
     }
 
+    BreakStringAutomatic(gDisplayedStringBattle, BATTLE_MSG_MAX_WIDTH, BATTLE_MSG_MAX_LINES, FONT_NORMAL, SHOW_SCROLL_PROMPT);
+    BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_MSG);
 }
 
 static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct StatChange *st)
