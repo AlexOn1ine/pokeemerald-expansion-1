@@ -11,9 +11,15 @@
 #include "move.h"
 
 // Stat change
+
+static enum StatChangeResult TryStatDecreases(struct BattleCalcValues *cv, struct StatChange *st);
+static enum StatChangeResult TryStatIncreases(struct BattleCalcValues *cv, struct StatChange *st);
+
 static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
 static enum StatChangeResult DecreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
 static enum StatChangeResult IncreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
+
+static void BuildStatChangeString(s32 stage, s8 statsChanged[], u32 numChanges);
 static void StatChanged(struct BattleCalcValues *cv, struct StatChange *st, bool32 isMaxStage);
 static void TryPlayStatChangeAnimation(struct BattleCalcValues *cv, struct StatChange *st);
 
@@ -34,6 +40,7 @@ static u32 GetNumPositiveStats(struct StatChange *st);
 static u32 GetNumNegativeStats(struct StatChange *st);
 static void SetAdditionalEffectsOnStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 static void MarkStatsAsDone(struct StatChange *st, enum Stat stat);
+
 
 enum Stat const sAccurateStatOrder[NUM_BATTLE_STATS] =
 {
@@ -247,49 +254,133 @@ enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChan
         return STAT_CHANGE_BLOCKED_BY_TARGET;
     }
 
-    enum StatChangeResult result = STAT_CHANGE_DIDNT_WORK;
+    if (TryStatDecreases(cv, st) != STAT_CHANGE_DIDNT_WORK)
+        return STAT_CHANGE_WORKED;
+
+    if (TryStatIncreases(cv, st) == STAT_CHANGE_WORKED)
+        return STAT_CHANGE_WORKED;
+
+    #if 0
+    if (st->nextBattler && !st->onlyChecking) // Set volatiles after all stats are done
+        SetAdditionalEffectsOnStatChange(cv, st);
+    #endif
+
+    return STAT_CHANGE_DIDNT_WORK;
+}
+
+
+static enum StatChangeResult TryStatDecreases(struct BattleCalcValues *cv, struct StatChange *st)
+{
     for (u32 i = 0; i < st->statStageAmount; i++)
     {
-        if (i + 1 == st->statStageAmount) // Avoids redundant looping
-            st->nextBattler = TRUE;
-
         if (st->statStageQueue[i].done)
             continue;
 
         st->stat = st->statStageQueue[i].stat;
         st->stage = st->statStageQueue[i].stage;
+
+        if (cv->move == MOVE_NONE)
+            AdjustStatStage(cv, st);
+
+        if (st->stage > 0)
+            continue;
+
         st->statStageQueue[i].done = TRUE;
+
+        if (CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
+        {
+            if (st->silentFailure)
+                continue;
+            return STAT_CHANGE_BLOCKED_BY_TARGET;
+        }
+
+        if (DecreaseStat(cv, st) == STAT_CHANGE_WORKED)
+        {
+            st->script = BattleScript_DecreaseStatChangeMessage;
+            TryPlayStatChangeAnimation(cv, st);
+            return STAT_CHANGE_WORKED;
+        }
+    }
+
+    return STAT_CHANGE_DIDNT_WORK;
+}
+
+static enum StatChangeResult TryStatIncreases(struct BattleCalcValues *cv, struct StatChange *st)
+{
+    u32 numChanges = 0;
+    s8 statsChanged[NUM_BATTLE_STATS + 1];
+    u32 maxStage = 0;
+
+    for (u32 i = 0; i < NUM_BATTLE_STATS + 1; i++)
+        statsChanged[i] = -1;
+
+    for (u32 i = 0; i < st->statStageAmount; i++)
+    {
+        if (st->statStageQueue[i].done)
+            continue;
+
+        st->stat = st->statStageQueue[i].stat;
+        st->stage = st->statStageQueue[i].stage;
 
         if (cv->move == MOVE_NONE)
             AdjustStatStage(cv, st);
 
         if (st->stage < 0)
-        {
-            if (CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
-            {
-                if (st->silentFailure)
-                    continue;
-                result = STAT_CHANGE_BLOCKED_BY_TARGET;
-                break;
-            }
+            continue;
 
-            if (DecreaseStat(cv, st) == STAT_CHANGE_WORKED)
-            {
-                result = STAT_CHANGE_WORKED;
-                break;
-            }
-        }
-        else if (IncreaseStat(cv, st) == STAT_CHANGE_WORKED)
+        st->statStageQueue[i].done = TRUE;
+        st->nextBattler = TRUE;
+
+        if (IncreaseStat(cv, st) == STAT_CHANGE_WORKED)
         {
-            result = STAT_CHANGE_WORKED;
-            break;
+            maxStage = max(st->stage, maxStage);
+            statsChanged[numChanges++] = st->stat;
         }
     }
 
-    if (st->nextBattler && !st->onlyChecking) // Set volatiles after all stats are done
-        SetAdditionalEffectsOnStatChange(cv, st);
+    if (numChanges > 0)
+    {
+        BuildStatChangeString(maxStage, statsChanged, numChanges);
+        TryPlayStatChangeAnimation(cv, st);
+        st->script = BattleScript_IncreaseStatChangeMessage;
+        return STAT_CHANGE_WORKED;
+    }
 
-    return result;
+    return STAT_CHANGE_DIDNT_WORK;
+}
+
+static void BuildStatChangeString(s32 stage, s8 statsChanged[], u32 numChanges)
+{
+
+    PREPARE_STAT_BUFFER(gBattleTextBuff1, statsChanged[0]);
+
+    if (numChanges > 1)
+    {
+        for (u32 i = 1; i < NUM_BATTLE_STATS; i++)
+        {
+            if (statsChanged[i] == -1)
+                break;
+
+            PREPARE_STAT_BUFFER(gBattleTextBuff1, STRINGID_STATSCOMMA);
+            if (statsChanged[i + 1] == -1)
+                PREPARE_STAT_BUFFER(gBattleTextBuff1, STRINGID_STATSAND);
+            PREPARE_STAT_BUFFER(gBattleTextBuff1, statsChanged[i]);
+        }
+    }
+
+    if (stage == 2)
+    {
+        PREPARE_STRING_BUFFER(gBattleTextBuff2, STRINGID_STATSHARPLY);
+    }
+    else if (stage >= 3)
+    {
+        PREPARE_STRING_BUFFER(gBattleTextBuff2, STRINGID_DRASTICALLY);
+    }
+    else
+    {
+        PREPARE_STRING_BUFFER(gBattleTextBuff2, STRINGID_EMPTYSTRING3);
+    }
+
 }
 
 static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct StatChange *st)
@@ -369,25 +460,10 @@ static enum StatChangeResult IncreaseStat(struct BattleCalcValues *cv, struct St
     u32 currStage = gBattleMons[cv->battlerDef].statStages[st->stat];
     bool32 isMaxStage = st->stage >= 12;
 
-    PREPARE_STAT_BUFFER(gBattleTextBuff1, st->stat);
-
     if (currStage == MAX_STAT_STAGE - 1)
         st->stage = 1;
     else if (currStage == MAX_STAT_STAGE - 2 && st->stage > 2)
         st->stage = 2;
-
-    if (st->stage == 2)
-    {
-        PREPARE_STRING_BUFFER(gBattleTextBuff2, STRINGID_STATSHARPLY);
-    }
-    else if (st->stage >= 3)
-    {
-        PREPARE_STRING_BUFFER(gBattleTextBuff2, STRINGID_DRASTICALLY);
-    }
-    else
-    {
-        PREPARE_STRING_BUFFER(gBattleTextBuff2, STRINGID_EMPTYSTRING3);
-    }
 
     if (gBattleMons[cv->battlerDef].statStages[st->stat] == MAX_STAT_STAGE)
     {
@@ -436,8 +512,6 @@ static enum StatChangeResult IncreaseStat(struct BattleCalcValues *cv, struct St
     {
         gProtectStructs[cv->battlerDef].statRaised = TRUE;
         StatChanged(cv, st, isMaxStage);
-        st->script = BattleScript_IncreaseStatChangeMessage;
-        TryPlayStatChangeAnimation(cv, st);
     }
 
     return STAT_CHANGE_WORKED;

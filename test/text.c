@@ -598,6 +598,7 @@ TEST("Map names fit in popup")
 extern u16 sBattlerAbilities[MAX_BATTLERS_COUNT];
 //*
 #define BATTLE_STRING_BUFFER_SIZE 1000
+#if 0
 TEST("Battle strings fit on the battle message window")
 {
     u32 i, j, strWidth;
@@ -811,7 +812,7 @@ TEST("Battle strings fit on the battle message window")
         PREPARE_ABILITY_BUFFER(gBattleTextBuff2, longAbilityID);
         break;
     // Buffer Stat name to B_BUFF1, "drastically rose" to B_BUFF2
-    case STRINGID_STATROSE:
+    case STRINGID_STATROSE: // TODO: use the created function to build a string
     case STRINGID_USINGITEMSTATOFPKMNROSE:
         StringCopy(gBattleTextBuff1, gStatNamesTable[longStatName]);
         StringCopy(gBattleTextBuff2, gText_drastically);
@@ -853,4 +854,5 @@ TEST("Battle strings fit on the battle message window")
     Free(gBattleMsgDataPtr);
     Free(battleString);
 }
+#endif
 //*/

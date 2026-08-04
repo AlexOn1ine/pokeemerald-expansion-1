@@ -16,3 +16,17 @@ SINGLE_BATTLE_TEST("Hone Claws increases Attack and Accuracy by one stage each")
         MESSAGE("Wobbuffet's accuracy rose!");
     }
 }
+
+SINGLE_BATTLE_TEST("Dragon Dance test")
+{
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET);
+    } WHEN {
+        TURN { MOVE(player, MOVE_DRAGON_DANCE); }
+    } SCENE {
+    } THEN {
+        EXPECT_EQ(player->statStages[STAT_ATK], 7);
+        EXPECT_EQ(player->statStages[STAT_SPEED], 7);
+    }
+}
