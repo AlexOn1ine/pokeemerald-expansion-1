@@ -377,6 +377,7 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
 
     [STRINGID_STATSCOMMA]                            = COMPOUND_STRING(", "),
     [STRINGID_STATSAND]                              = COMPOUND_STRING("and "),
+    [STRINGID_STATCHANGE] = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX}'s {B_BUFF3}"),
 
     [STRINGID_STATSHARPLY]                          = COMPOUND_STRING(" sharply"),
     [STRINGID_STATHARSHLY]                          = COMPOUND_STRING("harshly "),
@@ -2863,6 +2864,7 @@ static const u8 *TryGetStatusString(u8 *src)
             && chars2 == *(u32 *)(&gStatusConditionStringsTable[i][0][4]))
             return gStatusConditionStringsTable[i][1];
     }
+
     return NULL;
 }
 

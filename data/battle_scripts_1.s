@@ -229,6 +229,7 @@ BattleScript_EndTurnStatChange::
 
 BattleScript_IncreaseStatChangeMessage::
 	@printfromtable gStatUpStringIds
+	printstring STRINGID_STATCHANGE
 	waitmessage B_WAIT_TIME_LONG
 	tryadrenalineorb
 	return

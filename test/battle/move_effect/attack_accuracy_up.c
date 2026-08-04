@@ -20,8 +20,8 @@ SINGLE_BATTLE_TEST("Hone Claws increases Attack and Accuracy by one stage each")
 SINGLE_BATTLE_TEST("Dragon Dance test")
 {
     GIVEN {
-        PLAYER(SPECIES_WOBBUFFET);
-        OPPONENT(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_MEW);
+        OPPONENT(SPECIES_MEW);
     } WHEN {
         TURN { MOVE(player, MOVE_FILLET_AWAY); }
     } SCENE {
