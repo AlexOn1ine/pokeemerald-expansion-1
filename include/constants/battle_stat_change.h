@@ -8,6 +8,15 @@ enum StatChangeResult
     STAT_CHANGE_BLOCKED_BY_TARGET,
 };
 
+enum StatChangeProccess
+{
+    PROCCESS_STAT_DEFAULT,
+    PROCCESS_STAT_NO_INCREASE, // No change
+    PROCCESS_STAT_NO_DECREASE, // No change
+    PROCCESS_STAT_INCREASING,
+    PROCCESS_STAT_DECREASING,
+};
+
 #define STAT_CHANGE_NO_FLAGS             0
 #define STAT_CHANGE_ONLY_CHECKING       (1 << 0)
 #define STAT_CHANGE_IGNORE_SELF         (1 << 1)

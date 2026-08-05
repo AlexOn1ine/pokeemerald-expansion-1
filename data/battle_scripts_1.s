@@ -235,7 +235,7 @@ BattleScript_IncreaseStatChangeMessage::
 	return
 
 BattleScript_DecreaseStatChangeMessage::
-	printfromtable gStatDownStringIds
+	printstring STRINGID_STATCHANGE
 	waitmessage B_WAIT_TIME_LONG
 	trydefiantrattled
 	tryadrenalineorb

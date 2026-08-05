@@ -23,7 +23,10 @@ SINGLE_BATTLE_TEST("Dragon Dance test")
         PLAYER(SPECIES_MEW);
         OPPONENT(SPECIES_MEW);
     } WHEN {
-        TURN { MOVE(player, MOVE_FILLET_AWAY); }
+        TURN { MOVE(player, MOVE_SWORDS_DANCE); }
+        TURN { MOVE(player, MOVE_SWORDS_DANCE); }
+        TURN { MOVE(player, MOVE_SWORDS_DANCE); }
+        TURN { MOVE(player, MOVE_SHELL_SMASH); }
     } SCENE {
     } THEN {
         // EXPECT_EQ(player->statStages[STAT_ATK], 7);

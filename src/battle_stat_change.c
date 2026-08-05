@@ -28,10 +28,13 @@ static enum StatChangeResult TryStatDecreases(struct BattleCalcValues *cv, struc
 static enum StatChangeResult TryStatIncreases(struct BattleCalcValues *cv, struct StatChange *st);
 
 static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
+
+static bool32 IsMinStat(enum BattlerId battler, enum Stat stat);
 static enum StatChangeResult DecreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
+
 static enum StatChangeResult IncreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
 
-static void BuildStatChangeString(s32 stage, s8 statsChanged[], u32 numChanges);
+static void BuildStatChangeString(s32 stage, s8 statsChanged[], u32 numChanges, enum StatChangeProccess proccess);
 static void StatChanged(struct BattleCalcValues *cv, struct StatChange *st, bool32 isMaxStage);
 static void TryPlayStatChangeAnimation(struct BattleCalcValues *cv, struct StatChange *st);
 
@@ -279,9 +282,22 @@ enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChan
     return STAT_CHANGE_DIDNT_WORK;
 }
 
+#define END_NUM_CHANGES -1
 
+// Find either the first stat that can either change or not.
+// Then ignore one set. Focus on the first set. Print string and mark as done
+// Focus on the second string
 static enum StatChangeResult TryStatDecreases(struct BattleCalcValues *cv, struct StatChange *st)
 {
+    u32 numChanges = 0;
+    s8 statsChanged[NUM_BATTLE_STATS + 1];
+    u32 minStage = 0;
+
+    enum StatChangeProccess proccess = PROCCESS_STAT_DEFAULT;
+
+    for (u32 i = 0; i < NUM_BATTLE_STATS + 1; i++)
+        statsChanged[i] = END_NUM_CHANGES;
+
     for (u32 i = 0; i < st->statStageAmount; i++)
     {
         if (st->statStageQueue[i].done)
@@ -296,21 +312,42 @@ static enum StatChangeResult TryStatDecreases(struct BattleCalcValues *cv, struc
         if (st->stage > 0)
             continue;
 
-        st->statStageQueue[i].done = TRUE;
-
+        #if 0
         if (CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
         {
             if (st->silentFailure)
                 continue;
             return STAT_CHANGE_BLOCKED_BY_TARGET;
         }
+        #endif
 
-        if (DecreaseStat(cv, st) == STAT_CHANGE_WORKED)
+        if (proccess != PROCCESS_STAT_DECREASING && IsMinStat(cv->battlerDef, st->stage) == STAT_CHANGE_DIDNT_WORK)
         {
-            st->script = BattleScript_DecreaseStatChangeMessage;
-            TryPlayStatChangeAnimation(cv, st);
-            return STAT_CHANGE_WORKED;
+            proccess = PROCCESS_STAT_NO_DECREASE;
         }
+        else if (proccess != PROCCESS_STAT_NO_DECREASE && DecreaseStat(cv, st) == STAT_CHANGE_WORKED)
+        {
+            proccess = PROCCESS_STAT_DECREASING;
+            minStage = min(minStage, st->stage);
+        }
+
+        st->statStageQueue[i].done = TRUE;
+        statsChanged[numChanges++] = st->stat;
+    }
+
+    if (proccess == PROCCESS_STAT_NO_DECREASE)
+    {
+        BuildStatChangeString(minStage, statsChanged, numChanges, proccess);
+        st->script = BattleScript_IncreaseStatChangeMessage;
+        return STAT_CHANGE_WORKED;
+    }
+    else if (proccess == PROCCESS_STAT_DECREASING)
+    {
+        BuildStatChangeString(minStage, statsChanged, numChanges, proccess);
+        st->stage = minStage;
+        TryPlayStatChangeAnimation(cv, st);
+        st->script = BattleScript_IncreaseStatChangeMessage;
+        return STAT_CHANGE_WORKED;
     }
 
     return STAT_CHANGE_DIDNT_WORK;
@@ -322,16 +359,18 @@ static enum StatChangeResult TryStatIncreases(struct BattleCalcValues *cv, struc
     s8 statsChanged[NUM_BATTLE_STATS + 1];
     u32 maxStage = 0;
 
+    enum StatChangeProccess proccess = PROCCESS_STAT_DEFAULT;
+
     for (u32 i = 0; i < NUM_BATTLE_STATS + 1; i++)
-        statsChanged[i] = -1;
+        statsChanged[i] = END_NUM_CHANGES;
 
     for (u32 i = 0; i < st->statStageAmount; i++)
     {
         if (st->statStageQueue[i].done)
             continue;
 
-        st->stat = st->statStageQueue[i].stat;
-        st->stage = sAccurateStatOrder[st->statStageQueue[i].stage];
+        st->stat = sAccurateStatOrder[st->statStageQueue[i].stat];
+        st->stage = st->statStageQueue[i].stage;
 
         if (cv->move == MOVE_NONE)
             AdjustStatStage(cv, st);
@@ -344,15 +383,15 @@ static enum StatChangeResult TryStatIncreases(struct BattleCalcValues *cv, struc
 
         if (IncreaseStat(cv, st) == STAT_CHANGE_WORKED)
         {
-            maxStage = max(st->stage, maxStage);
-            // statsChanged[numChanges++] = sAccurateStatOrder[st->stat];
+            maxStage = max(maxStage, st->stage);
             statsChanged[numChanges++] = st->stat;
         }
     }
 
     if (numChanges > 0)
     {
-        BuildStatChangeString(maxStage, statsChanged, numChanges);
+        BuildStatChangeString(maxStage, statsChanged, numChanges, proccess);
+        st->stage = maxStage;
         TryPlayStatChangeAnimation(cv, st);
         st->script = BattleScript_IncreaseStatChangeMessage;
         return STAT_CHANGE_WORKED;
@@ -362,7 +401,11 @@ static enum StatChangeResult TryStatIncreases(struct BattleCalcValues *cv, struc
 }
 
 #include "string_util.h"
-static void BuildStatChangeString(s32 stage, s8 statsChanged[], u32 numChanges)
+
+// The message can't change will be printed depending on the order (first / last)
+// if attack can't go lower, that one will be printed first
+// if sp atk can't go lower but attack can. attack will be printed first to lower
+static void BuildStatChangeString(s32 stage, s8 statsChanged[], u32 numChanges, enum StatChangeProccess proccess)
 {
     StringCopy(gBattleTextBuff3, statString[statsChanged[0]]);
 
@@ -370,22 +413,40 @@ static void BuildStatChangeString(s32 stage, s8 statsChanged[], u32 numChanges)
     {
         for (u32 i = 1; i < NUM_BATTLE_STATS; i++)
         {
-            if (statsChanged[i] == -1)
+            if (statsChanged[i] == END_NUM_CHANGES)
                 break;
 
             StringAppend(gBattleTextBuff3, COMPOUND_STRING(", "));
-            if (statsChanged[i + 1] == -1)
+            if (statsChanged[i + 1] == END_NUM_CHANGES)
                 StringAppend(gDisplayedStringBattle, COMPOUND_STRING("and "));
             StringAppend(gBattleTextBuff3, statString[statsChanged[i]]);
         }
     }
 
-         if (stage == 2)  StringAppend(gBattleTextBuff3, COMPOUND_STRING(" rose sharply!"));
-    else if (stage >= 3)  StringAppend(gBattleTextBuff3, COMPOUND_STRING(" rose drastically!"));
-    else if (stage > 0)   StringAppend(gBattleTextBuff3, COMPOUND_STRING(" rose!"));
-    else if (stage == -2) StringAppend(gBattleTextBuff3, COMPOUND_STRING(" fell!"));
-    else if (stage <= -3) StringAppend(gBattleTextBuff3, COMPOUND_STRING(" fell!"));
-    else                  StringAppend(gBattleTextBuff3, COMPOUND_STRING(" fell!"));
+    if (proccess == PROCCESS_STAT_NO_INCREASE)
+    {
+        StringAppend(gDisplayedStringBattle, COMPOUND_STRING("won't go any higher!"));
+    }
+    else if (proccess == PROCCESS_STAT_NO_DECREASE)
+    {
+        StringAppend(gDisplayedStringBattle, COMPOUND_STRING("won't go any lower!"));
+    }
+    else
+    {
+        if (stage == 2) {
+            StringAppend(gBattleTextBuff3, COMPOUND_STRING(" rose sharply!"));
+        } else if (stage >= 3) {
+            StringAppend(gBattleTextBuff3, COMPOUND_STRING(" rose drastically!"));
+        } else if (stage > 0) {
+            StringAppend(gBattleTextBuff3, COMPOUND_STRING(" rose!"));
+        } else if (stage == -2) {
+            StringAppend(gBattleTextBuff3, COMPOUND_STRING(" fell harshly!"));
+        } else if (stage <= -3) {
+            StringAppend(gBattleTextBuff3, COMPOUND_STRING(" fell severely!"));
+        } else {
+            StringAppend(gBattleTextBuff3, COMPOUND_STRING(" fell!"));
+        }
+    }
 }
 
 static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct StatChange *st)
@@ -400,62 +461,37 @@ static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct
     return STAT_CHANGE_WORKED;
 }
 
+static bool32 IsMinStat(enum BattlerId battler, enum Stat stat)
+{
+    if (gBattleMons[battler].statStages[stat] == MIN_STAT_STAGE)
+        return TRUE;
+    return FALSE;
+}
+
 static enum StatChangeResult DecreaseStat(struct BattleCalcValues *cv, struct StatChange *st)
 {
-    u32 currStage = gBattleMons[cv->battlerDef].statStages[st->stat];
+    if (st->onlyChecking)
+        return STAT_CHANGE_DIDNT_WORK;
 
-    PREPARE_STAT_BUFFER(gBattleTextBuff1, st->stat);
+    u32 currStage = gBattleMons[cv->battlerDef].statStages[st->stat];
 
     if (currStage == (MIN_STAT_STAGE + 1))
         st->stage = -1;
     else if (currStage == 2 && st->stage < -2)
         st->stage = -2;
 
-    if (st->stage == -2)
+    gBattleMons[cv->battlerDef].volatiles.tryEjectPack = TRUE;
+    gProtectStructs[cv->battlerDef].lashOutAffected = TRUE;
+
+    if (!st->stickyWeb)
     {
-        PREPARE_STRING_BUFFER(gBattleTextBuff2, STRINGID_STATHARSHLY);
-    }
-    else if (st->stage <= -3)
-    {
-        PREPARE_STRING_BUFFER(gBattleTextBuff2, STRINGID_SEVERELY);
-    }
-    else
-    {
-        PREPARE_STRING_BUFFER(gBattleTextBuff2, STRINGID_EMPTYSTRING3);
+        if (st->certain || (cv->battlerAtk != cv->battlerDef && IsBattlerAlly(cv->battlerAtk, cv->battlerDef)))
+            gBattleStruct->ignoreDefiant = TRUE;
     }
 
-    if (currStage == MIN_STAT_STAGE)
-    {
-        if (st->onlyChecking)
-            return STAT_CHANGE_DIDNT_WORK;
-
-        if (cv->moveEffect == EFFECT_BELLY_DRUM)
-            gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_CHANGED_BELLY_DRUM;
-        else
-            gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_WONT_CHANGE;
-
-        gBattleScripting.battler = cv->battlerDef;
-        st->script = BattleScript_DecreaseStatChangeMessageMinStat;
-        return STAT_CHANGE_WORKED; // Handle failure
-    }
-    else if (!st->onlyChecking)
-    {
-        gBattleMons[cv->battlerDef].volatiles.tryEjectPack = TRUE;
-        gProtectStructs[cv->battlerDef].lashOutAffected = TRUE;
-    }
-
-    if (!st->onlyChecking)
-    {
-        if (!st->stickyWeb)
-        {
-            if (st->certain || (cv->battlerAtk != cv->battlerDef && IsBattlerAlly(cv->battlerAtk, cv->battlerDef)))
-                gBattleStruct->ignoreDefiant = TRUE;
-        }
-
-        StatChanged(cv, st, FALSE);
-        st->script = BattleScript_DecreaseStatChangeMessage;
-        TryPlayStatChangeAnimation(cv, st);
-    }
+    StatChanged(cv, st, FALSE);
+    st->script = BattleScript_DecreaseStatChangeMessage;
+    TryPlayStatChangeAnimation(cv, st);
 
     return STAT_CHANGE_WORKED;
 }
