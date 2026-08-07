@@ -24,15 +24,15 @@ static const u8 *const statString[] =
 
 // Stat change
 
-static enum StatChangeResult TryStatDecreases(struct BattleCalcValues *cv, struct StatChange *st);
-static enum StatChangeResult TryStatIncreases(struct BattleCalcValues *cv, struct StatChange *st);
-
 static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
 
 static bool32 IsMinStat(enum BattlerId battler, enum Stat stat);
-static enum StatChangeResult DecreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
+static void DecreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
 
-static enum StatChangeResult IncreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
+static bool32 IsMaxStat(enum BattlerId battler, enum Stat stat);
+
+static void IncreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
+static void CheckOpportunistMirrorHerb(struct BattleCalcValues *cv, struct StatChange *st, u32 stageIncrease);
 
 static void BuildStatChangeString(s32 stage, s8 statsChanged[], u32 numChanges, enum StatChangeProccess proccess);
 static void StatChanged(struct BattleCalcValues *cv, struct StatChange *st, bool32 isMaxStage);
@@ -260,6 +260,7 @@ bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
     return canAnyStatChange;
 }
 
+#define END_NUM_CHANGES -1
 enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 {
     if (CheckSpecificMoveCondition(cv, st) || IsSubstituteBlocked(cv, st))
@@ -268,30 +269,11 @@ enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChan
         return STAT_CHANGE_BLOCKED_BY_TARGET;
     }
 
-    if (TryStatDecreases(cv, st) != STAT_CHANGE_DIDNT_WORK)
-        return STAT_CHANGE_WORKED;
-
-    if (TryStatIncreases(cv, st) == STAT_CHANGE_WORKED)
-        return STAT_CHANGE_WORKED;
-
-    #if 0
-    if (st->nextBattler && !st->onlyChecking) // Set volatiles after all stats are done
-        SetAdditionalEffectsOnStatChange(cv, st);
-    #endif
-
-    return STAT_CHANGE_DIDNT_WORK;
-}
-
-#define END_NUM_CHANGES -1
-
-// Find either the first stat that can either change or not.
-// Then ignore one set. Focus on the first set. Print string and mark as done
-// Focus on the second string
-static enum StatChangeResult TryStatDecreases(struct BattleCalcValues *cv, struct StatChange *st)
-{
     u32 numChanges = 0;
     s8 statsChanged[NUM_BATTLE_STATS + 1];
-    u32 minStage = 0;
+    s32 minMaxStage = 0;
+
+    bool32 test = FALSE;
 
     enum StatChangeProccess proccess = PROCCESS_STAT_DEFAULT;
 
@@ -309,9 +291,6 @@ static enum StatChangeResult TryStatDecreases(struct BattleCalcValues *cv, struc
         if (cv->move == MOVE_NONE)
             AdjustStatStage(cv, st);
 
-        if (st->stage > 0)
-            continue;
-
         #if 0
         if (CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
         {
@@ -321,90 +300,65 @@ static enum StatChangeResult TryStatDecreases(struct BattleCalcValues *cv, struc
         }
         #endif
 
-        if (proccess != PROCCESS_STAT_DECREASING && IsMinStat(cv->battlerDef, st->stage) == STAT_CHANGE_DIDNT_WORK)
-        {
-            proccess = PROCCESS_STAT_NO_DECREASE;
-        }
-        else if (proccess != PROCCESS_STAT_NO_DECREASE && DecreaseStat(cv, st) == STAT_CHANGE_WORKED)
-        {
-            proccess = PROCCESS_STAT_DECREASING;
-            minStage = min(minStage, st->stage);
-        }
-
-        st->statStageQueue[i].done = TRUE;
-        statsChanged[numChanges++] = st->stat;
-    }
-
-    if (proccess == PROCCESS_STAT_NO_DECREASE)
-    {
-        BuildStatChangeString(minStage, statsChanged, numChanges, proccess);
-        st->script = BattleScript_IncreaseStatChangeMessage;
-        return STAT_CHANGE_WORKED;
-    }
-    else if (proccess == PROCCESS_STAT_DECREASING)
-    {
-        BuildStatChangeString(minStage, statsChanged, numChanges, proccess);
-        st->stage = minStage;
-        TryPlayStatChangeAnimation(cv, st);
-        st->script = BattleScript_IncreaseStatChangeMessage;
-        return STAT_CHANGE_WORKED;
-    }
-
-    return STAT_CHANGE_DIDNT_WORK;
-}
-
-static enum StatChangeResult TryStatIncreases(struct BattleCalcValues *cv, struct StatChange *st)
-{
-    u32 numChanges = 0;
-    s8 statsChanged[NUM_BATTLE_STATS + 1];
-    u32 maxStage = 0;
-
-    enum StatChangeProccess proccess = PROCCESS_STAT_DEFAULT;
-
-    for (u32 i = 0; i < NUM_BATTLE_STATS + 1; i++)
-        statsChanged[i] = END_NUM_CHANGES;
-
-    for (u32 i = 0; i < st->statStageAmount; i++)
-    {
-        if (st->statStageQueue[i].done)
-            continue;
-
-        st->stat = sAccurateStatOrder[st->statStageQueue[i].stat];
-        st->stage = st->statStageQueue[i].stage;
-
-        if (cv->move == MOVE_NONE)
-            AdjustStatStage(cv, st);
-
         if (st->stage < 0)
-            continue;
-
-        st->statStageQueue[i].done = TRUE;
-        st->nextBattler = TRUE;
-
-        if (IncreaseStat(cv, st) == STAT_CHANGE_WORKED)
         {
-            maxStage = max(maxStage, st->stage);
+            test = TRUE;
+            if (proccess != PROCCESS_STAT_DECREASING && IsMinStat(cv->battlerDef, st->stat))
+            {
+                proccess = PROCCESS_STAT_NO_DECREASE;
+            }
+            else if (proccess != PROCCESS_STAT_NO_DECREASE)
+            {
+                DecreaseStat(cv, st);
+                proccess = PROCCESS_STAT_DECREASING;
+                minMaxStage = min(minMaxStage, st->stage);
+            }
+
+            st->statStageQueue[i].done = TRUE;
+            statsChanged[numChanges++] = st->stat;
+        }
+        else if (!test)
+        {
+            if (proccess != PROCCESS_STAT_INCREASING && IsMaxStat(cv->battlerDef, st->stat))
+            {
+                proccess = PROCCESS_STAT_NO_INCREASE;
+            }
+            else if (proccess != PROCCESS_STAT_NO_INCREASE)
+            {
+                IncreaseStat(cv, st);
+                proccess = PROCCESS_STAT_DECREASING;
+                minMaxStage = max(minMaxStage, st->stage);
+            }
+            st->statStageQueue[i].done = TRUE;
             statsChanged[numChanges++] = st->stat;
         }
     }
 
-    if (numChanges > 0)
+    if (proccess != PROCCESS_STAT_DEFAULT)
     {
-        BuildStatChangeString(maxStage, statsChanged, numChanges, proccess);
-        st->stage = maxStage;
-        TryPlayStatChangeAnimation(cv, st);
+        BuildStatChangeString(minMaxStage, statsChanged, numChanges, proccess);
         st->script = BattleScript_IncreaseStatChangeMessage;
+
+        if (proccess == PROCCESS_STAT_DECREASING || proccess == PROCCESS_STAT_INCREASING)
+        {
+            st->stage = minMaxStage;
+            TryPlayStatChangeAnimation(cv, st);
+        }
+
         return STAT_CHANGE_WORKED;
     }
 
+    #if 0
+    if (st->nextBattler && !st->onlyChecking) // Set volatiles after all stats are done
+        SetAdditionalEffectsOnStatChange(cv, st);
+    #endif
+
+
+    st->nextBattler = TRUE;
     return STAT_CHANGE_DIDNT_WORK;
 }
 
 #include "string_util.h"
-
-// The message can't change will be printed depending on the order (first / last)
-// if attack can't go lower, that one will be printed first
-// if sp atk can't go lower but attack can. attack will be printed first to lower
 static void BuildStatChangeString(s32 stage, s8 statsChanged[], u32 numChanges, enum StatChangeProccess proccess)
 {
     StringCopy(gBattleTextBuff3, statString[statsChanged[0]]);
@@ -413,12 +367,15 @@ static void BuildStatChangeString(s32 stage, s8 statsChanged[], u32 numChanges, 
     {
         for (u32 i = 1; i < NUM_BATTLE_STATS; i++)
         {
-            if (statsChanged[i] == END_NUM_CHANGES)
+            if (statsChanged[i] == END_NUM_CHANGES) {
+                // DebugPrintf("num stats changed %d", statsChanged[NUM_BATTLE_STATS]);
                 break;
+            }
 
             StringAppend(gBattleTextBuff3, COMPOUND_STRING(", "));
-            if (statsChanged[i + 1] == END_NUM_CHANGES)
-                StringAppend(gDisplayedStringBattle, COMPOUND_STRING("and "));
+            if (statsChanged[i + 1] == END_NUM_CHANGES) {
+                StringAppend(gBattleTextBuff3, COMPOUND_STRING("and "));
+            }
             StringAppend(gBattleTextBuff3, statString[statsChanged[i]]);
         }
     }
@@ -468,10 +425,10 @@ static bool32 IsMinStat(enum BattlerId battler, enum Stat stat)
     return FALSE;
 }
 
-static enum StatChangeResult DecreaseStat(struct BattleCalcValues *cv, struct StatChange *st)
+static void DecreaseStat(struct BattleCalcValues *cv, struct StatChange *st)
 {
     if (st->onlyChecking)
-        return STAT_CHANGE_DIDNT_WORK;
+        return;
 
     u32 currStage = gBattleMons[cv->battlerDef].statStages[st->stat];
 
@@ -491,13 +448,20 @@ static enum StatChangeResult DecreaseStat(struct BattleCalcValues *cv, struct St
 
     StatChanged(cv, st, FALSE);
     st->script = BattleScript_DecreaseStatChangeMessage;
-    TryPlayStatChangeAnimation(cv, st);
-
-    return STAT_CHANGE_WORKED;
 }
 
-static enum StatChangeResult IncreaseStat(struct BattleCalcValues *cv, struct StatChange *st)
+static bool32 IsMaxStat(enum BattlerId battler, enum Stat stat)
 {
+    if (gBattleMons[battler].statStages[stat] == MAX_STAT_STAGE)
+        return TRUE;
+    return FALSE;
+}
+
+static void IncreaseStat(struct BattleCalcValues *cv, struct StatChange *st)
+{
+    if (st->onlyChecking)
+        return;
+
     u32 currStage = gBattleMons[cv->battlerDef].statStages[st->stat];
     bool32 isMaxStage = st->stage >= 12;
 
@@ -506,56 +470,42 @@ static enum StatChangeResult IncreaseStat(struct BattleCalcValues *cv, struct St
     else if (currStage == MAX_STAT_STAGE - 2 && st->stage > 2)
         st->stage = 2;
 
-    if (gBattleMons[cv->battlerDef].statStages[st->stat] == MAX_STAT_STAGE)
+    u32 stageIncrease = st->stage;
+
+    if ((st->stage + gBattleMons[cv->battlerDef].statStages[st->stat]) > MAX_STAT_STAGE)
+        stageIncrease = MAX_STAT_STAGE - gBattleMons[cv->battlerDef].statStages[st->stat];
+
+    CheckOpportunistMirrorHerb(cv, st, stageIncrease);
+
+    gProtectStructs[cv->battlerDef].statRaised = TRUE;
+    StatChanged(cv, st, isMaxStage);
+}
+
+static void CheckOpportunistMirrorHerb(struct BattleCalcValues *cv, struct StatChange *st, u32 stageIncrease)
+{
+    if (stageIncrease == 0)
+        return;
+
+    for (enum BattlerId battler = 0; battler < gBattlersCount; battler++)
     {
-        if (st->onlyChecking)
-            return STAT_CHANGE_DIDNT_WORK;
+        if (IsBattlerAlly(battler, cv->battlerDef))
+            continue; // Only triggers on opposing side
 
-        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_STAT_WONT_CHANGE;
-        st->script = BattleScript_StatDidntChangeMessagePause;
-        gBattleScripting.battler = cv->battlerDef;
-        return STAT_CHANGE_WORKED; // Handle failure
-    }
-    else if (!st->onlyChecking)
-    {
-        u32 stageIncrease = st->stage;
+        if (CompareStat(battler, st->stat, MAX_STAT_STAGE, CMP_EQUAL, cv->abilities[battler]))
+            continue;
 
-        if ((st->stage + gBattleMons[cv->battlerDef].statStages[st->stat]) > MAX_STAT_STAGE)
-            stageIncrease  = MAX_STAT_STAGE - gBattleMons[cv->battlerDef].statStages[st->stat];
+        if (cv->abilities[battler] == ABILITY_OPPORTUNIST && !st->opportunistActivation)
+            gProtectStructs[battler].activateOpportunist = TRUE;
 
-        if (stageIncrease > 0)
+        if (cv->holdEffects[battler] == HOLD_EFFECT_MIRROR_HERB && !st->mirrorHerbActivation)
+            gProtectStructs[battler].eatMirrorHerb = TRUE;
+
+        if (gProtectStructs[battler].activateOpportunist || gProtectStructs[battler].eatMirrorHerb)
         {
-            // Check Mirror Herb / Opportunist
-            for (enum BattlerId battler = 0; battler < gBattlersCount; battler++)
-            {
-                if (IsBattlerAlly(battler, cv->battlerDef))
-                    continue; // Only triggers on opposing side
-
-                if (CompareStat(battler, st->stat, MAX_STAT_STAGE, CMP_EQUAL, cv->abilities[battler]))
-                    continue;
-
-                if (cv->abilities[battler] == ABILITY_OPPORTUNIST && !st->opportunistActivation)
-                    gProtectStructs[battler].activateOpportunist = TRUE;
-
-                if (cv->holdEffects[battler] == HOLD_EFFECT_MIRROR_HERB && !st->mirrorHerbActivation)
-                    gProtectStructs[battler].eatMirrorHerb = TRUE;
-
-                if (gProtectStructs[battler].activateOpportunist || gProtectStructs[battler].eatMirrorHerb)
-                {
-                    gQueuedStatBoosts[battler].stats |= (1 << (st->stat - 1)); // -1 to start at atk
-                    gQueuedStatBoosts[battler].statChanges[st->stat - 1] += stageIncrease;
-                }
-            }
+            gQueuedStatBoosts[battler].stats |= (1 << (st->stat - 1)); // -1 to start at atk
+            gQueuedStatBoosts[battler].statChanges[st->stat - 1] += stageIncrease;
         }
     }
-
-    if (!st->onlyChecking)
-    {
-        gProtectStructs[cv->battlerDef].statRaised = TRUE;
-        StatChanged(cv, st, isMaxStage);
-    }
-
-    return STAT_CHANGE_WORKED;
 }
 
 static void StatChanged(struct BattleCalcValues *cv, struct StatChange *st, bool32 isMaxStage)

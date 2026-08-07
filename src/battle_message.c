@@ -375,9 +375,8 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_PKMNHURTSWITH]                        = COMPOUND_STRING("{B_ATK_NAME_WITH_PREFIX} was hurt by {B_DEF_NAME_WITH_PREFIX2}'s {B_BUFF1}!"),
     [STRINGID_PKMNTRACED]                           = COMPOUND_STRING("It traced {B_BUFF1}'s {B_BUFF2}!"),
 
-    [STRINGID_STATSCOMMA]                            = COMPOUND_STRING(", "),
-    [STRINGID_STATSAND]                              = COMPOUND_STRING("and "),
-    [STRINGID_STATCHANGE] = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX}'s {B_BUFF3}"),
+    [STRINGID_STATCHANGE] =
+        COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX}'s {B_STAT_CHANGE_BUFFER}"),
 
     [STRINGID_STATSHARPLY]                          = COMPOUND_STRING(" sharply"),
     [STRINGID_STATHARSHLY]                          = COMPOUND_STRING("harshly "),
@@ -3138,6 +3137,7 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst, u32 dstSize)
                     toCpy = gBattleTextBuff2;
                 }
                 break;
+            case B_TXT_STAT_CHANGE_BUFFER:
             case B_TXT_BUFF3:
                 if (gBattleTextBuff3[0] == B_BUFF_PLACEHOLDER_BEGIN)
                 {
@@ -3378,24 +3378,6 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst, u32 dstSize)
                 {
                     toCpy = GetTrainerWonSpeech();
                 }
-                break;
-            case B_TXT_26: // ?
-                if (!IsOnPlayerSide(gBattleScripting.battler))
-                {
-                    if (gBattleTypeFlags & BATTLE_TYPE_TRAINER)
-                        toCpy = sText_FoePkmnPrefix;
-                    else
-                        toCpy = sText_WildPkmnPrefix;
-                    while (*toCpy != EOS)
-                    {
-                        dst[dstID] = *toCpy;
-                        dstID++;
-                        toCpy++;
-                    }
-                }
-                GetMonData(&GetBattlerParty(gBattleScripting.battler)[gBattleStruct->scriptPartyIdx], MON_DATA_NICKNAME, text);
-                StringGet_Nickname(text);
-                toCpy = text;
                 break;
             case B_TXT_PC_CREATOR_NAME: // lanette pc
                 if (FlagGet(FLAG_SYS_PC_LANETTE))
@@ -3663,7 +3645,7 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst, u32 dstSize)
             {
                 while (*toCpy != EOS)
                 {
-                    if (*toCpy == CHAR_SPACE)
+                    if (*toCpy == CHAR_SPACE && *src != B_TXT_STAT_CHANGE_BUFFER)
                         dst[dstID] = CHAR_NBSP;
                     else
                         dst[dstID] = *toCpy;

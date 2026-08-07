@@ -13524,13 +13524,18 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_ALL] =
         .contestComboMoves = {0},
         .additionalEffects = ADDITIONAL_EFFECTS({
             .moveEffect = STAT_CHANGE_EFFECT_MINUS,
+            .attack = 1,
+            .spAtk = 1,
             .defense = 1,
             .spDef = 1,
+            .speed = 1,
         },
         {
             .moveEffect = STAT_CHANGE_EFFECT_PLUS,
             .attack = 2,
             .spAtk = 2,
+            .defense = 2,
+            .spDef = 2,
             .speed = 2,
         }),
         .battleAnimScript = gBattleAnimMove_ShellSmash,
