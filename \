@@ -5451,127 +5451,28 @@ static enum MoveResult StatChangeMirrorArmor(struct BattleCalcValues *cv)
     return MOVE_RESULT_CONTINUE;
 }
 
-static u32 GetNumMinStats(enum BattlerId battler)
-{
-    u32 count = 0;
-    for (u32 i = 1; < NUM_BATTLE_STATS; i++)
-    {
-        if (gSpeciesStatuses[battler].statStages[i].atMin)
-            count++;
-    }
-    return count;
-}
-
-static u32 GetNumMaxStats(enum BattlerId battler)
-{
-    u32 count = 0;
-    for (u32 i = 1; < NUM_BATTLE_STATS; i++)
-    {
-        if (gSpeciesStatuses[battler].statStages[i].atMax)
-            count++;
-    }
-    return count;
-}
-
-static enum Stat GetFirstStatFromQueue(enum BattlerId battler)
-{
-    enum Stat stat = NUM_BATTLE_STATS;
-    for (u32 i = 1; < NUM_BATTLE_STATS; i++)
-    {
-        if (!gSpeciesStatuses[battler].statStages[i].done)
-
-            count++;
-    }
-    return stat;
-}
-// 1. Handle user and partner
-// 2. Handle left and right opponent
-
-// Scan both queues. If they are identical, do the simu thingy
-// If they aren't identical, print message one by one
-
-static bool32 CanStatChange(enum BattlerId battler)
-{
-    return gBattleStruct->moveResultFlags[battler] & MOVE_RESULT_ATTEMPT_STAT_CHANGE;
-}
-
-static bool32 ShouldPrintSingleString(enum BattlerId battler, enum BattlerId partner)
-{
-    if (!IsDoubleBattle())
-        return FALSE;
-
-    // TODO: rename to queue
-    struct statStages *battlerStats = gSpecialStatuses[battler].statStageQueue;
-    struct statStages *partnerStats = gSpecialStatuses[partner].statStageQueue;
-
-    for (u32 i = 1; i < NUM_BATTLE_STATS; i++)
-    {
-        if (battlerStats[i].stat != partnerStats[i].stat)
-            return FALSE;
-
-        if (battlerStats[i].atMin != partnerStats[i].atMin)
-            return FALSE;
-
-        if (battlerStats[i].atMax != battlerStats[i].atMax)
-            return FALSE;
-    }
-
-    return TRUE;
-}
-
-static enum MoveResult StatChangeAtMinMax(struct BattleCalcValues *cv)
-{
-    while (gBattleStruct->statChangeBattler < gBattlersCount)
-    {
-        enum BattlerId battler = GetTargetBySlot(cv->battlerAtk, gBattleStruct->statChangeBattler);
-        gBattleStruct->statChangeBattler++;
-
-        enum BattlerId partner = BATTLE_PARTNER(battler);
-
-        if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, battler))
-            continue;
-
-        if (CanStatChange(battler))
-            continue;
-
-        if (!CanStatChange(partner) && ShouldPrintSingleString(battler, partner))
-        {
-            gBattleStruct->statChangeBattler++;
-            BattleScriptCall(BattleScript_PrintMinMaxStatSingleMessage);
-        }
-        else
-        {
-            BattleScriptCall(BattleScript_PrintMinMaxStatBattlerMessage);
-        }
-    }
-
-    gBattleStruct->statChangeBattler = 0;
-    return MOVE_RESULT_CONTINUE;
-}
-
-static enum MoveResult StatChangePrevented(struct BattleCalcValues *cv)
+static enum MoveResult StatChangeDecreasePrevented(struct BattleCalcValues *cv)
 {
     struct StatChange st = {0};
 
     while (gBattleStruct->statChangeBattler < gBattlersCount)
     {
-        cv->battlerDef = GetTargetBySlot(cv->battlerAtk, gBattleStruct->statChangeBattler);
+        cv->battlerDef = GetTargetBySlot(cv->battlerAtk, battler);
         gBattleStruct->statChangeBattler++;
 
-        if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, cv->battlerDef))
+        if (ShouldSkipFailureCheckOnBattler(cv->battlerAtk, cv->battlerDef))
             continue;
 
-        // TODO: if a stat did change, remove the flag. if a stat didn't change replace the flag with does not affect foe
-        if (gBattleStruct->moveResultFlags[cv->battlerDef] & MOVE_RESULT_STAT_CHANGE_PREVENTED)
+        if (gBattleStruct->moveResultFlags[cv->battlerDef] == MOVE_RESULT_STAT_CHANGE_PREVENTED)
         {
-            if (CanDecreaseStat(cv, &st) == STAT_CHANGE_DIDNT_WORK) {
-                BattleScriptCall(st.script);
+            if (CanDecreaseStat(cv, &st) == STAT_CHANGE_DIDNT_WORK)
                 return MOVE_RESULT_RUN_SCRIPT;
-            }
         }
     }
 
+    gBattleStruct->additionalEffectsCounter = 0;
     gBattleStruct->statChangeBattler = 0;
+
     return MOVE_RESULT_CONTINUE;
 }
 
@@ -5802,8 +5703,6 @@ static enum MoveResult (*const sStatChangeHandlers[])(struct BattleCalcValues *c
     [STAT_CHANGE_CAN_ANY_CHANGE] = StatChangeCanAnyChange,
     [STAT_CHANGE_ACCURACY] = StatChangeAccuracy,
     [STAT_CHANGE_MIRROR_ARMOR] = StatChangeMirrorArmor,
-    [STAT_CHANGE_AT_MIN_MAX] = StatChangeAtMinMax,
-    [STAT_CHANGE_PREVENTED] = StatChangePrevented,
     [STAT_CHANGE_BEFORE_CHANGE] = StatChangeBeforeChange,
     [STAT_CHANGE_TRY_CHANGE] = StatChangeTryChange,
 };

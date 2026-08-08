@@ -20,3 +20,20 @@ SINGLE_BATTLE_TEST("Scary Face reduces the target's Speed by 2 stages")
         EXPECT_EQ(opponent->statStages[STAT_SPEED], DEFAULT_STAT_STAGE - 2);
     }
 }
+
+DOUBLE_BATTLE_TEST("Cotton Spore animation is played after Clear Body Failure")
+{
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_BELDUM) { Ability(ABILITY_CLEAR_BODY); }
+    } WHEN {
+        TURN { MOVE(playerLeft, MOVE_COTTON_SPORE); }
+    } SCENE {
+        ABILITY_POPUP(opponentRight, ABILITY_CLEAR_BODY);
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_COTTON_SPORE, playerLeft);
+        ANIMATION(ANIM_TYPE_GENERAL, B_ANIM_STATS_CHANGE, opponentLeft);
+        NOT ANIMATION(ANIM_TYPE_GENERAL, B_ANIM_STATS_CHANGE, opponentRight);
+    }
+}

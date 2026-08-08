@@ -23,9 +23,6 @@ static const u8 *const statString[] =
 };
 
 // Stat change
-
-static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
-
 static bool32 IsMinStat(enum BattlerId battler, enum Stat stat);
 static void DecreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
 
@@ -103,19 +100,6 @@ static bool32 CheckSpecificMoveCondition(struct BattleCalcValues *cv, struct Sta
 {
     switch (cv->moveEffect)
     {
-    case EFFECT_CAPTIVATE:
-        if (cv->abilities[cv->battlerDef] == ABILITY_OBLIVIOUS)
-        {
-            if (!st->onlyChecking)
-            {
-                st->script = BattleScript_AbilityProtectedTarget;
-                gBattlerAbility = gBattleScripting.battler = cv->battlerDef;
-                gLastUsedAbility = ABILITY_OBLIVIOUS;
-                RecordAbilityBattle(cv->battlerDef, ABILITY_OBLIVIOUS);
-            }
-            return TRUE;
-        }
-        break;
     case EFFECT_STRENGTH_SAP:
         if (CompareStat(cv->battlerDef, STAT_ATK, MIN_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
         {
@@ -132,29 +116,6 @@ static bool32 CheckSpecificMoveCondition(struct BattleCalcValues *cv, struct Sta
         {
             SetStrengthSapHealing(cv->battlerAtk, cv->battlerDef, STAT_ATK);
             st->additionalEffectTriggers = TRUE;
-        }
-        break;
-    case EFFECT_ROTOTILLER:
-        if (!IsBattlerGrounded(cv->battlerDef, cv->abilities[cv->battlerDef], cv->holdEffects[cv->battlerDef])
-         || !IS_BATTLER_OF_TYPE(cv->battlerDef, TYPE_GRASS))
-        {
-            if (!st->onlyChecking)
-            {
-                st->script = BattleScript_ItDoesntAffectScrTarget;
-                gBattleScripting.battler = cv->battlerDef;
-            }
-            return TRUE;
-        }
-        break;
-    case EFFECT_FLOWER_SHIELD:
-        if (!IS_BATTLER_OF_TYPE(cv->battlerDef, TYPE_GRASS))
-        {
-            if (!st->onlyChecking)
-            {
-                st->script = BattleScript_ItDoesntAffectScrTarget;
-                gBattleScripting.battler = cv->battlerDef;
-            }
-            return TRUE;
         }
         break;
     case EFFECT_TOXIC_THREAD:
@@ -242,16 +203,25 @@ bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
             if (st->stage < 0)
             {
                 if (CompareStat(cv->battlerDef, st->stat, MIN_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
+                {
+                    gSpecialStatuses[cv->battlerDef].statStages.atMin = TRUE;
                     continue;
+                }
+
+                if (CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
+                {
+                    gSpecialStatuses[cv->battlerDef].statStages.prevented = TRUE;
+                    continue;
+                }
             }
             else
             {
                 if (CompareStat(cv->battlerDef, st->stat, MAX_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
+                {
+                    gSpecialStatuses[cv->battlerDef].statStages.atMin = TRUE;
                     continue;
+                }
             }
-
-            if (st->stage < 0 && CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
-                continue;
 
             canAnyStatChange = TRUE;
         }
@@ -291,14 +261,13 @@ enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChan
         if (cv->move == MOVE_NONE)
             AdjustStatStage(cv, st);
 
-        #if 0
         if (CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
-        {
-            if (st->silentFailure)
-                continue;
-            return STAT_CHANGE_BLOCKED_BY_TARGET;
-        }
-        #endif
+            continue;
+        // {
+        //     if (st->silentFailure)
+        //         continue;
+        //     return STAT_CHANGE_BLOCKED_BY_TARGET;
+        // }
 
         if (st->stage < 0)
         {
@@ -406,7 +375,7 @@ static void BuildStatChangeString(s32 stage, s8 statsChanged[], u32 numChanges, 
     }
 }
 
-static enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct StatChange *st)
+enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct StatChange *st)
 {
     if (IsMistProtected(cv, st)
      || IsIntimidateBlocked(cv, st)

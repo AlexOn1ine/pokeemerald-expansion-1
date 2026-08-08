@@ -34,6 +34,7 @@ struct StatChange
 
 extern enum Stat const sAccurateStatOrder[NUM_BATTLE_STATS];
 
+enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
 bool32 CompareStat(enum BattlerId battler, enum Stat statId, u32 cmpTo, u32 cmpKind, enum Ability ability);
 bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChange *st);
