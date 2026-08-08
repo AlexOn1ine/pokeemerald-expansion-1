@@ -54,4 +54,8 @@ bool32 IsAtkSpAtkStatUpMove(const struct AdditionalEffect *effect);
 bool32 IsDefSpDefStatUpMove(const struct AdditionalEffect *effect);
 bool32 IsAccDownEvasionUpStatChangeMove(const struct AdditionalEffect *effect);
 
+bool32 ShouldPrintSingleString(enum BattlerId battler, enum BattlerId partner);
+void HandleMaxMinStatChange(struct BattleCalcValues *cv, enum BattlerId battler, enum BattlerId partner, bool32 singleString);
+
+
 #endif // GUARD_BATTLE_MOVE_STAT_CHANGE_H

@@ -10,6 +10,8 @@
 #include "item.h"
 #include "move.h"
 
+#define END_NUM_CHANGES -1
+
 static const u8 *const statString[] =
 {
     NULL,
@@ -204,13 +206,13 @@ bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
             {
                 if (CompareStat(cv->battlerDef, st->stat, MIN_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
                 {
-                    gSpecialStatuses[cv->battlerDef].statStages.atMin = TRUE;
+                    gSpecialStatuses[cv->battlerDef].statStageQueue[st->stat].atMin = TRUE;
                     continue;
                 }
 
                 if (CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
                 {
-                    gSpecialStatuses[cv->battlerDef].statStages.prevented = TRUE;
+                    gSpecialStatuses[cv->battlerDef].statStageQueue[st->stat].prevented = TRUE;
                     continue;
                 }
             }
@@ -218,7 +220,7 @@ bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
             {
                 if (CompareStat(cv->battlerDef, st->stat, MAX_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
                 {
-                    gSpecialStatuses[cv->battlerDef].statStages.atMin = TRUE;
+                    gSpecialStatuses[cv->battlerDef].statStageQueue[st->stat].atMin = TRUE;
                     continue;
                 }
             }
@@ -230,7 +232,6 @@ bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st)
     return canAnyStatChange;
 }
 
-#define END_NUM_CHANGES -1
 enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 {
     if (CheckSpecificMoveCondition(cv, st) || IsSubstituteBlocked(cv, st))
@@ -1032,7 +1033,7 @@ bool32 CompareStat(enum BattlerId battler, enum Stat statId, u32 cmpTo, u32 cmpK
     return ret;
 }
 
-static void SetAdditionalEffectsOnStatChange(struct BattleCalcValues *cv, struct StatChange *st)
+static void UNUSED SetAdditionalEffectsOnStatChange(struct BattleCalcValues *cv, struct StatChange *st)
 {
     switch (cv->moveEffect)
     {
@@ -1156,4 +1157,83 @@ bool32 IsAccDownEvasionUpStatChangeMove(const struct AdditionalEffect *effect)
     }
 
     return FALSE;
+}
+
+bool32 ShouldPrintSingleString(enum BattlerId battler, enum BattlerId partner)
+{
+    if (!IsDoubleBattle())
+        return FALSE;
+
+    struct StatStages *battlerStats = gSpecialStatuses[battler].statStageQueue;
+    struct StatStages *partnerStats = gSpecialStatuses[partner].statStageQueue;
+
+    for (u32 i = 1; i < NUM_BATTLE_STATS; i++)
+    {
+        if (battlerStats[i].stat != partnerStats[i].stat)
+            return FALSE;
+
+        if (battlerStats[i].atMin != partnerStats[i].atMin)
+            return FALSE;
+
+        if (battlerStats[i].atMax != partnerStats[i].atMax)
+            return FALSE;
+
+        if (battlerStats[i].prevented || partnerStats[i].prevented)
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+void HandleMaxMinStatChange(struct BattleCalcValues *cv, enum BattlerId battler, enum BattlerId partner, bool32 singleString)
+{
+    struct StatStages *battlerStats = gSpecialStatuses[battler].statStageQueue;
+    struct StatStages *partnerStats = gSpecialStatuses[partner].statStageQueue;
+
+    u32 numChanges = 0;
+    s8 statsChanged[NUM_BATTLE_STATS + 1];
+
+    bool32 atMinStageString = FALSE;
+    bool32 atMaxStageString = TRUE;
+
+    for (u32 i = 0; i < NUM_BATTLE_STATS + 1; i++)
+        statsChanged[i] = END_NUM_CHANGES;
+
+    for (u32 i = 0; i < gSpecialStatuses[battler].statStageAmount; i++)
+    {
+        if (battlerStats[i].done)
+            continue;
+
+        // if (!battlerStats[i].atMax && !battlerStats[i].atMin)
+        //     continue;
+
+        enum Stat stat = battlerStats[i].stat;
+
+        if (!atMaxStageString && battlerStats[i].atMin)
+        {
+            atMinStageString = TRUE;
+            battlerStats[i].done = TRUE;
+            if (singleString)
+                partnerStats[i].done = TRUE;
+            statsChanged[numChanges++] = stat;
+        }
+        else if (atMinStageString && battlerStats[i].atMax)
+        {
+            DebugPrintf("max");
+            atMaxStageString = TRUE;
+            battlerStats[i].done = TRUE;
+            if (singleString)
+                partnerStats[i].done = TRUE;
+            statsChanged[numChanges++] = stat;
+        }
+    }
+
+    if (atMaxStageString)
+    {
+        BuildStatChangeString(6, statsChanged, numChanges, PROCCESS_STAT_NO_INCREASE);
+    }
+    else if (atMinStageString)
+    {
+        BuildStatChangeString(-6, statsChanged, numChanges, PROCCESS_STAT_NO_DECREASE);
+    }
 }

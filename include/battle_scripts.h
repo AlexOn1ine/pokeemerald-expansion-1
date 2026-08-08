@@ -517,6 +517,8 @@ extern const u8 BattleScript_IncreaseStatChangeMessage[];
 extern const u8 BattleScript_DecreaseStatChangeMessage[];
 extern const u8 BattleScript_DecreaseStatChangeMessageMinStat[];
 extern const u8 BattleScript_StatDidntChangeMessagePause[];
+extern const u8 BattleScript_PrintMinMaxStatBattlerMessage[];
+extern const u8 BattleScript_PrintMinMaxStatSingleMessage[];
 extern const u8 BattleScript_WildBattleVictory[];
 extern const u8 BattleScript_BelchFails[];
 extern const u8 BattleScript_MegaSolActivatesTwoTurnMove[];

@@ -252,6 +252,16 @@ BattleScript_StatDidntChangeMessagePause::
 	waitmessage B_WAIT_TIME_LONG
 	return
 
+BattleScript_PrintMinMaxStatBattlerMessage::
+	printstring STRINGID_STATCHANGE
+	waitmessage B_WAIT_TIME_LONG
+    return
+
+BattleScript_PrintMinMaxStatSingleMessage::
+	printstring STRINGID_STATCHANGESINGLESTRING
+	waitmessage B_WAIT_TIME_LONG
+    return
+
 BattleScript_EffectShedTail::
 	attackcanceler
 	waitstate
