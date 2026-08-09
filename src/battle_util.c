@@ -9729,6 +9729,11 @@ bool32 IsBattlerUnaffectedByMove(enum BattlerId battler)
     return gBattleStruct->moveResultFlags[battler] & MOVE_RESULT_NO_EFFECT;
 }
 
+bool32 IsMoveResult(enum BattlerId battler, u32 resultFlag)
+{
+    return gBattleStruct->moveResultFlags[battler] & resultFlag;
+}
+
 enum Type GetBattleMoveType(enum Move move)
 {
     if (gMain.inBattle)

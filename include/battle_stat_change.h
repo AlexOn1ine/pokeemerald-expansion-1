@@ -53,6 +53,7 @@ bool32 IsAtkStatUpMove(const struct AdditionalEffect *effect);
 bool32 IsAtkSpAtkStatUpMove(const struct AdditionalEffect *effect);
 bool32 IsDefSpDefStatUpMove(const struct AdditionalEffect *effect);
 bool32 IsAccDownEvasionUpStatChangeMove(const struct AdditionalEffect *effect);
+void ResetAnimPlayedFlags(void);
 
 bool32 ShouldPrintSingleString(enum BattlerId battler, enum BattlerId partner);
 void HandleMaxMinStatChange(struct BattleCalcValues *cv, enum BattlerId battler, enum BattlerId partner, bool32 singleString);

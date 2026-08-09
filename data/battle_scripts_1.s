@@ -146,19 +146,17 @@ BattleScript_ToxicThread::
 
 BattleScript_SwaggerConfusion::
 	seteffectprimary BS_ATTACKER, BS_TARGET, MOVE_EFFECT_CONFUSION
-	trymovestatchanges
-	goto BattleScript_MoveEnd
+    return
 
 BattleScript_NoRetreatMessage::
 	printstring STRINGID_CANTESCAPEDUETOUSEDMOVE
 	waitmessage B_WAIT_TIME_LONG
-	goto BattleScript_MoveEnd
+    return
 
 BattleScript_AutotomizeMessage::
 	printstring STRINGID_BECAMENIMBLE
 	waitmessage B_WAIT_TIME_LONG
-	trymovestatchanges
-	goto BattleScript_MoveEnd
+    return
 
 BattleScript_TarShotMessage::
 	printstring STRINGID_PKMNBECAMEWEAKERTOFIRE

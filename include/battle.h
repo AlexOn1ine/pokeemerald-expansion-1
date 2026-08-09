@@ -727,11 +727,12 @@ struct BattleStruct
     u32 dancerSavedAttacker:3;
     u32 dancerSavedTarget:3;
     u32 statChangeBattler:3;
-    u32 padding5:5;
+    u32 multiStatChangeAnim:1;
+    u32 padding5:4;
     u8 statChangeMoveAnim:1;
     u8 tidyUpActivates:1;
-    u8 positiveAnimPlayed:1;
-    u8 negativeAnimPlayed:1;
+    u8 positiveAnimPlayed[NUM_BATTLE_SIDES];
+    u8 negativeAnimPlayed[NUM_BATTLE_SIDES];
     u8 ignoreDefiant:1;
     u8 intimidateActivated:1;
     u8 allowPartingShot:1;

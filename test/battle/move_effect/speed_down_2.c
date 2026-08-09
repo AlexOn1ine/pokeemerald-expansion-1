@@ -21,6 +21,30 @@ SINGLE_BATTLE_TEST("Scary Face reduces the target's Speed by 2 stages")
     }
 }
 
+SINGLE_BATTLE_TEST("Tickle will print the correct message")
+{
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WOBBUFFET);
+    } WHEN {
+        TURN { MOVE(player, MOVE_TICKLE); }
+        TURN { MOVE(player, MOVE_TICKLE); }
+        TURN { MOVE(player, MOVE_TICKLE); }
+        TURN { MOVE(player, MOVE_TICKLE); }
+        TURN { MOVE(player, MOVE_TICKLE); }
+        TURN { MOVE(player, MOVE_TICKLE); }
+        TURN { MOVE(player, MOVE_TICKLE); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_TICKLE, player);
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_TICKLE, player);
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_TICKLE, player);
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_TICKLE, player);
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_TICKLE, player);
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_TICKLE, player);
+        NOT ANIMATION(ANIM_TYPE_MOVE, MOVE_TICKLE, player);
+    }
+}
+
 DOUBLE_BATTLE_TEST("Cotton Spore animation is played after Clear Body Failure")
 {
     GIVEN {

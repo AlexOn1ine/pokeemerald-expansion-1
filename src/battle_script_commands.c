@@ -10314,8 +10314,6 @@ static void Cmd_trystatchanges(void)
         if (st.nextBattler)
         {
             st.nextBattler = FALSE;
-            gBattleStruct->negativeAnimPlayed = 0;
-            gBattleStruct->positiveAnimPlayed = 0;
             gBattleStruct->statChangeBattler++;
             if (gBattleStruct->statChangeBattler >= gBattlersCount)
                 goToNextInstr = TRUE;

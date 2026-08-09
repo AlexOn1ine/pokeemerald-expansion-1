@@ -47,6 +47,8 @@ struct BattleCalcValues
     enum BattleMoveEffects moveEffect:10;
     enum Ability abilities[MAX_BATTLERS_COUNT];
     enum HoldEffect holdEffects[MAX_BATTLERS_COUNT];
+
+    u32 runScript:1;
 };
 
 struct SetEffect
@@ -219,6 +221,7 @@ bool32 IsMoveEffectRemoveSpeciesType(enum Move move, enum MoveEffect moveEffect,
 bool32 MoveHasChargeTurnAdditionalEffect(enum Move move);
 bool32 CanTargetPartner(enum BattlerId battlerAtk, enum BattlerId battlerDef);
 bool32 IsBattlerUnaffectedByMove(enum BattlerId battler);
+bool32 IsMoveResult(enum BattlerId battler, u32 resultFlag);
 bool32 MoodyCantRaiseStat(u32 stat);
 bool32 MoodyCantLowerStat(u32 stat);
 bool32 IsPsychicTerrainAffected(enum BattlerId battler, enum Ability ability, enum HoldEffect holdEffect, enum BattleTerrain currTerrain);

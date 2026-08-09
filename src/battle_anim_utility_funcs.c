@@ -394,6 +394,12 @@ static void StatsChangeAnimation_Step1(u8 taskId)
     else
         sAnimStatsChangeData->battler1 = gBattleAnimTarget;
 
+    if (gBattleStruct->multiStatChangeAnim)
+    {
+        gBattleStruct->multiStatChangeAnim = FALSE;
+        sAnimStatsChangeData->aMultipleBattlers = TRUE;
+    }
+
     sAnimStatsChangeData->battler2 = BATTLE_PARTNER(sAnimStatsChangeData->battler1);
     if (IsContest() || (sAnimStatsChangeData->aMultipleBattlers && !IsBattlerSpriteVisible(sAnimStatsChangeData->battler2)))
         sAnimStatsChangeData->aMultipleBattlers = FALSE;
