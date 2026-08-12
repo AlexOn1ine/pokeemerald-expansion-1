@@ -226,8 +226,13 @@ BattleScript_EndTurnStatChange::
 	return
 
 BattleScript_IncreaseStatChangeMessage::
-	@printfromtable gStatUpStringIds
 	printstring STRINGID_STATCHANGE
+	waitmessage B_WAIT_TIME_LONG
+	tryadrenalineorb
+	return
+
+BattleScript_IncreaseStatChangeMessageTwo::
+	printstring STRINGID_STATCHANGEBOTHBATTLERS
 	waitmessage B_WAIT_TIME_LONG
 	tryadrenalineorb
 	return
@@ -256,7 +261,7 @@ BattleScript_PrintMinMaxStatBattlerMessage::
     return
 
 BattleScript_PrintMinMaxStatSingleMessage::
-	printstring STRINGID_STATCHANGESINGLESTRING
+	printstring STRINGID_STATCHANGE
 	waitmessage B_WAIT_TIME_LONG
     return
 

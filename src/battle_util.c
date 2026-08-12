@@ -3949,10 +3949,15 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
                     .move = MOVE_NONE,
                 };
 
-                cv.abilities[gBattlerAttacker] = GetBattlerAbility(gBattlerAttacker);
-                cv.abilities[gBattlerTarget] = ability;
-                cv.holdEffects[gBattlerAttacker] = GetBattlerHoldEffect(gBattlerAttacker);
-                cv.holdEffects[gBattlerTarget] = GetBattlerHoldEffect(gBattlerTarget);
+                for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+                {
+                    if (battler == gBattlerTarget)
+                        cv.abilities[battler] = ability;
+                    else
+                        cv.abilities[battler] = GetBattlerAbility(battler);
+
+                    cv.holdEffects[battler] = GetBattlerHoldEffect(battler);
+                }
 
                 struct StatChange st = {
                     .onlyChecking = TRUE,
@@ -3965,12 +3970,15 @@ u32 AbilityBattleEffects(enum AbilityEffect caseID, enum BattlerId battler, enum
 
                 st.statStageQueue = &change;
                 st.statStageAmount = 1;
+                st.battler = gBattlerAttacker;
 
                 if (CanBattlerAvoidContactEffects(gBattlerAttacker, gBattlerTarget, cv.abilities[gBattlerAttacker], cv.holdEffects[gBattlerAttacker], move))
                     break;
 
-                if (TryStatChange(&cv, &st) == STAT_CHANGE_WORKED || cv.abilities[gBattlerAttacker] == ABILITY_MIRROR_ARMOR)
+                // TODO: This needs to be rewritten
+                if (cv.abilities[gBattlerAttacker] == ABILITY_MIRROR_ARMOR)
                 {
+                    TryStatChange(&cv, &st);
                     gEffectBattler = gBattlerAbility = gBattlerTarget;
                     SetStatChange(gBattlerAttacker, STAT_SPEED, -1);
                     BattleScriptCall(BattleScript_AbilityStatChange);

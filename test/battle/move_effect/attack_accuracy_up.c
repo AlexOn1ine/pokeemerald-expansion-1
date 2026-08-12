@@ -20,13 +20,34 @@ SINGLE_BATTLE_TEST("Hone Claws increases Attack and Accuracy by one stage each")
 SINGLE_BATTLE_TEST("Dragon Dance test")
 {
     GIVEN {
-        PLAYER(SPECIES_MEW);
-        OPPONENT(SPECIES_MEW);
+        PLAYER(SPECIES_BULBASAUR);
+        PLAYER(SPECIES_BULBASAUR);
+        OPPONENT(SPECIES_BULBASAUR);
+        OPPONENT(SPECIES_BULBASAUR);
     } WHEN {
         // TURN { MOVE(player, MOVE_SWORDS_DANCE); }
         // TURN { MOVE(player, MOVE_SWORDS_DANCE); }
         // TURN { MOVE(player, MOVE_SWORDS_DANCE); }
-        TURN { MOVE(player, MOVE_SHELL_SMASH); }
+        TURN { MOVE(player, MOVE_ROTOTILLER); }
+    } SCENE {
+    } THEN {
+        // EXPECT_EQ(player->statStages[STAT_ATK], 7);
+        // EXPECT_EQ(player->statStages[STAT_SPEED], 7);
+    }
+}
+
+DOUBLE_BATTLE_TEST("Dragon Dance double test")
+{
+    GIVEN {
+        PLAYER(SPECIES_BULBASAUR);
+        PLAYER(SPECIES_BULBASAUR);
+        OPPONENT(SPECIES_BULBASAUR);
+        OPPONENT(SPECIES_BULBASAUR);
+    } WHEN {
+        // TURN { MOVE(player, MOVE_SWORDS_DANCE); }
+        // TURN { MOVE(player, MOVE_SWORDS_DANCE); }
+        // TURN { MOVE(player, MOVE_SWORDS_DANCE); }
+        TURN { MOVE(playerLeft, MOVE_ROTOTILLER); }
     } SCENE {
     } THEN {
         // EXPECT_EQ(player->statStages[STAT_ATK], 7);

@@ -9,6 +9,7 @@ struct StatChange
     const u8 *moveScript; // I'm pretty sure this is redundant at this point. Will clean up in a follow up
     struct StatStages *statStageQueue;
 
+    enum BattlerId battler;
     enum Stat stat;
     s8 stage;
     u8 statStageAmount;
@@ -29,6 +30,8 @@ struct StatChange
     u32 ignoreCertainFailure:1; // for mirror armor and substitute
     u32 mirrorHerbActivation:1;
     u32 opportunistActivation:1;
+    u32 doSideBattlers:1;
+    u32 doneSideBattlers:1;
     u32 padding:17;
 };
 
@@ -36,13 +39,17 @@ extern enum Stat const sAccurateStatOrder[NUM_BATTLE_STATS];
 
 enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
 bool32 CompareStat(enum BattlerId battler, enum Stat statId, u32 cmpTo, u32 cmpKind, enum Ability ability);
-bool32 CanAnyStatChange(struct BattleCalcValues *cv, struct StatChange *st);
+void PrepareStatsForChange(struct BattleCalcValues *cv, struct StatChange *st);
 enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 void SetStatChange(enum BattlerId battler, enum Stat stat, s32 stage);
 void SetStatChange2(enum BattlerId battler, enum Stat stat, s32 stage);
+void CopyOverStatStageQueue(struct StatChange *st);
 void ClearStatChangeValues(void);
 void ClearOtherStatChangeValues(enum BattlerId battler);
+void ClearBattlerStatChangeValues(enum BattlerId battler);
 void ClearBothStatChangeQueues(void);
+u32 AreAllStatsDone(enum BattlerId battler);
+u32 AreAllStatChangesPrevented(enum BattlerId battler);
 enum StatChangeResult TrySingleStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 u32 GetStatStage(enum Stat stat, const struct AdditionalEffect *additionalEffect);
 bool32 ShouldDefiantCompetitiveActivate(enum BattlerId battler, enum Ability ability);
@@ -56,7 +63,6 @@ bool32 IsAccDownEvasionUpStatChangeMove(const struct AdditionalEffect *effect);
 void ResetAnimPlayedFlags(void);
 
 bool32 ShouldPrintSingleString(enum BattlerId battler, enum BattlerId partner);
-void HandleMaxMinStatChange(struct BattleCalcValues *cv, enum BattlerId battler, enum BattlerId partner, bool32 singleString);
 
 
 #endif // GUARD_BATTLE_MOVE_STAT_CHANGE_H

@@ -514,6 +514,7 @@ extern const u8 BattleScript_SkyDropTargetTooHeavy[];
 extern const u8 BattleScript_SkyDropFlyingType[];
 extern const u8 BattleScript_SkyDropNoTarget[];
 extern const u8 BattleScript_IncreaseStatChangeMessage[];
+extern const u8 BattleScript_IncreaseStatChangeMessageTwo[];
 extern const u8 BattleScript_DecreaseStatChangeMessage[];
 extern const u8 BattleScript_DecreaseStatChangeMessageMinStat[];
 extern const u8 BattleScript_StatDidntChangeMessagePause[];

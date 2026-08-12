@@ -1128,7 +1128,18 @@
     .endm
 
     .macro trystatchanges battler:req statChangeFlags:req
-    .byte B_SCR_OP_TRYSTATCHANGES
+    trystatchangesalliedside \battler, \statChangeFlags
+    trystatchangesoppositeside \battler, \statChangeFlags
+    .endm
+
+    .macro trystatchangesalliedside battler:req statChangeFlags:req
+    .byte B_SCR_OP_TRYSTATCHANGES_ALLIED_SIDE
+    .byte \battler
+    .2byte \statChangeFlags
+    .endm
+
+    .macro trystatchangesoppositeside battler:req statChangeFlags:req
+    .byte B_SCR_OP_TRYSTATCHANGES_OPPOSITE_SIDE
     .byte \battler
     .2byte \statChangeFlags
     .endm

@@ -40,6 +40,8 @@ static enum Move GetCopycatMove(void);
 static enum Move GetMeFirstMove(void);
 
 // Stat change moves
+static bool32 CheckStatChangeAdditionalEffects(struct BattleCalcValues *cv, enum BattlerId effectBattler);
+static void SetStrengthSapHealing(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Stat stat);
 static bool32 TryBellyDrum(enum BattlerId battler);
 static bool32 TryHalfHp(enum BattlerId battler);
 static bool32 CutThirdOfHp(enum BattlerId battler);
@@ -5378,7 +5380,7 @@ static void TryAcupressureStatChange(struct BattleCalcValues *cv)
     }
 }
 
-static enum MoveResult StatChangeCanAnyChange(struct BattleCalcValues *cv)
+static enum MoveResult StatChangePrepareStatsForChange(struct BattleCalcValues *cv)
 {
     if (GetMoveEffect(cv->move) == EFFECT_ACUPRESSURE)
     {
@@ -5393,17 +5395,13 @@ static enum MoveResult StatChangeCanAnyChange(struct BattleCalcValues *cv)
 
     for (enum BattlerId battler = 0; battler < gBattlersCount; battler++)
     {
-        cv->battlerDef = GetTargetBySlot(cv->battlerAtk, battler);
+        st.battler = GetTargetBySlot(cv->battlerAtk, battler);
 
-        if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, cv->battlerDef))
+        if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, st.battler))
             continue;
 
-        st.certain = cv->battlerAtk == cv->battlerDef;
-
-        if (CanAnyStatChange(cv, &st))
-            gBattleStruct->moveResultFlags[cv->battlerDef] = MOVE_RESULT_ATTEMPT_STAT_CHANGE;
-        else
-            gBattleStruct->moveResultFlags[cv->battlerDef] = MOVE_RESULT_STAT_CHANGE_PREVENTED;
+        st.certain = cv->battlerAtk == st.battler;
+        PrepareStatsForChange(cv, &st);
     }
 
     gBattleStruct->additionalEffectsCounter = 0;
@@ -5435,6 +5433,7 @@ static enum MoveResult StatChangeMirrorArmor(struct BattleCalcValues *cv)
 {
     for (enum BattlerId battler = 0; battler < gBattlersCount; battler++)
     {
+        // TODO: needs a different check
         if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, battler)
          || gBattleStruct->moveResultFlags[battler] & (MOVE_RESULT_STAT_CHANGE_PREVENTED | MOVE_RESULT_MIRROR_ARMOR_PENDING)
          || cv->battlerAtk == battler)
@@ -5447,176 +5446,61 @@ static enum MoveResult StatChangeMirrorArmor(struct BattleCalcValues *cv)
     return MOVE_RESULT_CONTINUE;
 }
 
-static enum MoveResult StatChangePrevented(struct BattleCalcValues *cv)
+static bool32 SkipStatChangePreventedForBattler(enum BattlerId battlerAtk, enum BattlerId battler)
 {
-    struct StatChange st = {0};
+    if (ShouldSkipStatChangeOnBattler(battlerAtk, battler))
+        return TRUE;
 
-    while (gBattleStruct->statChangeBattler < gBattlersCount)
-    {
-        cv->battlerDef = GetTargetBySlot(cv->battlerAtk, gBattleStruct->statChangeBattler);
-        gBattleStruct->statChangeBattler++;
+    if (!AreAllStatChangesPrevented(battler))
+        return TRUE;
 
-        if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, cv->battlerDef))
-            continue;
-
-        if (!IsMoveResult(cv->battlerDef, MOVE_RESULT_STAT_CHANGE_PREVENTED))
-            continue;
-
-        if (CanDecreaseStat(cv, &st) == STAT_CHANGE_DIDNT_WORK)
-        {
-            BattleScriptCall(st.script);
-            return MOVE_RESULT_RUN_SCRIPT;
-        }
-    }
-
-    cv->battlerDef = gBattlerTarget;
-    gBattleStruct->statChangeBattler = 0;
-    return MOVE_RESULT_CONTINUE;
-}
-
-static enum MoveResult StatChangeAtMinMax(struct BattleCalcValues *cv)
-{
-    while (gBattleStruct->statChangeBattler < gBattlersCount)
-    {
-        cv->battlerDef = GetTargetBySlot(cv->battlerAtk, gBattleStruct->statChangeBattler);
-        gBattleStruct->statChangeBattler++;
-
-        if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, cv->battlerDef))
-            continue;
-
-        if (IsMoveResult(cv->battlerDef, MOVE_RESULT_ATTEMPT_STAT_CHANGE))
-            continue;
-
-        struct StatChange st = {0};
-
-        st.statStageQueue = gSpecialStatuses[cv->battlerDef].statStageQueue;
-        st.statStageAmount = gSpecialStatuses[cv->battlerDef].statStageAmount;
-
-        if (TryStatChange(cv, &st) != STAT_CHANGE_DIDNT_WORK)
-        {
-            BattleScriptCall(st.script);
-            return MOVE_RESULT_RUN_SCRIPT;
-        }
-    }
-
-    cv->battlerDef = gBattlerTarget;
-    gBattleStruct->statChangeBattler = 0;
-    return MOVE_RESULT_CONTINUE;
-}
-
-static void SetStrengthSapHealing(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Stat stat)
-{
-    u32 healAmount = 0;
-    switch (stat)
-    {
-    case STAT_ATK:
-        healAmount = gBattleMons[battlerDef].attack;
-        break;
-    case STAT_DEF:
-        healAmount = gBattleMons[battlerDef].defense;
-        break;
-    case STAT_SPATK:
-        healAmount = gBattleMons[battlerDef].spAttack;
-        break;
-    case STAT_SPDEF:
-        healAmount = gBattleMons[battlerDef].spDefense;
-        break;
-    case STAT_SPEED:
-        healAmount = gBattleMons[battlerDef].speed;
-        break;
-    default:
-        errorf("Illegal stat requested");
-        return;
-    }
-
-    healAmount *= gStatStageRatios[gBattleMons[battlerDef].statStages[stat]][0];
-    healAmount /= gStatStageRatios[gBattleMons[battlerDef].statStages[stat]][1];
-    gBattleStruct->passiveHpUpdate[battlerAtk] = healAmount;
-}
-
-static bool32 CheckStatChangeAdditionalEffects(struct BattleCalcValues *cv, enum BattlerId effectBattler)
-{
-    switch (cv->moveEffect)
-    {
-    case EFFECT_STRENGTH_SAP:
-        if (!CompareStat(effectBattler, STAT_ATK, MIN_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
-        {
-            if (cv->runScript)
-                SetStrengthSapHealing(cv->battlerAtk, effectBattler, STAT_ATK);
-            return TRUE;
-        }
-        break;
-    case EFFECT_TOXIC_THREAD:
-        if (CanBePoisoned(cv->battlerAtk, effectBattler, cv->abilities[cv->battlerAtk], cv->abilities[effectBattler]))
-        {
-            if (cv->runScript)
-                BattleScriptCall(BattleScript_ToxicThread);
-            return TRUE;
-        }
-        break;
-    case EFFECT_SWAGGER:
-        if (cv->abilities[effectBattler] == ABILITY_OWN_TEMPO)
-        {
-            if (cv->runScript)
-            {
-                gBattlerAbility = effectBattler;
-                gLastUsedAbility = ABILITY_OWN_TEMPO;
-                RecordAbilityBattle(effectBattler, ABILITY_OWN_TEMPO);
-                BattleScriptCall(BattleScript_OwnTempoPreventsRet);
-            }
-            return TRUE;
-        }
-        else if (CanBeConfused(cv->battlerAtk, effectBattler))
-        {
-            if (cv->runScript)
-                BattleScriptCall(BattleScript_SwaggerConfusion);
-            return TRUE;
-        }
-
-        break;
-    case EFFECT_TAR_SHOT:
-        if (!gBattleMons[effectBattler].volatiles.tarShot && GetActiveGimmick(effectBattler) != GIMMICK_TERA)
-        {
-            if (cv->runScript)
-            {
-                gBattleMons[effectBattler].volatiles.tarShot = TRUE;
-                BattleScriptCall(BattleScript_TarShotMessage);
-            }
-            return TRUE;
-        }
-        break;
-
-    case EFFECT_DEFENSE_CURL:
-        if (cv->runScript)
-            gBattleMons[effectBattler].volatiles.defenseCurl = TRUE;
-        break;
-    case EFFECT_MINIMIZE: // Write a tests that fails on max stat
-        if (IsMoveResult(effectBattler, MOVE_RESULT_STAT_CHANGED))
-            gBattleMons[effectBattler].volatiles.minimize = TRUE;
-        break;
-    case EFFECT_NO_RETREAT:
-        if (cv->runScript && !gBattleMons[effectBattler].volatiles.escapePrevention)
-        {
-            gBattleMons[effectBattler].volatiles.noRetreat = TRUE;
-            gBattleMons[effectBattler].volatiles.escapePrevention = TRUE;
-            BattleScriptCall(BattleScript_NoRetreatMessage);
-            return TRUE;
-        }
-        break;
-    case EFFECT_AUTOTOMIZE:
-        if (IsMoveResult(effectBattler, MOVE_RESULT_STAT_CHANGED)
-         && GetBattlerWeight(cv->battlerDef, cv->abilities[effectBattler], cv->holdEffects[effectBattler]) > 1)
-        {
-            gBattleMons[effectBattler].volatiles.autotomizeCount++;
-            BattleScriptCall(BattleScript_AutotomizeMessage);
-            return TRUE;
-        }
-        break;
-    default:
-        break;
-    }
+    if (AreAllStatsDone(battler))
+        return TRUE;
 
     return FALSE;
+}
+
+static enum MoveResult StatChangePrevented(struct BattleCalcValues *cv, u32 battlersCount)
+{
+    for (enum BattlerId battler = 0; battler < battlersCount; battler++)
+    {
+        struct StatChange stBattler1 = { .ignoreCertainFailure = TRUE, };
+        struct StatChange stBattler2 = { .ignoreCertainFailure = TRUE, };
+        stBattler1.battler = GetTargetBySlot(cv->battlerAtk, battler);
+
+        if (SkipStatChangePreventedForBattler(cv->battlerAtk, stBattler1.battler))
+            continue;
+
+        CopyOverStatStageQueue(&stBattler1);
+        if (TryStatChange(cv, &stBattler1) == STAT_CHANGE_BLOCKED_BY_TARGET)
+            return MOVE_RESULT_RUN_SCRIPT;
+
+        stBattler1.battler = BATTLE_PARTNER(stBattler1.battler);
+
+        if (SkipStatChangePreventedForBattler(cv->battlerAtk, stBattler2.battler))
+            continue;
+
+        if (ShouldPrintSingleString(stBattler1.battler, stBattler2.battler))
+        {
+            stBattler1.doSideBattlers = TRUE;
+            stBattler2.doneSideBattlers = TRUE;
+            CopyOverStatStageQueue(&stBattler2);
+            TryStatChange(cv, &stBattler1);
+            return MOVE_RESULT_RUN_SCRIPT;
+        }
+    }
+
+    return MOVE_RESULT_CONTINUE;
+}
+
+static enum MoveResult StatChangePreventedAlliedSide(struct BattleCalcValues *cv)
+{
+    return StatChangePrevented(cv, gBattlersCount / 2);
+}
+
+static enum MoveResult StatChangePreventedOpposingSide(struct BattleCalcValues *cv)
+{
+    return StatChangePrevented(cv, gBattlersCount);
 }
 
 static bool32 WillAnyStatChange(struct BattleCalcValues *cv)
@@ -5629,7 +5513,6 @@ static bool32 WillAnyStatChange(struct BattleCalcValues *cv)
         if (gBattleStruct->moveResultFlags[battler] & MOVE_RESULT_ATTEMPT_STAT_CHANGE)
             return TRUE;
 
-            DebugPrintf("battler %d", battler);
         if (CheckStatChangeAdditionalEffects(cv, battler))
             return TRUE;
     }
@@ -5789,60 +5672,66 @@ static enum MoveResult StatChangeBeforeChange(struct BattleCalcValues *cv)
     return MOVE_RESULT_FAILURE;
 }
 
-static enum MoveResult StatChangeTryChange(struct BattleCalcValues *cv)
+static enum MoveResult StatChangeTryChange(struct BattleCalcValues *cv, u32 battlersCount)
 {
-    struct StatChange st = {
-        .ignoreCertainFailure = TRUE,
-    };
-
-    while (gBattleStruct->statChangeBattler < gBattlersCount)
+    while (gBattleStruct->statChangeBattler < battlersCount)
     {
-        cv->battlerDef = GetTargetBySlot(cv->battlerAtk, gBattleStruct->statChangeBattler);
+        struct StatChange stBattler1 = { .ignoreCertainFailure = TRUE, };
+        struct StatChange stBattler2 = { .ignoreCertainFailure = TRUE, };
+        stBattler1.battler = GetTargetBySlot(cv->battlerAtk, gBattleStruct->statChangeBattler);
 
-        if (gBattleStruct->moveResultFlags[cv->battlerDef] & MOVE_RESULT_MISSED)
+        if (gBattleStruct->moveResultFlags[stBattler1.battler] & MOVE_RESULT_MISSED)
         {
             gBattleScripting.battler = gBattleStruct->statChangeBattler++;
             BattleScriptCall(BattleScript_BattlerAvoidedAttack);
             return MOVE_RESULT_RUN_SCRIPT;
         }
 
-        if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, cv->battlerDef))
+        if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, stBattler1.battler))
         {
             gBattleStruct->statChangeBattler++;
             continue;
         }
 
-        st.certain = cv->battlerAtk == cv->battlerDef;
+        stBattler1.certain = cv->battlerAtk == stBattler1.battler;
+        CopyOverStatStageQueue(&stBattler1);
+        TryStatChange(cv, &stBattler1);
+        gBattleStruct->statChangeBattler++;
 
-        bool32 runScript = FALSE;
-        st.statStageQueue = gSpecialStatuses[cv->battlerDef].statStageQueue;
-        st.statStageAmount = gSpecialStatuses[cv->battlerDef].statStageAmount;
+        stBattler2.battler = BATTLE_PARTNER(stBattler1.battler);
 
-        if (TryStatChange(cv, &st) != STAT_CHANGE_DIDNT_WORK)
-            runScript = TRUE;
+        if (SkipStatChangePreventedForBattler(cv->battlerAtk, stBattler2.battler))
+            continue;
 
-        if (st.nextBattler) // Or done
+        if (ShouldPrintSingleString(stBattler1.battler, stBattler2.battler))
         {
-            st.nextBattler = FALSE;
+            stBattler1.doSideBattlers = TRUE;
+            stBattler2.doneSideBattlers = TRUE;
+            CopyOverStatStageQueue(&stBattler2);
+            TryStatChange(cv, &stBattler2);
             gBattleStruct->statChangeBattler++;
-
-            if (st.moveScript != NULL)
-            {
-                gBattlescriptCurrInstr = st.moveScript;
-                if (!runScript)
-                    return MOVE_RESULT_RUN_SCRIPT;
-            }
         }
 
-        if (runScript)
-        {
-            BattleScriptCall(st.script);
-            return MOVE_RESULT_RUN_SCRIPT;
-        }
+        BattleScriptCall(stBattler1.script);
+
+        if (AreAllStatsDone(stBattler2.battler) && gBattleStruct->statChangeBattler == battlersCount)
+            return MOVE_RESULT_RUN_SCRIPT_INCREMENT;
+        return MOVE_RESULT_RUN_SCRIPT;
     }
 
-    gBattleStruct->statChangeBattler = 0;
     return MOVE_RESULT_CONTINUE;
+}
+
+static enum MoveResult StatChangeTryChangeAlliedSide(struct BattleCalcValues *cv)
+{
+    return StatChangeTryChange(cv, gBattlersCount / 2);
+}
+
+static enum MoveResult StatChangeTryChangeOpposingSide(struct BattleCalcValues *cv)
+{
+    enum MoveResult result = StatChangeTryChange(cv, gBattlersCount);
+    gBattleStruct->statChangeBattler = 0;
+    return result;
 }
 
 static enum MoveResult TryStatChangeAdditionalEffects(struct BattleCalcValues *cv)
@@ -5870,13 +5759,17 @@ static enum MoveResult (*const sStatChangeHandlers[])(struct BattleCalcValues *c
 {
     [STAT_CHANGE_MOVE_FAILURE] = StatChangeMoveFailure,
     [STAT_CHANGE_SUBSTITUTE] = StatChangeSubstitute,
-    [STAT_CHANGE_CAN_ANY_CHANGE] = StatChangeCanAnyChange,
+    [STAT_CHANGE_CAN_ANY_CHANGE] = StatChangePrepareStatsForChange,
     [STAT_CHANGE_ACCURACY] = StatChangeAccuracy,
     [STAT_CHANGE_MIRROR_ARMOR] = StatChangeMirrorArmor,
-    [STAT_CHANGE_PREVENTED] = StatChangePrevented,
-    [STAT_CHANGE_AT_MIN_MAX] = StatChangeAtMinMax,
+
+    [STAT_CHANGE_PREVENTED_ALLIED_SIDE] = StatChangePreventedAlliedSide,
+    [STAT_CHANGE_PREVENTED_OPPOSING_SIDE] = StatChangePreventedOpposingSide,
+
     [STAT_CHANGE_BEFORE_CHANGE] = StatChangeBeforeChange,
-    [STAT_CHANGE_TRY_CHANGE] = StatChangeTryChange,
+
+    [STAT_CHANGE_TRY_CHANGE_ALLIED_SIDE] = StatChangeTryChangeAlliedSide,
+    [STAT_CHANGE_TRY_CHANGE_OPPOSING_SIDE] = StatChangeTryChangeOpposingSide,
     [STAT_CHANGE_ADDITIONAL_EFFECT] = TryStatChangeAdditionalEffects,
 };
 
@@ -5921,7 +5814,6 @@ enum MoveResult DoStatChange(void)
 
     return result;
 }
-
 
 // Utility functions
 
@@ -6310,6 +6202,121 @@ static void UpdateStallMons(struct BattleCalcValues *cv)
 
 // Move Stat Change Functions
 
+static bool32 CheckStatChangeAdditionalEffects(struct BattleCalcValues *cv, enum BattlerId effectBattler)
+{
+    switch (cv->moveEffect)
+    {
+    case EFFECT_STRENGTH_SAP:
+        if (!CompareStat(effectBattler, STAT_ATK, MIN_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
+        {
+            if (cv->runScript)
+                SetStrengthSapHealing(cv->battlerAtk, effectBattler, STAT_ATK);
+            return TRUE;
+        }
+        break;
+    case EFFECT_TOXIC_THREAD:
+        if (CanBePoisoned(cv->battlerAtk, effectBattler, cv->abilities[cv->battlerAtk], cv->abilities[effectBattler]))
+        {
+            if (cv->runScript)
+                BattleScriptCall(BattleScript_ToxicThread);
+            return TRUE;
+        }
+        break;
+    case EFFECT_SWAGGER:
+        if (cv->abilities[effectBattler] == ABILITY_OWN_TEMPO)
+        {
+            if (cv->runScript)
+            {
+                gBattlerAbility = effectBattler;
+                gLastUsedAbility = ABILITY_OWN_TEMPO;
+                RecordAbilityBattle(effectBattler, ABILITY_OWN_TEMPO);
+                BattleScriptCall(BattleScript_OwnTempoPreventsRet);
+            }
+            return TRUE;
+        }
+        else if (CanBeConfused(cv->battlerAtk, effectBattler))
+        {
+            if (cv->runScript)
+                BattleScriptCall(BattleScript_SwaggerConfusion);
+            return TRUE;
+        }
+
+        break;
+    case EFFECT_TAR_SHOT:
+        if (!gBattleMons[effectBattler].volatiles.tarShot && GetActiveGimmick(effectBattler) != GIMMICK_TERA)
+        {
+            if (cv->runScript)
+            {
+                gBattleMons[effectBattler].volatiles.tarShot = TRUE;
+                BattleScriptCall(BattleScript_TarShotMessage);
+            }
+            return TRUE;
+        }
+        break;
+
+    case EFFECT_DEFENSE_CURL:
+        if (cv->runScript)
+            gBattleMons[effectBattler].volatiles.defenseCurl = TRUE;
+        break;
+    case EFFECT_MINIMIZE: // Write a tests that fails on max stat
+        if (IsMoveResult(effectBattler, MOVE_RESULT_STAT_CHANGED))
+            gBattleMons[effectBattler].volatiles.minimize = TRUE;
+        break;
+    case EFFECT_NO_RETREAT:
+        if (cv->runScript && !gBattleMons[effectBattler].volatiles.escapePrevention)
+        {
+            gBattleMons[effectBattler].volatiles.noRetreat = TRUE;
+            gBattleMons[effectBattler].volatiles.escapePrevention = TRUE;
+            BattleScriptCall(BattleScript_NoRetreatMessage);
+            return TRUE;
+        }
+        break;
+    case EFFECT_AUTOTOMIZE:
+        if (IsMoveResult(effectBattler, MOVE_RESULT_STAT_CHANGED)
+         && GetBattlerWeight(cv->battlerDef, cv->abilities[effectBattler], cv->holdEffects[effectBattler]) > 1)
+        {
+            gBattleMons[effectBattler].volatiles.autotomizeCount++;
+            BattleScriptCall(BattleScript_AutotomizeMessage);
+            return TRUE;
+        }
+        break;
+    default:
+        break;
+    }
+
+    return FALSE;
+}
+
+static void SetStrengthSapHealing(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Stat stat)
+{
+    u32 healAmount = 0;
+    switch (stat)
+    {
+    case STAT_ATK:
+        healAmount = gBattleMons[battlerDef].attack;
+        break;
+    case STAT_DEF:
+        healAmount = gBattleMons[battlerDef].defense;
+        break;
+    case STAT_SPATK:
+        healAmount = gBattleMons[battlerDef].spAttack;
+        break;
+    case STAT_SPDEF:
+        healAmount = gBattleMons[battlerDef].spDefense;
+        break;
+    case STAT_SPEED:
+        healAmount = gBattleMons[battlerDef].speed;
+        break;
+    default:
+        errorf("Illegal stat requested");
+        return;
+    }
+
+    healAmount *= gStatStageRatios[gBattleMons[battlerDef].statStages[stat]][0];
+    healAmount /= gStatStageRatios[gBattleMons[battlerDef].statStages[stat]][1];
+    gBattleStruct->passiveHpUpdate[battlerAtk] = healAmount;
+}
+
 static bool32 TryBellyDrum(enum BattlerId battler)
 {
     if (CompareStat(battler, STAT_ATK, MAX_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
@@ -6366,3 +6373,4 @@ static bool32 CutThirdOfHp(enum BattlerId battler)
 
     return FALSE;
 }
+
