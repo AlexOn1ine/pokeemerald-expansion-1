@@ -10385,23 +10385,12 @@ static void Cmd_trybattlerstatchange(void)
         st.statStageAmount = gSpecialStatuses[st.battler].statStageAmount;
     }
 
-    // if (TryStatChange(&cv, &st) != STAT_CHANGE_DIDNT_WORK)
-    // {
-    //     if (st.nextBattler) // Done
-    //     {
-    //         if (flags & STAT_CHANGE_SECOND_QUEUE)
-    //             ClearOtherStatChangeValues(st.battler);
-    //         else
-    //             ClearStatChangeValues();
-    //         BattleScriptPush(cmd->nextInstr);
-    //         gBattlescriptCurrInstr = st.script;
-    //     }
-    //     else
-    //     {
-    //         BattleScriptCall(st.script);
-    //     }
-    //     return;
-    // }
+    if (TryStatChange(&cv, &st) == STAT_CHANGE_WORKED)
+    {
+        DebugPrintf("????");
+        BattleScriptCall(st.script);
+        return;
+    }
 
     if (flags & STAT_CHANGE_SECOND_QUEUE)
         ClearOtherStatChangeValues(st.battler);

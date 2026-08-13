@@ -5306,8 +5306,8 @@ static enum MoveResult StatChangeMoveFailure(struct BattleCalcValues *cv)
     {
         cv->battlerDef = GetTargetBySlot(cv->battlerAtk, battler);
 
-        if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, cv->battlerDef))
-            continue;
+        if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, cv->battlerDef)
+         || cv->battlerAtk == battler)
 
         switch (cv->moveEffect)
         {
@@ -5339,12 +5339,42 @@ static enum MoveResult StatChangeSubstitute(struct BattleCalcValues *cv)
 {
     for (enum BattlerId battler = 0; battler < gBattlersCount; battler++)
     {
+        cv->battlerDef = GetTargetBySlot(cv->battlerAtk, gBattleStruct->eventState.atkCancelerBattler);
+
         if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, battler)
          || cv->battlerAtk == battler)
             continue;
 
         if (IsSubstituteProtected(cv->battlerAtk, battler, cv->abilities[cv->battlerAtk], cv->move))
+        {
             gBattleStruct->moveResultFlags[battler] = MOVE_RESULT_DOESNT_AFFECT_FOE;
+            gBattleScripting.battler = cv->battlerDef;
+            BattleScriptCall(BattleScript_ItDoesntAffectScrTarget);
+            return MOVE_RESULT_RUN_SCRIPT;
+        }
+    }
+
+    return MOVE_RESULT_CONTINUE;
+}
+
+static enum MoveResult StatChangeAccuracy(struct BattleCalcValues *cv)
+{
+    for (enum BattlerId battler = 0; battler < gBattlersCount; battler++)
+    {
+        cv->battlerDef = GetTargetBySlot(cv->battlerAtk, gBattleStruct->eventState.atkCancelerBattler);
+
+        if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, battler)
+         || cv->battlerAtk == battler)
+
+        if (DoesMoveMissTarget(cv))
+        {
+            if (cv->holdEffects[cv->battlerAtk] == HOLD_EFFECT_BLUNDER_POLICY)
+                gBattleStruct->blunderPolicy = TRUE;
+            gBattleStruct->moveResultFlags[cv->battlerDef] = MOVE_RESULT_MISSED;
+            gBattleScripting.battler = cv->battlerDef;
+            BattleScriptCall(BattleScript_BattlerAvoidedAttack);
+            return MOVE_RESULT_RUN_SCRIPT;
+        }
     }
 
     return MOVE_RESULT_CONTINUE;
@@ -5380,7 +5410,7 @@ static void TryAcupressureStatChange(struct BattleCalcValues *cv)
     }
 }
 
-static enum MoveResult StatChangePrepareStatsForChange(struct BattleCalcValues *cv)
+static enum MoveResult StatChangePrepareStats(struct BattleCalcValues *cv)
 {
     if (GetMoveEffect(cv->move) == EFFECT_ACUPRESSURE)
     {
@@ -5409,49 +5439,12 @@ static enum MoveResult StatChangePrepareStatsForChange(struct BattleCalcValues *
     return MOVE_RESULT_CONTINUE;
 }
 
-static enum MoveResult StatChangeAccuracy(struct BattleCalcValues *cv)
-{
-    for (enum BattlerId battler = 0; battler < gBattlersCount; battler++)
-    {
-        if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, battler)
-         || gBattleStruct->moveResultFlags[battler] & MOVE_RESULT_STAT_CHANGE_PREVENTED
-         || cv->battlerAtk == battler)
-            continue;
-
-        if (DoesMoveMissTarget(cv))
-        {
-            if (cv->holdEffects[gBattlerAttacker] == HOLD_EFFECT_BLUNDER_POLICY)
-                gBattleStruct->blunderPolicy = TRUE;
-            gBattleStruct->moveResultFlags[battler] = MOVE_RESULT_MISSED;
-        }
-    }
-
-    return MOVE_RESULT_CONTINUE;
-}
-
-static enum MoveResult StatChangeMirrorArmor(struct BattleCalcValues *cv)
-{
-    for (enum BattlerId battler = 0; battler < gBattlersCount; battler++)
-    {
-        // TODO: needs a different check
-        if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, battler)
-         || gBattleStruct->moveResultFlags[battler] & (MOVE_RESULT_STAT_CHANGE_PREVENTED | MOVE_RESULT_MIRROR_ARMOR_PENDING)
-         || cv->battlerAtk == battler)
-            continue;
-
-        if (cv->abilities[battler] == ABILITY_MIRROR_ARMOR)
-            gBattleStruct->moveResultFlags[battler] = MOVE_RESULT_MIRROR_ARMOR_PENDING;
-    }
-
-    return MOVE_RESULT_CONTINUE;
-}
-
 static bool32 SkipStatChangePreventedForBattler(enum BattlerId battlerAtk, enum BattlerId battler)
 {
     if (ShouldSkipStatChangeOnBattler(battlerAtk, battler))
         return TRUE;
 
-    if (!AreAllStatChangesPrevented(battler))
+    if (AreAllStatChangesPrevented(battler))
         return TRUE;
 
     if (AreAllStatsDone(battler))
@@ -5464,8 +5457,14 @@ static enum MoveResult StatChangePrevented(struct BattleCalcValues *cv, u32 batt
 {
     for (enum BattlerId battler = 0; battler < battlersCount; battler++)
     {
-        struct StatChange stBattler1 = { .ignoreCertainFailure = TRUE, };
-        struct StatChange stBattler2 = { .ignoreCertainFailure = TRUE, };
+        struct StatChange stBattler1 = {
+            .ignoreCertainFailure = TRUE,
+            .checkMirrorArmor = TRUE,
+        };
+        struct StatChange stBattler2 = {
+            .ignoreCertainFailure = TRUE,
+            .checkMirrorArmor  = TRUE,
+        };
         stBattler1.battler = GetTargetBySlot(cv->battlerAtk, battler);
 
         if (SkipStatChangePreventedForBattler(cv->battlerAtk, stBattler1.battler))
@@ -5477,10 +5476,8 @@ static enum MoveResult StatChangePrevented(struct BattleCalcValues *cv, u32 batt
 
         stBattler1.battler = BATTLE_PARTNER(stBattler1.battler);
 
-        if (SkipStatChangePreventedForBattler(cv->battlerAtk, stBattler2.battler))
-            continue;
-
-        if (ShouldPrintSingleString(stBattler1.battler, stBattler2.battler))
+        if (SkipStatChangePreventedForBattler(cv->battlerAtk, stBattler2.battler)
+         && ShouldPrintSingleString(stBattler1.battler, stBattler2.battler))
         {
             stBattler1.doSideBattlers = TRUE;
             stBattler2.doneSideBattlers = TRUE;
@@ -5495,11 +5492,13 @@ static enum MoveResult StatChangePrevented(struct BattleCalcValues *cv, u32 batt
 
 static enum MoveResult StatChangePreventedAlliedSide(struct BattleCalcValues *cv)
 {
+    return MOVE_RESULT_CONTINUE;
     return StatChangePrevented(cv, gBattlersCount / 2);
 }
 
 static enum MoveResult StatChangePreventedOpposingSide(struct BattleCalcValues *cv)
 {
+    return MOVE_RESULT_CONTINUE;
     return StatChangePrevented(cv, gBattlersCount);
 }
 
@@ -5510,7 +5509,7 @@ static bool32 WillAnyStatChange(struct BattleCalcValues *cv)
         if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, battler))
             continue;
 
-        if (gBattleStruct->moveResultFlags[battler] & MOVE_RESULT_ATTEMPT_STAT_CHANGE)
+        if (!AreAllStatsDone(battler))
             return TRUE;
 
         if (CheckStatChangeAdditionalEffects(cv, battler))
@@ -5674,47 +5673,51 @@ static enum MoveResult StatChangeBeforeChange(struct BattleCalcValues *cv)
 
 static enum MoveResult StatChangeTryChange(struct BattleCalcValues *cv, u32 battlersCount)
 {
-    while (gBattleStruct->statChangeBattler < battlersCount)
+    u32 slot = 0;
+    while (slot < battlersCount)
     {
-        struct StatChange stBattler1 = { .ignoreCertainFailure = TRUE, };
-        struct StatChange stBattler2 = { .ignoreCertainFailure = TRUE, };
-        stBattler1.battler = GetTargetBySlot(cv->battlerAtk, gBattleStruct->statChangeBattler);
+        struct StatChange stBattler1 = {
+            .ignoreCertainFailure = TRUE,
+            .checkMirrorArmor = TRUE,
+        };
+        struct StatChange stBattler2 = {
+            .ignoreCertainFailure = TRUE,
+            .checkMirrorArmor  = TRUE,
+        };
+        stBattler1.battler = GetTargetBySlot(cv->battlerAtk, slot);
 
-        if (gBattleStruct->moveResultFlags[stBattler1.battler] & MOVE_RESULT_MISSED)
+        if (SkipStatChangePreventedForBattler(cv->battlerAtk, stBattler1.battler))
         {
-            gBattleScripting.battler = gBattleStruct->statChangeBattler++;
-            BattleScriptCall(BattleScript_BattlerAvoidedAttack);
-            return MOVE_RESULT_RUN_SCRIPT;
-        }
-
-        if (ShouldSkipStatChangeOnBattler(cv->battlerAtk, stBattler1.battler))
-        {
-            gBattleStruct->statChangeBattler++;
+            slot++;
             continue;
         }
-
-        stBattler1.certain = cv->battlerAtk == stBattler1.battler;
-        CopyOverStatStageQueue(&stBattler1);
-        TryStatChange(cv, &stBattler1);
-        gBattleStruct->statChangeBattler++;
 
         stBattler2.battler = BATTLE_PARTNER(stBattler1.battler);
 
-        if (SkipStatChangePreventedForBattler(cv->battlerAtk, stBattler2.battler))
-            continue;
+        bool32 statChangePrevented = SkipStatChangePreventedForBattler(cv->battlerAtk, stBattler2.battler);
+        bool32 printSingleString = ShouldPrintSingleString(cv->battlerAtk, stBattler2.battler);
+        stBattler1.doSideBattlers = !statChangePrevented && printSingleString;
 
-        if (ShouldPrintSingleString(stBattler1.battler, stBattler2.battler))
+        stBattler1.certain = cv->battlerAtk == stBattler1.battler;
+        CopyOverStatStageQueue(&stBattler1);
+        if (TryStatChange(cv, &stBattler1) == STAT_CHANGE_BLOCKED_BY_TARGET)
         {
-            stBattler1.doSideBattlers = TRUE;
+            BattleScriptCall(stBattler1.script);
+            return MOVE_RESULT_RUN_SCRIPT;
+        }
+        slot++;
+
+        if (stBattler1.doSideBattlers)
+        {
             stBattler2.doneSideBattlers = TRUE;
             CopyOverStatStageQueue(&stBattler2);
             TryStatChange(cv, &stBattler2);
-            gBattleStruct->statChangeBattler++;
+            slot++;
         }
 
         BattleScriptCall(stBattler1.script);
 
-        if (AreAllStatsDone(stBattler2.battler) && gBattleStruct->statChangeBattler == battlersCount)
+        if (AreAllStatsDone(stBattler1.battler) && slot == battlersCount)
             return MOVE_RESULT_RUN_SCRIPT_INCREMENT;
         return MOVE_RESULT_RUN_SCRIPT;
     }
@@ -5730,7 +5733,6 @@ static enum MoveResult StatChangeTryChangeAlliedSide(struct BattleCalcValues *cv
 static enum MoveResult StatChangeTryChangeOpposingSide(struct BattleCalcValues *cv)
 {
     enum MoveResult result = StatChangeTryChange(cv, gBattlersCount);
-    gBattleStruct->statChangeBattler = 0;
     return result;
 }
 
@@ -5759,15 +5761,11 @@ static enum MoveResult (*const sStatChangeHandlers[])(struct BattleCalcValues *c
 {
     [STAT_CHANGE_MOVE_FAILURE] = StatChangeMoveFailure,
     [STAT_CHANGE_SUBSTITUTE] = StatChangeSubstitute,
-    [STAT_CHANGE_CAN_ANY_CHANGE] = StatChangePrepareStatsForChange,
     [STAT_CHANGE_ACCURACY] = StatChangeAccuracy,
-    [STAT_CHANGE_MIRROR_ARMOR] = StatChangeMirrorArmor,
-
+    [STAT_CHANGE_PREPARE_STATS] = StatChangePrepareStats,
     [STAT_CHANGE_PREVENTED_ALLIED_SIDE] = StatChangePreventedAlliedSide,
     [STAT_CHANGE_PREVENTED_OPPOSING_SIDE] = StatChangePreventedOpposingSide,
-
     [STAT_CHANGE_BEFORE_CHANGE] = StatChangeBeforeChange,
-
     [STAT_CHANGE_TRY_CHANGE_ALLIED_SIDE] = StatChangeTryChangeAlliedSide,
     [STAT_CHANGE_TRY_CHANGE_OPPOSING_SIDE] = StatChangeTryChangeOpposingSide,
     [STAT_CHANGE_ADDITIONAL_EFFECT] = TryStatChangeAdditionalEffects,

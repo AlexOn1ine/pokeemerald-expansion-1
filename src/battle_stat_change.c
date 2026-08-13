@@ -179,10 +179,11 @@ enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChan
         }
     }
 
-    if (process == PROCESS_STAT_DEFAULT
-     || process == PROCESS_STAT_CHANGE_PREVENTED
-     || st->doneSideBattlers)
-        return STAT_CHANGE_DONE_ALLY;
+    if (process == PROCESS_STAT_DEFAULT)
+        return STAT_CHANGE_DIDNT_WORK;
+
+    if (st->doneSideBattlers)
+        return STAT_CHANGE_WORKED;
 
     BuildStatChangeString(minMaxStage, statsChanged, numChanges, process);
 
@@ -253,8 +254,21 @@ static void BuildStatChangeString(s32 stage, s8 statsChanged[], u32 numChanges, 
     }
 }
 
+static bool32 AreNegativeStatChangesDone(struct StatChange *st)
+{
+    for (u32 i = 0; i < st->statStageAmount; i++)
+    {
+        if (st->statStageQueue[i].stage < 0 && !st->statStageQueue[i].done)
+            return FALSE;
+    }
+    return TRUE;
+}
+
 enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct StatChange *st)
 {
+    if (AreNegativeStatChangesDone(st))
+        return STAT_CHANGE_WORKED;
+
     if ((st->silentFailure || st->onlyChecking) && IsSubstituteBlocked(cv, st))
         return STAT_CHANGE_DIDNT_WORK;
 
@@ -415,8 +429,8 @@ static void TryPlayStatChangeAnimation(struct BattleCalcValues *cv, struct StatC
     if (st->stage <= -1) // goes down
     {
         enum BattleSide side = GetBattlerSide(st->battler);
-        if (gBattleStruct->negativeAnimPlayed[side])
-            return;
+        // if (gBattleStruct->negativeAnimPlayed[side])
+        //     return;
 
         u32 numNegativeStats = 0;
         bool32 isStatChangeByTwo = abs(st->stage) > 1;
@@ -435,8 +449,8 @@ static void TryPlayStatChangeAnimation(struct BattleCalcValues *cv, struct StatC
     else // goes up
     {
         enum BattleSide side = GetBattlerSide(st->battler);
-        if (gBattleStruct->positiveAnimPlayed[side])
-            return;
+        // if (gBattleStruct->positiveAnimPlayed[side])
+        //     return;
 
         u32 numPositiveStats = 0;
         bool32 isStatChangeByTwo = st->stage > 1;
@@ -455,7 +469,7 @@ static void TryPlayStatChangeAnimation(struct BattleCalcValues *cv, struct StatC
 
     enum BattlerId partner = BATTLE_PARTNER(st->battler);
 
-    if (IsMoveResult(partner, MOVE_RESULT_ATTEMPT_STAT_CHANGE))
+    if (st->doSideBattlers)
     {
         gBattleStruct->multiStatChangeAnim = TRUE;
         BtlController_EmitBattleAnimation(partner,
@@ -664,7 +678,7 @@ static bool32 IsMirrorArmorReflected(struct BattleCalcValues *cv, struct StatCha
     if (st->onlyChecking && !st->ignoreCertainFailure)
         return TRUE;
 
-    if (gBattleStruct->moveResultFlags[st->battler] & MOVE_RESULT_MIRROR_ARMOR_PENDING || !st->ignoreCertainFailure)
+    if (st->checkMirrorArmor || !st->ignoreCertainFailure)
     {
         st->silentFailure = FALSE; // Mirror Armor still deflects damaging move stat drops
         st->script = BattleScript_MirrorArmorReflect;
@@ -891,7 +905,7 @@ void ClearBothStatChangeQueues(void)
     gBattleStruct->statChangeBattler  = 0;
 }
 
-u32 AreAllStatsDone(enum BattlerId battler)
+bool32 AreAllStatsDone(enum BattlerId battler)
 {
     u32 amount = gSpecialStatuses[battler].statStageAmount;
     struct StatStages *battlerStats = gSpecialStatuses[battler].statStageQueue;
@@ -904,18 +918,32 @@ u32 AreAllStatsDone(enum BattlerId battler)
     return TRUE;
 }
 
+bool32 AreAllStatsDone2(enum BattlerId battler)
+{
+    u32 amount = gSpecialStatuses[battler].statStageAmount2;
+    struct StatStages *battlerStats = gSpecialStatuses[battler].statStageQueue2;
+
+    for (u32 i = 0; i < amount; i++)
+    {
+        if (!battlerStats[i].done)
+            return FALSE;
+    }
+        DebugPrintf("???");
+    return TRUE;
+}
+
 u32 AreAllStatChangesPrevented(enum BattlerId battler)
 {
+    u32 count = 0;
     u32 amount = gSpecialStatuses[battler].statStageAmount;
     struct StatStages *battlerStats = gSpecialStatuses[battler].statStageQueue;
 
     for (u32 i = 0; i < amount; i++)
     {
         if (battlerStats[i].prevented && battlerStats[i].atMin && battlerStats[i].atMax)
-            continue;
-        return FALSE;
+            count++;
     }
-    return TRUE;
+    return count == amount;
 }
 
 bool32 CompareStat(enum BattlerId battler, enum Stat statId, u32 cmpTo, u32 cmpKind, enum Ability ability)
@@ -1080,6 +1108,9 @@ bool32 ShouldPrintSingleString(enum BattlerId battler, enum BattlerId partner)
             return FALSE;
 
         if (battlerStats[i].atMax != partnerStats[i].atMax)
+            return FALSE;
+
+        if (battlerStats[i].done != partnerStats[i].done)
             return FALSE;
 
         if (battlerStats[i].prevented || partnerStats[i].prevented)
