@@ -87,23 +87,29 @@ void PrepareStatsForChange(struct BattleCalcValues *cv, struct StatChange *st)
                 st->stage = -1 * st->stage;
 
             AdjustStatStage(cv, st);
+            u32 amount = gSpecialStatuses[st->battler].statStageAmount;
             SetStatChange(st->battler, st->stat, st->stage);
 
             // Workaround for contrary
             if (cv->moveEffect == EFFECT_BELLY_DRUM && !CompareStat(st->battler, st->stat, MAX_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
             {
-                battlerStats[st->stat].atMax = TRUE;
+                battlerStats[amount].state = STAT_CHANGE_AT_MAX;
             }
             else if (st->stage < 0)
             {
                 if (CompareStat(st->battler, st->stat, MIN_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
-                    battlerStats[st->stat].atMin = TRUE;
+                    battlerStats[amount].state = STAT_CHANGE_AT_MIN;
                 else if (CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
-                    battlerStats[st->stat].prevented = TRUE;
+                    battlerStats[amount].state = STAT_CHANGE_PREVENTED;
+                else
+                    battlerStats[amount].state = STAT_CHANGE_DO_CHANGE;
             }
-            else if (CompareStat(st->battler, st->stat, MAX_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
+            else
             {
-                battlerStats[st->stat].atMax = TRUE;
+                if (CompareStat(st->battler, st->stat, MAX_STAT_STAGE, CMP_EQUAL, ABILITY_NONE))
+                    battlerStats[st->stat].state = STAT_CHANGE_AT_MAX;
+                else
+                    battlerStats[st->stat].state = STAT_CHANGE_DO_CHANGE;
             }
         }
     }
@@ -134,15 +140,17 @@ enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChan
 
     for (u32 i = 0; i < st->statStageAmount; i++)
     {
-        if (st->statStageQueue[i].done)
+        if (st->statStageQueue[i].state == STAT_CHANGE_DONE)
+        {
             continue;
+        }
 
         st->stat = st->statStageQueue[i].stat;
         st->stage = st->statStageQueue[i].stage;
 
         if (!ArePositiveStatsInProcess(process) && !AreNegativeStatsInProcess(process))
         {
-            if (CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
+            if (st->stage < 0 && CanDecreaseStat(cv, st) == STAT_CHANGE_DIDNT_WORK)
                 return STAT_CHANGE_BLOCKED_BY_TARGET;
         }
 
@@ -159,7 +167,7 @@ enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChan
                 minMaxStage = min(minMaxStage, st->stage);
             }
 
-            st->statStageQueue[i].done = TRUE;
+            st->statStageQueue[i].state = STAT_CHANGE_DONE;
             statsChanged[numChanges++] = st->stat;
         }
         else if (!AreNegativeStatsInProcess(process))
@@ -174,7 +182,7 @@ enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChan
                 process = PROCESS_STAT_INCREASING;
                 minMaxStage = max(minMaxStage, st->stage);
             }
-            st->statStageQueue[i].done = TRUE;
+            st->statStageQueue[i].state = STAT_CHANGE_DONE;
             statsChanged[numChanges++] = st->stat;
         }
     }
@@ -215,10 +223,8 @@ static void BuildStatChangeString(s32 stage, s8 statsChanged[], u32 numChanges, 
     {
         for (u32 i = 1; i < NUM_BATTLE_STATS; i++)
         {
-            if (statsChanged[i] == END_NUM_CHANGES) {
-                // DebugPrintf("num stats changed %d", statsChanged[NUM_BATTLE_STATS]);
+            if (statsChanged[i] == END_NUM_CHANGES)
                 break;
-            }
 
             StringAppend(gBattleTextBuff3, COMPOUND_STRING(", "));
             if (statsChanged[i + 1] == END_NUM_CHANGES) {
@@ -258,7 +264,7 @@ static bool32 AreNegativeStatChangesDone(struct StatChange *st)
 {
     for (u32 i = 0; i < st->statStageAmount; i++)
     {
-        if (st->statStageQueue[i].stage < 0 && !st->statStageQueue[i].done)
+        if (st->statStageQueue[i].stage < 0 && st->statStageQueue[i].state != STAT_CHANGE_DONE)
             return FALSE;
     }
     return TRUE;
@@ -266,8 +272,8 @@ static bool32 AreNegativeStatChangesDone(struct StatChange *st)
 
 enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct StatChange *st)
 {
-    if (AreNegativeStatChangesDone(st))
-        return STAT_CHANGE_WORKED;
+    // if (AreNegativeStatChangesDone(st))
+    //     return STAT_CHANGE_WORKED;
 
     if ((st->silentFailure || st->onlyChecking) && IsSubstituteBlocked(cv, st))
         return STAT_CHANGE_DIDNT_WORK;
@@ -713,7 +719,7 @@ static bool32 IsMirrorArmorReflected(struct BattleCalcValues *cv, struct StatCha
             s32 stage = st->statStageQueue[i].stage;
             if (stage < 0)
             {
-                st->statStageQueue[i].done = TRUE;
+                st->statStageQueue[i].state = STAT_CHANGE_DONE;
                 SetStatChange2(gBattleScripting.battler, stat, stage);
             }
         }
@@ -849,8 +855,9 @@ static u32 GetNumNegativeStats(struct StatChange *st)
 
 void SetStatChange(enum BattlerId battler, enum Stat stat, s32 stage)
 {
-    gSpecialStatuses[battler].statStageQueue[gSpecialStatuses[battler].statStageAmount].stat = stat;
-    gSpecialStatuses[battler].statStageQueue[gSpecialStatuses[battler].statStageAmount].stage = stage;
+    u32 amount = gSpecialStatuses[battler].statStageAmount;
+    gSpecialStatuses[battler].statStageQueue[amount].stat = stat;
+    gSpecialStatuses[battler].statStageQueue[amount].stage = stage;
     gSpecialStatuses[battler].statStageAmount++;
 }
 
@@ -905,6 +912,19 @@ void ClearBothStatChangeQueues(void)
     gBattleStruct->statChangeBattler  = 0;
 }
 
+bool32 WillAnyStatChange(enum BattlerId battler)
+{
+    u32 amount = gSpecialStatuses[battler].statStageAmount;
+    struct StatStages *battlerStats = gSpecialStatuses[battler].statStageQueue;
+
+    for (u32 i = 0; i < amount; i++)
+    {
+        if (battlerStats[i].state == STAT_CHANGE_DO_CHANGE)
+            return TRUE;
+    }
+    return FALSE;;
+}
+
 bool32 AreAllStatsDone(enum BattlerId battler)
 {
     u32 amount = gSpecialStatuses[battler].statStageAmount;
@@ -912,7 +932,7 @@ bool32 AreAllStatsDone(enum BattlerId battler)
 
     for (u32 i = 0; i < amount; i++)
     {
-        if (!battlerStats[i].done)
+        if (battlerStats[i].state != STAT_CHANGE_DONE)
             return FALSE;
     }
     return TRUE;
@@ -925,14 +945,26 @@ bool32 AreAllStatsDone2(enum BattlerId battler)
 
     for (u32 i = 0; i < amount; i++)
     {
-        if (!battlerStats[i].done)
+        if (battlerStats[i].state != STAT_CHANGE_DONE)
             return FALSE;
     }
-        DebugPrintf("???");
     return TRUE;
 }
 
-u32 AreAllStatChangesPrevented(enum BattlerId battler)
+static bool32 UNUSED AreAnyStatChangesPrevented(enum BattlerId battler, enum BattlerId partner)
+{
+    struct StatStages *battlerStats = gSpecialStatuses[battler].statStageQueue;
+    struct StatStages *partnerStats = gSpecialStatuses[partner].statStageQueue;
+
+    for (u32 i = 1; i < NUM_BATTLE_STATS; i++)
+    {
+        if (battlerStats[i].state == STAT_CHANGE_PREVENTED || partnerStats[i].state == STAT_CHANGE_PREVENTED)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+bool32 AreAllStatChangesPrevented(enum BattlerId battler)
 {
     u32 count = 0;
     u32 amount = gSpecialStatuses[battler].statStageAmount;
@@ -940,11 +972,109 @@ u32 AreAllStatChangesPrevented(enum BattlerId battler)
 
     for (u32 i = 0; i < amount; i++)
     {
-        if (battlerStats[i].prevented && battlerStats[i].atMin && battlerStats[i].atMax)
-            count++;
+        if (battlerStats[i].state == STAT_CHANGE_NONE)
+            continue;
+        if (battlerStats[i].state == STAT_CHANGE_PREVENTED)
+            continue;
+        return FALSE;
     }
-    return count == amount;
+    return TRUE;
 }
+
+struct QueuedStatChange GetQueuedStatChangeStates(enum BattlerId battler)
+{
+    struct StatStages *battlerStats = gSpecialStatuses[battler].statStageQueue;
+
+    struct QueuedStatChange change = {0};
+    change.amount = gSpecialStatuses[battler].statStageAmount;
+
+    for (u32 i = 0; i < change.amount; i++)
+    {
+        switch (battlerStats[i].state)
+        {
+        case STAT_CHANGE_NONE:
+            change.numNone++;
+            break;
+        case STAT_CHANGE_DONE:
+            change.numDone++;
+            break;
+        case STAT_CHANGE_PREVENTED:
+            change.numPrevented++;
+            break;
+        case STAT_CHANGE_AT_MAX:
+            change.numMax++;
+            break;
+        case STAT_CHANGE_AT_MIN:
+            change.numMin++;
+            break;
+        case STAT_CHANGE_DO_CHANGE:
+            change.doChange = TRUE;
+            break;
+        }
+    }
+
+    return change;
+}
+
+bool32 AreSameStatsAtMinMax(enum BattlerId battler, enum BattlerId partner)
+{
+    struct StatStages *battlerStats = gSpecialStatuses[battler].statStageQueue;
+    struct StatStages *partnerStats = gSpecialStatuses[partner].statStageQueue;
+
+    for (u32 i = 1; i < NUM_BATTLE_STATS; i++)
+    {
+        if (battlerStats[i].state == STAT_CHANGE_NONE && partnerStats[i].state == STAT_CHANGE_NONE)
+            continue;
+        if (battlerStats[i].state == STAT_CHANGE_AT_MAX && partnerStats[i].state == STAT_CHANGE_AT_MAX)
+            continue;
+        if (battlerStats[i].state == STAT_CHANGE_AT_MIN && partnerStats[i].state == STAT_CHANGE_AT_MIN)
+            continue;
+        return FALSE;
+    }
+    return TRUE;
+}
+
+bool32 AreStatChangesTheSame(enum BattlerId battler, enum BattlerId partner)
+{
+    if (!IsDoubleBattle())
+        return FALSE;
+
+    struct StatStages *battlerStats = gSpecialStatuses[battler].statStageQueue;
+    struct StatStages *partnerStats = gSpecialStatuses[partner].statStageQueue;
+
+    for (u32 i = 1; i < NUM_BATTLE_STATS; i++)
+    {
+        if (battlerStats[i].state == STAT_CHANGE_PREVENTED || partnerStats[i].state == STAT_CHANGE_PREVENTED)
+            return FALSE;
+
+        if (battlerStats[i].stat == partnerStats[i].stat && battlerStats[i].stage == partnerStats[i].stage)
+            continue;
+
+        return FALSE;
+    }
+    return TRUE;
+}
+
+bool32 IsStatChangeQueued(enum BattlerId battler)
+{
+    u32 amount = gSpecialStatuses[battler].statStageAmount;
+    struct StatStages *battlerStats = gSpecialStatuses[battler].statStageQueue;
+
+    for (u32 i = 0; i < amount; i++)
+    {
+        if (battlerStats[i].state == STAT_CHANGE_NONE)
+            continue;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+// 1. Check if any stat changes are prevented (includes min / max)
+//    a. Other stats can be changed -> do after anim
+//    b. No stats can be changed, do before anim
+// 2. If none are prevented check if both (all) are at min / max
+// 3. If some stats can be changed, skip
 
 bool32 CompareStat(enum BattlerId battler, enum Stat statId, u32 cmpTo, u32 cmpKind, enum Ability ability)
 {
@@ -997,12 +1127,6 @@ bool32 CompareStat(enum BattlerId battler, enum Stat statId, u32 cmpTo, u32 cmpK
     return ret;
 }
 
-/*
-  There might be a better solution without this function
-  The problems this fixes:
-  1. Multiply failure pop ups
-  2. Since we don't mark battlers as doesn't affect foe, they still get a stat drop
-*/
 static void MarkStatsAsDone(struct StatChange *st, enum Stat stat)
 {
     for (u32 i = 0; i < st->statStageAmount; i++)
@@ -1011,7 +1135,7 @@ static void MarkStatsAsDone(struct StatChange *st, enum Stat stat)
             continue;
 
         if (st->statStageQueue[i].stage < 0)
-            st->statStageQueue[i].done = TRUE;
+            st->statStageQueue[i].state = STAT_CHANGE_DONE;
     }
 }
 
@@ -1089,33 +1213,4 @@ bool32 IsAccDownEvasionUpStatChangeMove(const struct AdditionalEffect *effect)
     }
 
     return FALSE;
-}
-
-bool32 ShouldPrintSingleString(enum BattlerId battler, enum BattlerId partner)
-{
-    if (!IsDoubleBattle())
-        return FALSE;
-
-    struct StatStages *battlerStats = gSpecialStatuses[battler].statStageQueue;
-    struct StatStages *partnerStats = gSpecialStatuses[partner].statStageQueue;
-
-    for (u32 i = 1; i < NUM_BATTLE_STATS; i++)
-    {
-        if (battlerStats[i].stat != partnerStats[i].stat)
-            return FALSE;
-
-        if (battlerStats[i].atMin != partnerStats[i].atMin)
-            return FALSE;
-
-        if (battlerStats[i].atMax != partnerStats[i].atMax)
-            return FALSE;
-
-        if (battlerStats[i].done != partnerStats[i].done)
-            return FALSE;
-
-        if (battlerStats[i].prevented || partnerStats[i].prevented)
-            return FALSE;
-    }
-
-    return TRUE;
 }

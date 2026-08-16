@@ -10387,7 +10387,6 @@ static void Cmd_trybattlerstatchange(void)
 
     if (TryStatChange(&cv, &st) == STAT_CHANGE_WORKED)
     {
-        DebugPrintf("????");
         BattleScriptCall(st.script);
         return;
     }

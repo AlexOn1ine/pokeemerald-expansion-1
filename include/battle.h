@@ -102,15 +102,22 @@ struct ProtectStruct
     u8 padding3:1;
 };
 
+enum StatChangeState
+{
+    STAT_CHANGE_NONE,
+    STAT_CHANGE_DO_CHANGE,
+    STAT_CHANGE_PREVENTED,
+    STAT_CHANGE_AT_MAX,
+    STAT_CHANGE_AT_MIN,
+    STAT_CHANGE_DONE,
+};
+
 struct StatStages
 {
-    u8 stat:7;
-    u8 done:1;
+    u8 stat;
     s8 stage;
-    u8 atMax:1;
-    u8 atMin:1;
-    u8 prevented:1;
-    u8 padding:7;
+    enum StatChangeState state:3;
+    u8 padding:5;
 };
 
 // Cleared at the start of HandleAction_ActionFinished

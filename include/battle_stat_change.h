@@ -49,9 +49,38 @@ void ClearStatChangeValues(void);
 void ClearOtherStatChangeValues(enum BattlerId battler);
 void ClearBattlerStatChangeValues(enum BattlerId battler);
 void ClearBothStatChangeQueues(void);
+
+bool32 WillAnyStatChange(enum BattlerId battler);
 bool32 AreAllStatsDone(enum BattlerId battler);
 bool32 AreAllStatsDone2(enum BattlerId battler);
-u32 AreAllStatChangesPrevented(enum BattlerId battler);
+bool32 AreAllStatChangesPrevented(enum BattlerId battler);
+
+enum CanAnyStatChange
+{
+    STAT_OTHER,
+    STAT_NONE,
+    STAT_DONE,
+    STAT_DO_CHANGE,
+    STAT_PREVENTED,
+    STAT_AT_MIN,
+    STAT_AT_MAX,
+};
+
+struct QueuedStatChange
+{
+    u8 amount;
+    u8 numNone;
+    u8 numDone;
+    u8 numPrevented;
+    u8 numMax;
+    u8 numMin;
+    bool8 doChange;
+};
+
+struct QueuedStatChange GetQueuedStatChangeStates(enum BattlerId battler);
+bool32 AreSameStatsAtMinMax(enum BattlerId battler, enum BattlerId partner);
+bool32 IsStatChangeQueued(enum BattlerId battler);
+
 enum StatChangeResult TrySingleStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 u32 GetStatStage(enum Stat stat, const struct AdditionalEffect *additionalEffect);
 bool32 ShouldDefiantCompetitiveActivate(enum BattlerId battler, enum Ability ability);
@@ -64,7 +93,7 @@ bool32 IsDefSpDefStatUpMove(const struct AdditionalEffect *effect);
 bool32 IsAccDownEvasionUpStatChangeMove(const struct AdditionalEffect *effect);
 void ResetAnimPlayedFlags(void);
 
-bool32 ShouldPrintSingleString(enum BattlerId battler, enum BattlerId partner);
+bool32 AreStatChangesTheSame(enum BattlerId battler, enum BattlerId partner);
 
 
 #endif // GUARD_BATTLE_MOVE_STAT_CHANGE_H
