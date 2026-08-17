@@ -556,6 +556,7 @@ static void Cmd_tryoverwriteability(void);
 static void Cmd_trysynchronize(void);
 static void Cmd_tryconfusionafterskydrop(void);
 static void Cmd_trymovestatchanges(void);
+static void Cmd_preparestatsforchangefromqueue(void);
 static void Cmd_trystatchangesalliedside(void);
 static void Cmd_trystatchangesoppositeside(void);
 static void Cmd_trybattlerstatchange(void);
@@ -772,6 +773,7 @@ void (*const gBattleScriptingCommandsTable[])(void) =
     [B_SCR_OP_TRY_SYNCHRONIZE]                       = Cmd_trysynchronize,
     [B_SCR_OP_TRY_CONFUSION_AFTER_SKY_DROP]          = Cmd_tryconfusionafterskydrop,
     [B_SCR_OP_TRYMOVESTATCHANGES]                    = Cmd_trymovestatchanges,
+    [B_SCR_OP_PREPARESTATSFORCHANGEFROMQUEUE]        = Cmd_preparestatsforchangefromqueue,
     [B_SCR_OP_TRYSTATCHANGES_ALLIED_SIDE]            = Cmd_trystatchangesalliedside,
     [B_SCR_OP_TRYSTATCHANGES_OPPOSITE_SIDE]          = Cmd_trystatchangesoppositeside,
     [B_SCR_OP_TRYBATTLERSTATCHANGE]                  = Cmd_trybattlerstatchange,
@@ -10243,6 +10245,17 @@ static void Cmd_tryconfusionafterskydrop(void)
 }
 
 
+static void Cmd_preparestatsforchangefromqueue(void)
+{
+    CMD_ARGS();
+
+    if (gBattleControllerExecFlags)
+        return;
+
+    PrepareStatsForChangeFromQueue();
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 static void Cmd_trymovestatchanges(void)
 {
     CMD_ARGS();
@@ -10267,7 +10280,7 @@ static void SetStatChangeFlags(struct StatChange *st, u32 flags)
 }
 #undef SET_FLAG
 
-static void Script_TryStatChanges(enum BattlerId battlerAtk, u32 sideBattlerCount, u32 statChangeFlags, const u8 *nextInstr)
+static void Script_TryStatChanges(enum BattlerId battlerAtk, u32 startSlot, u32 battlersCount, u32 statChangeFlags, const u8 *nextInstr)
 {
     struct BattleCalcValues cv = {
         .battlerAtk = battlerAtk,
@@ -10280,54 +10293,60 @@ static void Script_TryStatChanges(enum BattlerId battlerAtk, u32 sideBattlerCoun
         cv.holdEffects[battler] = GetBattlerHoldEffect(battler);
     }
 
-    while (gBattleStruct->statChangeBattler < sideBattlerCount)
+    u32 slot = startSlot;
+    while (slot < battlersCount)
     {
-        struct StatChange stBattler1 = {0};
-        struct StatChange stBattler2 = {0};
-        SetStatChangeFlags(&stBattler1, statChangeFlags);
-        SetStatChangeFlags(&stBattler2, statChangeFlags);
+        struct StatChange changeBattler1 = {0};
+        struct StatChange changeBattler2 = {0};
+        SetStatChangeFlags(&changeBattler1, statChangeFlags);
+        SetStatChangeFlags(&changeBattler2, statChangeFlags);
 
         gBattleStruct->ignoreDefiant = FALSE;
-        stBattler1.battler = GetTargetBySlot(cv.battlerAtk, gBattleStruct->statChangeBattler);
+        changeBattler1.battler = GetTargetBySlot(cv.battlerAtk, slot);
 
-        // TODO: Check if any stat can be changed
-        if (!IsBattlerAlive(stBattler1.battler) || gSpecialStatuses[stBattler1.battler].statStageAmount == 0)
+        struct QueuedStatChange stateBattler1 = GetQueuedStatChangeStates(changeBattler1.battler);
+
+        if (!IsBattlerAlive(changeBattler1.battler)
+         || stateBattler1.numNone == stateBattler1.amount
+         || stateBattler1.numDone == stateBattler1.amount)
         {
-            gBattleStruct->statChangeBattler++;
+            slot++;
             continue;
         }
 
         if (statChangeFlags & STAT_CHANGE_IGNORE_SELF)
-            stBattler1.certain = cv.battlerAtk == stBattler1.battler;
+            changeBattler1.certain = cv.battlerAtk == changeBattler1.battler;
 
-        CopyOverStatStageQueue(&stBattler1);
-        TryStatChange(&cv, &stBattler1);
-        ClearBattlerStatChangeValues(stBattler1.battler);
-        gBattleStruct->statChangeBattler++;
+        changeBattler2.battler = BATTLE_PARTNER(changeBattler1.battler);
 
-        stBattler2.battler = BATTLE_PARTNER(stBattler1.battler);
-        // TODO: This also needs to check if stat changes are the same
-        if (IsBattlerAlive(stBattler2.battler) && gSpecialStatuses[stBattler2.battler].statStageAmount == 0)
+        struct QueuedStatChange stateBattler2 = GetQueuedStatChangeStates(changeBattler2.battler);
+        changeBattler1.doSideBattlers = ShouldPrintSingleString(changeBattler1.battler, stateBattler1, changeBattler2.battler, stateBattler2);
+
+        CopyOverStatStageQueue(&changeBattler1);
+        enum StatChangeResult result = TryStatChange(&cv, &changeBattler1);
+        if (result == STAT_CHANGE_BLOCKED_BY_TARGET)
         {
-            stBattler1.doSideBattlers = TRUE;
-            stBattler2.doneSideBattlers = TRUE;
-            CopyOverStatStageQueue(&stBattler2);
-            TryStatChange(&cv, &stBattler2);
-            ClearBattlerStatChangeValues(stBattler2.battler);
-            gBattleStruct->statChangeBattler++;
+            BattleScriptCall(changeBattler1.script);
+            return;
+        }
+        slot++;
+
+        if (IsBattlerAlive(changeBattler2.battler) && changeBattler1.doSideBattlers)
+        {
+            changeBattler2.doneSideBattlers = TRUE;
+            CopyOverStatStageQueue(&changeBattler2);
+            TryStatChange(&cv, &changeBattler2);
+            slot++;
         }
 
-        if (gBattleStruct->statChangeBattler == gBattlersCount)
+        if (result == STAT_CHANGE_WORKED)
         {
-            BattleScriptPush(nextInstr);
-            gBattlescriptCurrInstr = stBattler1.script;
-        }
-        else
-        {
-            BattleScriptCall(stBattler1.script);
+            BattleScriptCall(changeBattler1.script);
+            return;
         }
     }
 
+    ClearStatChangeValues();
     gBattlescriptCurrInstr = nextInstr;
 }
 
@@ -10338,7 +10357,7 @@ static void Cmd_trystatchangesalliedside(void)
     if (gBattleControllerExecFlags)
         return;
 
-    Script_TryStatChanges(GetBattlerForBattleScript(cmd->battler), gBattlersCount, cmd->statChangeFlags, cmd->nextInstr);
+    Script_TryStatChanges(GetBattlerForBattleScript(cmd->battler), 0, gBattlersCount, cmd->statChangeFlags, cmd->nextInstr);
 }
 
 static void Cmd_trystatchangesoppositeside(void)
@@ -10348,7 +10367,7 @@ static void Cmd_trystatchangesoppositeside(void)
     if (gBattleControllerExecFlags)
         return;
 
-    Script_TryStatChanges(GetBattlerForBattleScript(cmd->battler), gBattlersCount / 2, cmd->statChangeFlags, cmd->nextInstr);
+    Script_TryStatChanges(GetBattlerForBattleScript(cmd->battler), 2, gBattlersCount / 2, cmd->statChangeFlags, cmd->nextInstr);
     gBattleStruct->statChangeBattler = 0;
 }
 

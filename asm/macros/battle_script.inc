@@ -1127,7 +1127,12 @@
     .byte B_SCR_OP_TRYMOVESTATCHANGES
     .endm
 
+    .macro preparestatsforchangefromqueue
+    .byte B_SCR_OP_PREPARESTATSFORCHANGEFROMQUEUE
+    .endm
+
     .macro trystatchanges battler:req statChangeFlags:req
+    preparestatsforchangefromqueue
     trystatchangesalliedside \battler, \statChangeFlags
     trystatchangesoppositeside \battler, \statChangeFlags
     .endm

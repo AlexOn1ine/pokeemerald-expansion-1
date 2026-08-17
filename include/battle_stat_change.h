@@ -41,6 +41,7 @@ extern enum Stat const sAccurateStatOrder[NUM_BATTLE_STATS];
 enum StatChangeResult CanDecreaseStat(struct BattleCalcValues *cv, struct StatChange *st);
 bool32 CompareStat(enum BattlerId battler, enum Stat statId, u32 cmpTo, u32 cmpKind, enum Ability ability);
 void PrepareStatsForChange(struct BattleCalcValues *cv, struct StatChange *st);
+void PrepareStatsForChangeFromQueue(void);
 enum StatChangeResult TryStatChange(struct BattleCalcValues *cv, struct StatChange *st);
 void SetStatChange(enum BattlerId battler, enum Stat stat, s32 stage);
 void SetStatChange2(enum BattlerId battler, enum Stat stat, s32 stage);
@@ -78,6 +79,7 @@ struct QueuedStatChange
 };
 
 struct QueuedStatChange GetQueuedStatChangeStates(enum BattlerId battler);
+bool32 ShouldPrintSingleString(enum BattlerId battler1, struct QueuedStatChange stateBattler1, enum BattlerId battler2, struct QueuedStatChange stateBattler2);
 bool32 AreSameStatsAtMinMax(enum BattlerId battler, enum BattlerId partner);
 bool32 IsStatChangeQueued(enum BattlerId battler);
 

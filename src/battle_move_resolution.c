@@ -5440,56 +5440,58 @@ static enum MoveResult StatChangePrevented(struct BattleCalcValues *cv, u32 star
     u32 slot = startSlot;
     while (slot < battlersCount)
     {
-        struct StatChange stBattler1 = {
+        struct StatChange changeBattler1 = {
             .ignoreCertainFailure = TRUE,
             .checkMirrorArmor = TRUE,
         };
-        struct StatChange stBattler2 = {
+        struct StatChange changeBattler2 = {
             .ignoreCertainFailure = TRUE,
             .checkMirrorArmor  = TRUE,
         };
 
-        stBattler1.battler = GetTargetBySlot(cv->battlerAtk, slot);
-        stBattler2.battler = BATTLE_PARTNER(stBattler1.battler);
-        stBattler1.certain = cv->battlerAtk == stBattler1.battler;
+        changeBattler1.battler = GetTargetBySlot(cv->battlerAtk, slot);
+        changeBattler2.battler = BATTLE_PARTNER(changeBattler1.battler);
+        changeBattler1.certain = cv->battlerAtk == changeBattler1.battler;
 
-        struct QueuedStatChange change = GetQueuedStatChangeStates(stBattler1.battler);
+        struct QueuedStatChange stateBattler1 = GetQueuedStatChangeStates(changeBattler1.battler);
 
-        if (change.numNone == change.amount
-         || change.numDone == change.amount
-         || change.doChange)
+        if (stateBattler1.numNone == stateBattler1.amount
+         || stateBattler1.numDone == stateBattler1.amount
+         || stateBattler1.doChange)
         {
             slot++;
             continue;
         }
 
-        if (change.numPrevented > 0)
+        struct QueuedStatChange stateBattler2 = GetQueuedStatChangeStates(changeBattler2.battler);
+
+        if (stateBattler1.numPrevented > 0 || stateBattler2.numPrevented > 0)
         {
-            stBattler1.doSideBattlers = FALSE;
-        }                                                   // Are all and same
-        else if (stBattler1.battler < stBattler2.battler && AreSameStatsAtMinMax(stBattler1.battler, stBattler2.battler))
+            changeBattler1.doSideBattlers = FALSE;
+        }
+        else if (!stateBattler2.doChange && AreSameStatsAtMinMax(changeBattler1.battler, changeBattler2.battler))
         {
-            stBattler1.doSideBattlers = TRUE;
+            changeBattler1.doSideBattlers = TRUE;
         }
 
-        CopyOverStatStageQueue(&stBattler1);
-        if (TryStatChange(cv, &stBattler1) == STAT_CHANGE_BLOCKED_BY_TARGET)
+        CopyOverStatStageQueue(&changeBattler1);
+        if (TryStatChange(cv, &changeBattler1) == STAT_CHANGE_BLOCKED_BY_TARGET)
         {
-            BattleScriptCall(stBattler1.script);
+            BattleScriptCall(changeBattler1.script);
             return MOVE_RESULT_RUN_SCRIPT;
         }
         slot++;
 
-        if (stBattler1.doSideBattlers)
+        if (changeBattler1.doSideBattlers)
         {
-            stBattler2.doneSideBattlers = TRUE;
-            CopyOverStatStageQueue(&stBattler2);
-            TryStatChange(cv, &stBattler2);
+            changeBattler2.doneSideBattlers = TRUE;
+            CopyOverStatStageQueue(&changeBattler2);
+            TryStatChange(cv, &changeBattler2);
             slot++;
         }
 
-        BattleScriptCall(stBattler1.script);
-        if (AreAllStatsDone(stBattler1.battler) && slot == battlersCount)
+        BattleScriptCall(changeBattler1.script);
+        if (AreAllStatsDone(changeBattler1.battler) && slot == battlersCount)
             return MOVE_RESULT_RUN_SCRIPT_INCREMENT;
         return MOVE_RESULT_RUN_SCRIPT;
     }
@@ -5673,53 +5675,50 @@ static enum MoveResult StatChangeTryChange(struct BattleCalcValues *cv, u32 star
     u32 slot = startSlot;
     while (slot < battlersCount)
     {
-        struct StatChange stBattler1 = {
+        struct StatChange changeBattler1 = {
             .ignoreCertainFailure = TRUE,
             .checkMirrorArmor = TRUE,
         };
-        struct StatChange stBattler2 = {
+        struct StatChange changeBattler2 = {
             .ignoreCertainFailure = TRUE,
             .checkMirrorArmor  = TRUE,
         };
-        stBattler1.battler = GetTargetBySlot(cv->battlerAtk, slot);
+        changeBattler1.battler = GetTargetBySlot(cv->battlerAtk, slot);
 
-        struct QueuedStatChange cBattler1 = GetQueuedStatChangeStates(stBattler1.battler);
+        struct QueuedStatChange stateBattler1 = GetQueuedStatChangeStates(changeBattler1.battler);
 
-        if (cBattler1.numNone == cBattler1.amount || cBattler1.numDone == cBattler1.amount)
+        if (stateBattler1.numNone == stateBattler1.amount
+         || stateBattler1.numDone == stateBattler1.amount)
         {
             slot++;
             continue;
         }
 
-        stBattler2.battler = BATTLE_PARTNER(stBattler1.battler);
+        changeBattler2.battler = BATTLE_PARTNER(changeBattler1.battler);
 
-        struct QueuedStatChange cBattler2 = GetQueuedStatChangeStates(stBattler2.battler);
-        bool32 areSameStatsDone = cBattler1.numDone == cBattler2.numDone;
-        bool32 areAnyBattlersStatsPrevented = (cBattler1.numPrevented > 0 || cBattler2.numPrevented > 0);
+        struct QueuedStatChange stateBattler2 = GetQueuedStatChangeStates(changeBattler2.battler);
+        changeBattler1.doSideBattlers = ShouldPrintSingleString(changeBattler1.battler, stateBattler1, changeBattler2.battler, stateBattler2);
+        changeBattler1.certain = cv->battlerAtk == changeBattler1.battler;
 
-        if (areSameStatsDone) //&& !areAnyBattlersStatsPrevented)
-            stBattler1.doSideBattlers = AreStatChangesTheSame(cv->battlerAtk, stBattler2.battler);
-        stBattler1.certain = cv->battlerAtk == stBattler1.battler;
-
-        CopyOverStatStageQueue(&stBattler1);
-        if (TryStatChange(cv, &stBattler1) == STAT_CHANGE_BLOCKED_BY_TARGET)
+        CopyOverStatStageQueue(&changeBattler1);
+        if (TryStatChange(cv, &changeBattler1) == STAT_CHANGE_BLOCKED_BY_TARGET)
         {
-            BattleScriptCall(stBattler1.script);
+            BattleScriptCall(changeBattler1.script);
             return MOVE_RESULT_RUN_SCRIPT;
         }
         slot++;
 
-        if (stBattler1.doSideBattlers)
+        if (changeBattler1.doSideBattlers)
         {
-            stBattler2.doneSideBattlers = TRUE;
-            CopyOverStatStageQueue(&stBattler2);
-            TryStatChange(cv, &stBattler2);
+            changeBattler2.doneSideBattlers = TRUE;
+            CopyOverStatStageQueue(&changeBattler2);
+            TryStatChange(cv, &changeBattler2);
             slot++;
         }
 
-        BattleScriptCall(stBattler1.script);
+        BattleScriptCall(changeBattler1.script);
 
-        if (AreAllStatsDone(stBattler1.battler) && slot == battlersCount)
+        if (AreAllStatsDone(changeBattler1.battler) && slot == battlersCount)
             return MOVE_RESULT_RUN_SCRIPT_INCREMENT;
         return MOVE_RESULT_RUN_SCRIPT;
     }

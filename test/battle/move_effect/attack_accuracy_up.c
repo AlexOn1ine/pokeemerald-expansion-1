@@ -28,7 +28,7 @@ SINGLE_BATTLE_TEST("Dragon Dance test")
         // TURN { MOVE(player, MOVE_SWORDS_DANCE); }
         // TURN { MOVE(player, MOVE_SWORDS_DANCE); }
         // TURN { MOVE(player, MOVE_SWORDS_DANCE); }
-        TURN { MOVE(player, MOVE_ROTOTILLER); }
+        TURN { MOVE(player, MOVE_SHIFT_GEAR); }
     } SCENE {
     } THEN {
         // EXPECT_EQ(player->statStages[STAT_ATK], 7);
@@ -44,15 +44,27 @@ DOUBLE_BATTLE_TEST("Dragon Dance double test")
         OPPONENT(SPECIES_IVYSAUR);
         OPPONENT(SPECIES_BULBASAUR) { Ability(ABILITY_MIRROR_ARMOR); }
     } WHEN {
-        // TURN { MOVE(player, MOVE_SWORDS_DANCE); }
-        // TURN { MOVE(player, MOVE_SWORDS_DANCE); }
-        // TURN { MOVE(player, MOVE_SWORDS_DANCE); }
         TURN { MOVE(playerLeft, MOVE_ROTOTILLER); }
     } SCENE {
     } THEN {
-        // EXPECT_EQ(playerLeft->statStages[STAT_ATK], 7);
-        // EXPECT_EQ(playerRight->statStages[STAT_ATK], 7);
-        // EXPECT_EQ(opponentLeft->statStages[STAT_ATK], 7);
-        // EXPECT_EQ(opponentRight->statStages[STAT_ATK], 7);
+    }
+}
+
+DOUBLE_BATTLE_TEST("Cotton Down test")
+{
+    GIVEN {
+        PLAYER(SPECIES_BAYLEEF) { Ability(ABILITY_INTIMIDATE); }
+        PLAYER(SPECIES_CHIKORITA) { Ability(ABILITY_COTTON_DOWN); }
+        OPPONENT(SPECIES_IVYSAUR) { Ability(ABILITY_INTIMIDATE); }
+        OPPONENT(SPECIES_BULBASAUR) { Ability(ABILITY_COTTON_DOWN); }
+    } WHEN {
+        TURN {
+            MOVE(playerLeft, MOVE_POUND, target: opponentRight);
+            MOVE(playerRight, MOVE_ROTOTILLER, target: opponentRight);
+            MOVE(opponentLeft, MOVE_POUND, target: playerRight);
+            MOVE(opponentRight, MOVE_ROTOTILLER, target: playerRight);
+        }
+    } SCENE {
+    } THEN {
     }
 }
