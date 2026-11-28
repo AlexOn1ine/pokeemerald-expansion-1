@@ -1203,11 +1203,12 @@ enum ItemEffect ItemBattleEffects(enum BattlerId itemBattler, enum BattlerId bat
     {
         gLastUsedItem = item;
         gBattleScripting.battler = gPotentialItemEffectBattler = itemBattler;
-        if (gItemsInfo[item].pocket == POCKET_BERRIES)
-        {
-            GetBattlerPartyState(itemBattler)->belchActive = TRUE;
-            gSpecialStatuses[itemBattler].ateBerry = TRUE;
-        }
+    }
+
+    if (gItemsInfo[item].pocket == POCKET_BERRIES && (effect || gBattleScripting.overrideBerryRequirements > 0))
+    {
+        GetBattlerPartyState(itemBattler)->belchActive = TRUE;
+        gSpecialStatuses[itemBattler].ateBerry = TRUE;
     }
 
     return effect;
